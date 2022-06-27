@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+<div class="jumbotron">
+
+    <h5>Lista de todas as Demandas (Pactos de Trabalho)</h5>
+    <p>Total de <span class="badge badge-primary badge-pill">{{demandas_count}}</span> demandas - pág. {{demandas.page}} de {{demandas.pages}} 
+      {% if lista == '%' %}
+        (Todas)
+      {% else %}
+        ({{lista}})
+      {% endif %}</p>
+
+
+<div style="overflow-y: auto; overflow-x: hidden ; height:450px">
+  {% for demanda in demandas.items %}
+
+    <div class="row">
+
+    <div class="col-sm-11">
+      <div class="card">
+        <div class="card-body">
+
+          <p><h6 class="">Responsável: <b>{{demanda.pesNome}}</b> <b>({{demanda.undSigla}})</b></h6> </p>
+          <p class="small"><b>Data Início:</b> {{demanda.dataInicio.strftime('%x')}} - <b>Data Fim:</b> {{demanda.dataFim.strftime('%x')}}</p>
+
+
+          <p class=""><a class="card-title" href="{{url_for('demandas.demanda',pacto_id=demanda.pactoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver detalhes da demanda"> Ver andamento da demanda </abbr></a>
+            </p>
+
+          <p class="small">Relacionada à(s) Atividade(s): </p>
+            {% for item in items_cat %}
+              {% if item.planoTrabalhoId == demanda.planoTrabalhoId %}
+                <h6>{{ item.titulo }}</h6>
+              {% endif %}  
+            {% endfor %}
+
+
+          <p><h6 class="text-muted">Forma: <b>{{demanda.forma}}</b> - Situação: <b>{{demanda.descricao}}</b></h6></p>
+
+
+          <h6>Carga horária diária: <b>{{demanda.cargaHorariaDiaria}}</b> - 
+            Percentual execução: <b>{{demanda.percentualExecucao|decimal_com_virgula}}</b> - 
+            Rel. previsto/realizado: <b>{{demanda.relacaoPrevistoRealizado|decimal_com_virgula}}</b> - 
+            Tempo total disponível: <b>{{demanda.tempoTotalDisponivel}}</b>
+          </h6>
+
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <div class="row">
+      <p>...</p>
+    </div>
+
+  {% endfor %}
+  </div>
+</div>
+</div>
+
+<nav aria-label="Page navigation example">
+  <ul class="pagination justify-content-center">
+
+    {% for page_num in demandas.iter_pages(left_edge=1,left_current=1,right_current=2,right_edge=1) %}
+      {% if page_num %}
+        {% if demandas.page == page_num %}
+          <li class="page-item active">
+              <a class="page-link" href="{{url_for('demandas.list_demandas',lista=lista,page=page_num)}}">{{page_num}}</a>
+          </li>
+        {% else %}
+          <li class="page-item">
+              <a class="page-link" href="{{url_for('demandas.list_demandas',lista=lista,page=page_num)}}">{{page_num}}</a>
+          </li>
+        {% endif %}
+      {% else %}
+        <span class="page-link">…</span>
+      {% endif %}
+
+    {% endfor %}
+  </ul>
+</nav>
+
+{% endblock %}

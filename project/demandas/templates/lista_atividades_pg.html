@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+  
+  <h5>Lista das Atividades do PG {{pg}}</h5>
+
+<caption>
+  <div class="row">
+      <div class="col">
+        <p>Lista das <span class="badge badge-pill badge-primary">{{quantidade}}</span> atividades no PG</p>
+      </div>
+  </div>
+</caption>
+
+<div style="overflow-y:auto ; height:450px">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col"><p align = "center">#</p></th>
+        <th scope="col"><p align = "center">Titulo</p></th>
+        <th scope="col"><p align = "center">Tempo Presencial</p></th>
+        <th scope="col"><p align = "center">Tempo Remoto</p></th>
+        <th scope="col"><p align = "center">Complexidade</p></th>
+        <th scope="col"><p align = "center">Entregas</p></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for a in ativs_lista %}
+        <tr>
+          <td><p align = "center"> {{ativs_lista.index(a) + 1}} </p></td>
+          <td><p align = "left"> {{a.titulo}} </p></td>
+          <td><p align = "center"> {{a.tempoPresencial|decimal_com_virgula}} </p></td>
+          <td><p align = "center"> {{a.tempoRemoto|decimal_com_virgula}} </p></td>
+          <td><p align = "center"> {{a.complexidade}} </p></td>
+          <td><p align = "left"> {{a.entregasEsperadas}} </p></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+
+  </table>
+
+</div>
+
+</div>
+{% endblock %}

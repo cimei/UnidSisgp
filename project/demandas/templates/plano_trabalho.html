@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h5><b>Programas de Gestão da Unidade {{unid_dados.undSigla}} (Atividades)</b></h5>
+
+<caption>
+  <div class="row">
+      <div class="col">
+        <p>Lista dos <span class="badge badge-pill badge-primary">{{quantidade}}</span> PGs. 
+          {% if lista == '%' %}
+            (Todas)
+          {% else %}
+            ({{lista}})
+          {% endif %}</p>
+      </div>
+  </div>
+</caption>
+
+<div class="container" style="overflow-y:auto; width:2000px; height:400px">
+
+  <table class="table table-striped table-hover table-sm">
+    <caption>Programas de Gestão (Atividades)</caption>
+    <thead>
+      <tr>
+        <th scope="col"><p align = "center">#</p></th>
+
+        <th scope="col"><p align = "center">Situação</p></th>
+        <th scope="col"><p align = "center">Início</p></th>
+        <th scope="col"><p align = "center">Fim</p></th>
+        <th scope="col"><p align = "center">Atividades</p></th>
+        <th scope="col"><p align = "center">Metas</p></th>
+        <th scope="col"><p align = "center">Pactos</p></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% for pt in planos_trab_unid %}
+
+      <tr>
+        <th scope="row"><p align = "center"> {{planos_trab_unid.index(pt) + 1}} </p></th>
+        <td><p align = "center"> {{pt.descricao}} </p></td>
+        <td><p align = "center"> {{pt.dataInicio.strftime('%x')}} </p></td>
+        <td><p align = "center"> {{pt.dataFim.strftime('%x')}} </p></td>
+        <td><p align = "center"> <a class="" href="{{url_for('demandas.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
+          <abbr title="Clique aqui para ver atividades deste PG.">{{pt.qtd_ativs}} </abbr></a></p></td>
+        <td><p align = "center"> 
+            {% if pt.qtd_metas == None %}
+              0
+            {% else %}
+            <a class="" href="{{url_for('demandas.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
+              <abbr title="Clique aqui para ver as metas deste PG.">{{pt.qtd_metas}} </abbr></a>
+            {% endif %}
+        </p></td>
+        <td><p align = "center"> 
+          {% if pt.qtd_pactos == None %}
+            0
+          {% else %}
+          <a class="" href="{{url_for('demandas.lista_pactos_pg',pg=pt.planoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver os pactos deste PG.">{{pt.qtd_pactos}} </abbr></a>
+          {% endif %}
+      </p></td>  
+            
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+</div>
+
+</div>
+{% endblock %}

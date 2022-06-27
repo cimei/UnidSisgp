@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+  
+  <h5>Lista dos Pactos gerados a partir do PG {{pg}}</h5>
+
+<caption>
+  <div class="row">
+      <div class="col">
+        <p>Lista dos <span class="badge badge-pill badge-primary">{{quantidade}}</span> pactos no PG</p>
+      </div>
+  </div>
+</caption>
+
+<div style="overflow-y:auto ; height:450px">
+  <table class="table table-striped table-hover table-sm">
+    <thead>
+      <tr>
+        <th scope="col"><p align = "center">#</p></th>
+        <th scope="col"><p align = "center">Pessoa</p></th>
+        <th scope="col"><p align = "center">Unidade</p></th>
+        <th scope="col"><p align = "center">Forma</p></th>
+        <th scope="col"><p align = "center">Situação</p></th>
+        <th scope="col"><p align = "center">Início</p></th>
+        <th scope="col"><p align = "center">Fim</p></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for p in pactos_lista %}
+        <tr>
+          <td><p align = "center"><a class="" href="{{url_for('demandas.demanda',pacto_id=p.pactoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver detalhes do pacto"> {{pactos_lista.index(p) + 1}} </abbr></a>
+            </p></td>
+          <td><p align = "left"> {{p.pesNome}} </p></td>
+          <td><p align = "center"> {{p.undSigla}} </p></td>
+          <td><p align = "left"> {{p.forma}} </p></td>
+          <td><p align = "left"> {{p.descricao}} </p></td>
+          <td><p align = "center"> {{p.dataInicio.strftime('%x')}} </p></td>
+          <td><p align = "left"> {{p.dataFim.strftime('%x')}} </p></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+
+  </table>
+
+</div>
+
+</div>
+{% endblock %}
