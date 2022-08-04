@@ -1,8 +1,10 @@
-# ApoioSisgp
-Aplicativo de apoio à gestão do SISGP. Permite visualizar e atualizar dados das tabelas Unidade e Pessoa, de tabelas auxiliares (SituacaoPessoa, TipoFuncao, TipoVinculo e Feriado), além de outras funcionalidades.
+# UnidSisgp
+Aplicativo de apoio à gestão do PGD em cada unidade por meio da gestão por demandas usando dados do DBSISGP.
 
 Considerando que você tem o Python instalado em sua máquina, baixe os arquivos deste repositório. 
-Lembre-se de criar um ambiente para o sistema. Para tal user o arquivo environment.yml, no qual o nome do ambiente (name) e sua localização (prefix) deverão ser ajustados para o seu caso. Consulte https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html para detalhes de como lidar com ambientes.
+Lembre-se de criar um ambiente para o sistema. Para tal user o arquivo environment.yml, ou o arquivo requirements.txt, de acordo com sua preferência e ajustando-os para seu caso. 
+No environment.yml, por exemplo, o nome do ambiente (name) e sua localização (prefix) deverão ser ajustados. 
+Consulte https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html (conda) e https://pip.pypa.io/en/latest/user_guide/#requirements-files (pip) para detalhes de como lidar com ambientes.
 
 Como o código é reaproveitado de um projeto anterior, pode ocorrer de ter mais pacotes instalados do que o realmente necessário, mas isto não é um impedimento.
 
@@ -16,7 +18,7 @@ Como este sistema faz controle de acesso e registra o log dos commits realizados
       CREATE SCHEMA [Apoio]
       GO
       
-      /****** Object:  Table [Apoio].[User]  e [Apoio].[log_auto]  ******/
+      /****** Object:  Table [Apoio].[User]  e [Apoio].[log_unid]  ******/
       SET ANSI_NULLS ON
       GO
       
@@ -42,30 +44,31 @@ Como este sistema faz controle de acesso e registra o log dos commits realizados
       ) ON [PRIMARY]
       GO
       
-      CREATE TABLE [Apoio].[log_auto](
-            [id] [bigint] IDENTITY(1,1) NOT NULL,
-            [data_hora] [datetime] NOT NULL,
-            [user_id] [bigint] NOT NULL,
-            [msg] [varchar](150) NOT NULL,
-       CONSTRAINT [PK_log_auto] PRIMARY KEY CLUSTERED 
+      CREATE TABLE [Apoio].[log_unid](
+	      [id] [bigint] IDENTITY(1,1) NOT NULL,
+      	[data_hora] [datetime] NOT NULL,
+	      [user_id] [bigint] NOT NULL,
+      	[msg] [varchar](150) NOT NULL,
+       CONSTRAINT [PK_log_unid] PRIMARY KEY CLUSTERED 
       (
-      	[id] ASC
-      )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)     ON [PRIMARY]
+	      [id] ASC
+      )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
       ) ON [PRIMARY]
       GO
 
-      ALTER TABLE [Apoio].[log_auto]  WITH CHECK ADD  CONSTRAINT [FK_log_auto_user_id] FOREIGN KEY([user_id])
+      ALTER TABLE [Apoio].[log_unid]  WITH CHECK ADD  CONSTRAINT [FK_log_unid_user_id] FOREIGN KEY([user_id])
       REFERENCES [Apoio].[User] ([id])
       GO
-      
-      ALTER TABLE [Apoio].[log_auto] CHECK CONSTRAINT [FK_log_auto_user_id]
+
+      ALTER TABLE [Apoio].[log_unid] CHECK CONSTRAINT [FK_log_unid_user_id]
       GO
 
-Uma forma de disponibilizar este aplicativo várias pessoas na unidade, sem que se necessite instalar o Python para cada uma, é por meio do Pyinstaller. Ele agrega o projeto e todas as suas dependências em um único arquivo executável. Consulte https://realpython.com/pyinstaller-python/
-para informações sobre este programa. 
+O aplicativo está preparado para ser executado via conteiner Docker. Com o ambiente pronto, a imagem pode ser gerada via 
 
-Com o pyinstaller instalado, crie este .exe com o comando pyinstaller --onefile app.spec.
+docker build -t unidsisgp . 
 
-O app.spec neste repositório contém as configurações necessárias para a geração do .exe com sucesso, mas precisa ajustar o pathex para o teu caso.
-Se tudo funcionar, será gerado o arquvo app.exe, na pasta dist. Renomeie ele com o nome que quiser e passe para os demais que irão utilizar o ApoioSigp. 
-Atenção para o fato de eles deverão ter a mesma versão do driver ODBC que você usou para gerar o executável.
+Para executar o conteiner:
+
+docker run -dp 5002:5002 unidsisgp 
+
+# UnidSisgp
