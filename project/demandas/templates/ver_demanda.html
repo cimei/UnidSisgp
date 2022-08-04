@@ -12,27 +12,120 @@
         <!-- <div class="card"> -->
           <div class="card-body" style="overflow-y:auto; height:616px">
 
-            <p class="small">Demanda: {{id}} <b>({{post.undSigla}})</b></p>
-            <p class="small">Relacionada à(s) Atividade(s): </p>
-              {% for item in items_cat %}
-                <h6>{{ item.titulo }}</h6>
-              {% endfor %}  
+            {% if current_user.is_authenticated and usuario.unidadeId in tree_sup_ids %}
+              <div class="row">
+                <div class="col-6">
+                  {% if usuario.pesNome == post.pesNome %}
+                    <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#tipo_modal'>Fazer solicitação</button>
+                  {% endif %}  
+                </div>
+                <div class="col-6" align="right">
+                  {% if usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None %}
+                    <a href="{{url_for('objetos.add_objeto',plano_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">Criar objeto no PG</a>
+                  {% endif %}
+                </div>
+              </div> 
+
+              {# modal para verificar tipo de solicitação #}
+
+              <div class="modal" tabindex="-1" role="dialog" id="tipo_modal">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+
+                      <h5 class="modal-title">Escolhendo tipo de Solicitação </h5>
+
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+
+                    </div>
+                    <div class="modal-body">
+
+                      {% macro render_field(field,obr) %}
+                        {% if obr == True %}
+                          <dt>{{ field.label(class="form-control-label") }}<span class="text-danger font-weight-bold">*</span>
+                        {% else %}
+                          <dt>{{ field.label(class="form-control-label") }}
+                        {% endif %}
+                        <dd>{{ field(**kwargs)|safe }}
+                        {% if field.errors %}
+                          <ul class=errors>
+                          {% for error in field.errors %}
+                            <li><span class="text-danger font-weight-bold">{{ error }}</span></li>
+                          {% endfor %}
+                          </ul>
+                        {% endif %}
+                        </dd>
+                      {% endmacro %}
+
+                      <form class="form-group" method='POST'>
+                        {{ form1.hidden_tag() }}
+
+                        <div class="form-row">
+                          <div class="form-group">
+                            {{ render_field(form1.tipo,class="form-control",obr=True) }}
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <div class="col-3">
+                          </div>
+                          <div class="col-7" align = "center" >
+                            {{ form1.submit(class="btn btn-outline-primary") }}<span class="text-muted"><br> Atenção: campos marcados com * são obrigatórios.</span>
+                          </div>
+                        </div>
+                    
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                    </div>
+                  </div>
+                </div>
+              </div>  
+            {% endif %}
+            <p></p>
+
+
+            <p class="small">PG: {{post.planoTrabalhoId}}<br>
+            Demanda: {{id}} <br> Unidade: <b>{{post.undSigla}}</b></p>
 
             <p><h6 class="">Resp.: <b>{{post.pesNome}}</b></h6></p>
 
-            <p><h6 class="text-muted">Forma: <b>{{post.forma}}</b> - Situação: <b>{{post.descricao}}</b></h6></p>  
-
-            <p class="small"><b>Data Início:</b> {{post.dataInicio.strftime('%x')}}</p>
-            <p class="small"><b>Data Fim:</b> {{post.dataFim.strftime('%x')}}</h7><br>
-
-            <h6>Carga horária diária: <b>{{post.cargaHorariaDiaria}}</b></h6>
+            <p><h6>Forma: <b>{{post.forma}}</b> - Situação: <b>{{post.descricao}}</b></h6></p>
             
-            <h6>Percentual execução: <b>{{post.percentualExecucao|decimal_com_virgula}}</b></h6>
+            <p class="small">Carga horária diária: <b>{{post.cargaHorariaDiaria}}</b>
+              Percentual execução: <b>{{post.percentualExecucao|decimal_com_virgula}}</b>
+              <br>
+              Rel. previsto/realizado: <b>{{post.relacaoPrevistoRealizado|decimal_com_virgula}}</b></h6>
+              Tempo total disponível: <b>{{post.tempoTotalDisponivel}}</b> horas
+            </p>
+
+            <p class="small">Data Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Data Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b><br>
+              (período com <b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)
+            </p>
+
+            <p class="small">
+              {% if sum_ativs_tempo_total == post.tempoTotalDisponivel%}
+                <b>{{sum_ativs_tempo_total|decimal_com_virgula}}</b>
+              {% else %}
+                <b><span class = "text-danger">{{sum_ativs_tempo_total|decimal_com_virgula}}</span></b>  
+              {% endif %}  
+               horas comprometidas com atividades<br>
+              ({{sum_ativs_p_tempo_total|decimal_com_virgula}}h programadas, 
+               {{sum_ativs_e_tempo_total|decimal_com_virgula}}h em execução e 
+               {{sum_ativs_c_tempo_total|decimal_com_virgula}}h concluídas)
+            </p>
+            _______________________________________________________________
+            <p class="small"><b>{{qtd_items_cat}}</b> Atividade(s) no PG: <br>
+              {% for item in items_cat %}
+                {{ item.titulo }} - {{item.tempoPresencial|decimal_com_virgula}}h (P)
+                {% if item.permiteRemoto %} - {{item.tempoRemoto|decimal_com_virgula}}h (R) {% endif %}<br>
+              {% endfor %}  
+            </p>
+
             
-            <h6>Rel. previsto/realizado: <b>{{post.relacaoPrevistoRealizado|decimal_com_virgula}}</b></h6>
-
-            <h6>Tempo total disponível: <b>{{post.tempoTotalDisponivel}}</b></h6>
-
 
          </div>
         <!-- </div> -->
@@ -42,69 +135,251 @@
       <div class="col-sm">
         <div class="card border-info">
         <div class="card bg-light mb-3">
-          <div class="card-header"><div class="text-info">Reuniões, Solicitações e Ações</div></div>
+          <div class="card-header"><div class="text-info">Histórico ({{qtd_hist}}), Reuniões ({{qtd_reun}}), Solicitações ({{qtd_solic}}) e Atividades ({{qtd_ativs_pacto}})</div></div>
           <div class="card-body"  style="overflow-y:auto; height:550px">
             <div class="list-group">
 
             {% for item in pro_des %}
 
                 <div class="list-group-item list-group-item-action">
-                  {% if item.tipo == 'Reunião' %}
-                    <p class="card-text text-warning"> {{item.tipo}} </p>
-                    <small class="text-muted"> Título: </small>
-                    <p class="card-text"> {% if item.tit == None%}Não informada{% else %}{{item.tit}}{% endif %} </p>
-                    <small class="text-muted"> Descrição: </small>
-                    <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>
 
+                  <!-- Histórico -->
+
+                  {% if item.tipo == 'Histórico' %}
                     {% if item.data != None%}
-                      <small class="text-muted"> Data Reunião: {{item.data.strftime('%x')}} </small>
+                      <small class="text-muted"> Data: {{item.data.strftime('%d/%m/%Y')}} </small>
+                    {% else %}  
+                     <small class="text-muted"> Data Operação não informada </small>
+                    {% endif %}
+
+                    <p class="card-text text-info"> <b>{{item.tipo}}</b> </p>
+                    <div class = 'row'>
+                      <div class = 'col-4'>
+                        <small class="text-muted"> Situação: </small>
+                        <p class="card-text"> {{item.situa}} </p>
+                      </div>
+                      <div class = 'col'>
+                        <small class="text-muted"> Responsável: </small>
+                        <p class="card-text"> {{item.pesNome}} </p>
+                      </div>
+                    </div>
+                    {% if item.obs != None%}
+                      <small class="text-muted"> Observações: </small> <p class="card-text"> {{item.obs}}</p>
+                    {% endif %}      
+
+
+                  <!-- Reuniões -->
+
+                  {% elif item.tipo == 'Reunião' %}
+                    {% if item.data != None%}
+                      <small class="text-muted"> Data: {{item.data.strftime('%d/%m/%Y')}} </small>
                     {% else %}  
                      <small class="text-muted"> Data Reunião não informada </small>
                     {% endif %}
 
-                  {% elif item.tipo == 'Solicitação' %}  
-                    <p class="card-text text-success"> {{item.tipo}} </p>
-                    <small class="text-muted"> Obs. Solicitante: </small>
+                    <p class="card-text text-warning"> <b>{{item.tipo}}</b> </p>
+                    <small class="text-muted"> Título: </small>
                     <p class="card-text"> {% if item.tit == None%}Não informada{% else %}{{item.tit}}{% endif %} </p>
-                    <small class="text-muted"> Obs. Analista: </small>
-                    <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>
 
-                    {% if item.data != None%}
-                      <small class="text-muted"> Data Solicitação: {{item.data.strftime('%x')}} - </small>
-                    {% else %}  
-                      <small class="text-muted"> Data Solicitação não informada - </small>
-                    {% endif %}
+                    {% if item.obj != None and item.obj != '' %}
+                      <p><small class="text-dark"> <b>Objeto:</b> {{item.obj}} - {{item.chave}} </small></p>
+                    {% endif %}  
 
-                    {% if item.dataFim != None%}
-                      <small class="text-muted"> Data Análise: {{item.dataFim.strftime('%x')}} </small>
-                    {% else %}  
-                      <small class="text-muted"> Data Análise não informada </small>
-                    {% endif %}
-
-                  {% else %}
-                    <p class="card-text text-primary"> Ação </p>
                     <small class="text-muted"> Descrição: </small>
                     <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>
-                    <small class="text-muted"> Considerações: </small>
-                    <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>
 
-                    <p>
+                    {% if item.obj == None and current_user.is_authenticated and obj_pg_count != 0 and usuario.unidadeId in tree_sup_ids%}
+                      <br>
+                      <div class="row">
+                        <div class="col-6">
+                        </div>
+                        <div class="col-6" align="right">
+                            <a href="{{url_for('objetos.objeto_reuniao',plano_id=post.planoTrabalhoId,pacto_id=id,reuniao_id=item.id)}}" class="btn btn-secondary btn-sm" role="button" aria-pressed="true">Objeto</a>
+                        </div>
+                      </div>
+                    {% endif %}
+
+
+                  <!-- Atividades -->
+
+                  {% elif item.tipo == 'Atividade' %}
                     {% if item.data != None%}
-                      <small class="text-muted"> Data Início: {{item.data.strftime('%x')}} - </small>
+                      <small class="text-muted"> Data Início: <b>{{item.data.strftime('%d/%m/%Y')}}</b> </small>
                     {% else %}  
-                      <small class="text-muted"> Data Início não informada - </small>
+                      <small class="text-muted"> Data Início não informada </small>
                     {% endif %}
 
-                    {% if item.dataFim != None%}
-                      <small class="text-muted"> Data Fim: {{item.dataFim.strftime('%x')}} </small>
-                    {% else %}  
-                      <small class="text-muted"> Data Fim não informada </small>
+                    <p><span class="card-text text-primary"> Atividade <b>{{item.situa}}</b></span><br>
+                    {% for i in seq_ativs %}
+                      {% if item.id == i[1][0] %}  
+                        <span class="card-text"> <b>({{i[0]}}) {{item.titulo}}</b></span> </p>
+                      {% endif %}  
+                    {% endfor %}
+
+                    {% if item.obj != None and item.obj != '' %}
+                      <p><small class="text-dark"> <b>Objeto:</b> {{item.obj}} - {{item.chave}} </small></p>
                     {% endif %}
-                  </p>
 
-                    <small class="text-muted"> Tempo realizado: {% if item.tempoRealizado == None%}0{% else %}{{item.tempoRealizado}}{% endif %} - </small>
+                    <small class="text-muted"> Descrição: </small>
+                    <p class="card-text"> {% if item.tit == None%}Não informada{% else %}{{item.tit}}{% endif %} </p>
+                    
+                    {% if item.situa == 'Em execução' %}
+                      <small class="text-muted"> Considerações: </small>
+                      <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>
+                    {% elif item.situa == 'Concluída' %}
+                      <small class="text-muted"> Conclusão: </small>
+                      <p class="card-text"> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </p>  
+                    {% endif %}
 
-                    <small class="text-muted"> Nota: {% if item.nota == None%}0{% else %}{{item.nota}}{% endif %} </small>
+                    {% if item.situa == 'Concluída' %} 
+                    <p>
+                      {% if item.dataFim != None%}
+                        <small class="text-muted"> Data Fim: <b>{{item.dataFim.strftime('%d/%m/%Y')}}</b> </small>
+                      {% else %}  
+                        <small class="text-muted"> Data Fim não informada </small>
+                      {% endif %}
+                    </p>
+                    {% endif %}
+
+                    <small class="text-muted"> Modalidade: {% if item.descricao == None%}N.I.{% else %}{{item.descricao}}{% endif %} - </small>
+                    <small class="text-muted"> Quantidade: {% if item.quantidade == None%}0{% else %}{{item.quantidade}}{% endif %}</small> <br>
+                    <small class="text-muted"> Tempo previsto por item: {% if item.tempoPrevistoPorItem == None%}0{% else %}{{item.tempoPrevistoPorItem|decimal_com_virgula}}{% endif %} - </small>
+                    <small class="text-muted"> Tempo previsto total: {% if item.tempoPrevistoTotal == None%}0{% else %}{{item.tempoPrevistoTotal|decimal_com_virgula}}{% endif %}</small><br>
+                    {% if item.situa == 'Concluída' %}
+                      <br>
+                      <small class="text-muted"> Tempo realizado: {% if item.tempoRealizado == None%}0{% else %}{{item.tempoRealizado|decimal_com_virgula}}{% endif %} - </small>
+                      <small class="text-muted"> Tempo homologado: {% if item.tempoHomologado == None%}0{% else %}{{item.tempoHomologado|decimal_com_virgula}}{% endif %} - </small>
+                      <small class="text-muted"> Nota: {% if item.nota == None%}0{% else %}{{item.nota|decimal_com_virgula}}{% endif %} </small>
+                      {% if item.justificativa != None and item.justificativa !='' %}
+                        <small class="text-muted"> Justificativa: {{item.justificativa}} </small>
+                      {% endif %}
+                    {% endif %}
+
+                    {% if usuario.unidadeId in tree_sup_ids and usuario.pesNome == post.pesNome %}
+                      <br>
+                      <br>
+                      <div class="row">
+                        <div class="col-3">
+                        </div>
+                        <div class="col-3" align="right">
+                          {% if item.situa == 'Programada' %}
+                            <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=id,ativ_pacto_id=item.id,acao='i')}}" class="btn btn-outline-success btn-sm" role="button" aria-pressed="true">Iniciar?</a>
+                          {% endif %}  
+                        </div>
+                        <div class="col-3" align="right">
+                          {% if item.situa == 'Programada' or item.situa == 'Em execução' %}
+                            <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=id,ativ_pacto_id=item.id,acao='f')}}" class="btn btn-outline-info btn-sm" role="button" aria-pressed="true">Concluir?</a>
+                          {% endif %}
+                          {% if item.situa == 'Concluída' and usuario.tipoFuncaoId != None %}
+                            {% if item.nota != None and item.nota != '' %}
+                              <a href="{{url_for('demandas.avalia_atividade',pacto_id=id,ativ_pacto_id=item.id)}}" class="btn btn-outline-warning btn-sm" role="button" aria-pressed="true">Reavaliar?</a>
+                            {% else %}
+                              <a href="{{url_for('demandas.avalia_atividade',pacto_id=id,ativ_pacto_id=item.id)}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">Avaliar?</a>
+                            {% endif %}  
+                          {% endif %}
+                        </div>
+                        <div class="col-3" align="right">
+                          {% if item.obj == None and current_user.is_authenticated and obj_pg_count != 0 %}
+                            <a href="{{url_for('objetos.objeto_ativ_pacto',plano_id=post.planoTrabalhoId,pacto_id=id,pacto_ativ_id=item.id)}}" class="btn btn-secondary btn-sm" role="button" aria-pressed="true">Objeto</a>
+                          {% endif %}  
+                        </div>
+                      </div>
+                    {% endif %}   
+                    
+                  <!-- Solicitações -->
+
+                  {% else %}  
+                    {% if item.data != None%}
+                      <small class="text-muted"> Data: {{item.data.strftime('%d/%m/%Y')}} </small>
+                    {% else %}  
+                      <small class="text-muted"> Data Solicitação não informada </small>
+                    {% endif %}
+                    <p class="card-text text-success"> {{item.tipo[0:17]}}<b>{{item.tipo[16:]}}</b> por {{item.pesNome}}</p>
+
+                    <small class="text-muted"> Observações do Solicitante: </small>
+                    <p class="card-text"> {% if item.obs == None%}Não informada{% else %}{{item.obs}}{% endif %} </p>
+
+                    {% for d in dados_solic %}
+                      {% if d[0] == item.id %}
+                        {% if item.tipo[18:22] == 'Nova' %}
+                          <p>
+                          <small class="text-muted"> Atividade: </small>
+                          <span class="card-text"> <b>{{d[1]['itemCatalogo']}}</b></span>
+                          <br>
+                          {% if d[1]['tempoPrevistoPorItem'] != None %}
+                            <small class="text-muted"> Tempo previsto: </small>
+                            <span class="card-text"> <b>{{d[1]['tempoPrevistoPorItem']|decimal_com_virgula}}</b> </span>
+                          {% endif %}
+                          <small class="text-muted"> Situação: </small>
+                          <span class="card-text"> <b>{{d[1]['situacao']}}</b> </span>
+                          <br>
+                          {% if d[1]['dataInicio'] != 'null' and d[1]['dataInicio'] != None and d[1]['dataInicio'] != '' %}
+                            <small class="text-muted"> Data Início: </small>
+                            <span class="card-text"> <b>{{(d[1]['dataInicio']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          {% endif %}
+                          {% if d[1]['dataFim'] != 'null' and d[1]['dataFim'] != None and d[1]['dataFim'] != '' %}
+                            <small class="text-muted"> Data Fim: </small>
+                            <span class="card-text"> <b>{{(d[1]['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          {% endif %}
+                          </p>    
+                        {% elif item.tipo[18:22] == 'Alte' %}
+                          <p>
+                          <small class="text-muted"> Data Fim: </small>
+                          <span class="card-text"> <b>{{(d[1]['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          </p> 
+                        {% elif item.tipo[18:22] == 'Excl' %}
+                          <p>
+                            {% for s in seq_ativs %}
+                              {% if d[1]['pactoTrabalhoAtividadeId'] == s[1][0] %}
+                                <small class="text-muted"> Atividade: </small>
+                                <span class="card-text"> <b>({{s[0]}}) {{s[1][1]}}</b></span>
+                              {% endif %}   
+                            {% endfor %}
+                          </p>  
+
+                        {% elif item.tipo[18:22] == 'Praz' %}
+                        <p>
+                          <small class="text-muted"> Atividade: </small>
+                          
+                          {% for s in seq_ativs %}
+                            {% if d[1]['pactoTrabalhoAtividadeId'] == s[1][0] %}
+                              <span class="card-text"> <b>({{s[0]}}) {{s[1][1]}}</b></span>
+                            {% endif %}  
+                          {% endfor %}
+                        </p>   
+                          
+                        {% endif %}
+                      {% endif %}  
+                    {% endfor %}
+
+                    {% if item.desc != None and item.desc != '' %}
+                      <small class="text-muted"> Obs. Analista: </small>
+                      <p class="card-text"> {{item.desc}} </p>
+                    {% endif %}
+
+                    {% if item.dataFim != None and item.dataFim != '' %}
+                      
+                      <p>Análise  
+                        {% if item.nota == False %}<span class= "text-danger font-weight-bold">Recusada</span>
+                        {% else %}<span class= "text-primary font-weight-bold">Aprovada</span> {% endif %}
+                        em {{item.dataFim.strftime('%d/%m/%Y')}} por {{item.analist}}</p>
+                     
+                    {% endif %}
+
+                    {% if usuario.unidadeId in tree_sup_ids %}
+                      <div class="row">
+                        <div class="col-6">
+                          
+                        </div>
+                        <div class="col-6">
+                          {% if (item.dataFim == None or item.dataFim == '') and usuario.tipoFuncaoId != None %}
+                            <a href="{{url_for('demandas.solicitacao_analise',solic_id=item.id,pacto_id=id)}}" 
+                            class="btn btn-warning btn-sm" role="button" aria-pressed="true">Analisar</a>
+                          {% endif %}
+                        </div>
+                    </div>
+                   {% endif %}  
+
 
                   {% endif %}  
                   

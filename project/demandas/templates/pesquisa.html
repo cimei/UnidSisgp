@@ -57,14 +57,14 @@
             {% if demanda.necessita_despacho == True %}
               <h5 class="text-warning">Aguarda despacho
                 {% if demanda.data_env_despacho != None %}
-                  desde {{demanda.data_env_despacho.strftime('%x')}}
+                  desde {{demanda.data_env_despacho.strftime('%d/%m/%Y')}}
                 {% endif %}
               </h5>
             {% endif %}
             {% if demanda.necessita_despacho_cg == True %}
               <h5 class="text-info">Aguarda despacho CG ou sup.
                 {% if demanda.data_env_despacho != None %}
-                  desde {{demanda.data_env_despacho.strftime('%x')}}
+                  desde {{demanda.data_env_despacho.strftime('%d/%m/%Y')}}
                 {% endif %}
               </h5>
             {% endif %}
@@ -72,9 +72,9 @@
             {% if demanda.conclu == 0 %}
               <h5>Em andamento</h5>
             {% elif demanda.conclu == 1 %}
-              <h5 class="text-success">Concluído (sucesso) em {{demanda.data_conclu.strftime('%x')}}</h5>
+              <h5 class="text-success">Concluído (sucesso) em {{demanda.data_conclu.strftime('%d/%m/%Y')}}</h5>
             {% elif demanda.conclu == 2 %}
-              <h5 class="text-warning">Concluído (insucesso) em {{demanda.data_conclu.strftime('%x')}}</h5>
+              <h5 class="text-warning">Concluído (insucesso) em {{demanda.data_conclu.strftime('%d/%m/%Y')}}</h5>
             {% endif %}
 
           <a href="{{url_for('demandas.demanda',demanda_id=demanda.id)}}" class="card-link">Ler a demanda</a>

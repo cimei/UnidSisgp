@@ -5,13 +5,13 @@
 
 <div class="jumbotron">
 
-    <h5>Lista de Planos de Trabalho na unidade {{unid_dados.undSiglaCompleta}} e suas subordinadas</h5>
+    <h5>Lista de Planos de Trabalho de {{nome}}</h5>
     <p>Total de <span class="badge badge-success badge-pill">{{demandas_count}}</span> 
-       demandas sendo <span class="badge badge-secondary badge-pill">{{demandas_count_pai}}</span> da {{unid_dados.undSigla}} - pág. {{demandas.page}} de {{demandas.pages}} 
+       demandas - pág. {{demandas.page}} de {{demandas.pages}} 
       {% if lista == '%' %}
         (Todas)
       {% else %}
-        ({{lista}})
+        (forma e situação selecionadas)
       {% endif %}</p>
 
 
@@ -24,9 +24,7 @@
       <div class="card">
         <div class="card-body">
 
-          <p><h6 class="">Responsável: <b>{{demanda.pesNome}}</b> <b>({{demanda.undSigla}})</b></h6> </p>
           <p class="small"><b>Data Início:</b> {{demanda.dataInicio.strftime('%d/%m/%Y')}} - <b>Data Fim:</b> {{demanda.dataFim.strftime('%d/%m/%Y')}}</p>
-
 
           <p class=""><a class="card-title" href="{{url_for('demandas.demanda',pacto_id=demanda.pactoTrabalhoId)}}">
             <abbr title="Clique aqui para ver detalhes da demanda"> Ver andamento da demanda </abbr></a>
@@ -62,11 +60,11 @@
       {% if page_num %}
         {% if demandas.page == page_num %}
           <li class="page-item active">
-              <a class="page-link" href="{{url_for('demandas.list_demandas',lista=lista,coord=coord,page=page_num)}}">{{page_num}}</a>
+              <a class="page-link" href="{{url_for('demandas.list_demandas_usu',lista=lista,pessoa_id=0,page=page_num)}}">{{page_num}}</a>
           </li>
         {% else %}
           <li class="page-item">
-              <a class="page-link" href="{{url_for('demandas.list_demandas',lista=lista,coord=coord,page=page_num)}}">{{page_num}}</a>
+              <a class="page-link" href="{{url_for('demandas.list_demandas_usu',lista=lista,pessoa_id=0,page=page_num)}}">{{page_num}}</a>
           </li>
         {% endif %}
       {% else %}

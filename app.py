@@ -1,8 +1,7 @@
 from project import app
 from flask import render_template
-import webbrowser
-from threading import Timer
 import locale
+from datetime import datetime
 
 # filtro cusomizado para o jinja
 #
@@ -20,13 +19,16 @@ def decimal_com_virgula(valor):
     else:
         return locale.format_string('%.1f',valor,grouping=True)
 
+@app.template_filter('str_to_date')
+def str_to_date(valor):
+    if valor == None or valor == '':
+        return 0
+    else:
+        return datetime.strptime(valor,'%Y-%m-%dT%H:%M:%S')        
+
 @app.route('/')
 def index():
     return render_template('home.html')
 
-def open_browser():
-    webbrowser.open_new('http://127.0.0.1:5002/')
-
 if __name__ == '__main__':
-    Timer(1, open_browser).start()
-    app.run(port = 5002)
+    app.run(port = 5002, host='0.0.0.0')

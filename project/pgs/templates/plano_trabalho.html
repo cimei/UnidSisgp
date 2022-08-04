@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="jumbotron">
-  <h5><b>Programas de Gestão da Unidade {{unid_dados.undSigla}} (Atividades)</b></h5>
+  <h5><b>Programas de Gestão da Unidade {{unid_dados.undSiglaCompleta}} e suas subordinadas</b></h5>
 
 <caption>
   <div class="row">
@@ -24,12 +24,14 @@
       <tr>
         <th scope="col"><p align = "center">#</p></th>
 
+        <th scope="col"><p align = "center">Unidade</p></th>
         <th scope="col"><p align = "center">Situação</p></th>
         <th scope="col"><p align = "center">Início</p></th>
         <th scope="col"><p align = "center">Fim</p></th>
         <th scope="col"><p align = "center">Atividades</p></th>
         <th scope="col"><p align = "center">Metas</p></th>
         <th scope="col"><p align = "center">Pactos</p></th>
+        <th scope="col"><p align = "center">Objetos</p></th>
       </tr>
     </thead>
     <tbody>
@@ -38,16 +40,17 @@
 
       <tr>
         <th scope="row"><p align = "center"> {{planos_trab_unid.index(pt) + 1}} </p></th>
+        <td><p align = "center"> {{pt.undSigla}} </p></td>
         <td><p align = "center"> {{pt.descricao}} </p></td>
-        <td><p align = "center"> {{pt.dataInicio.strftime('%x')}} </p></td>
-        <td><p align = "center"> {{pt.dataFim.strftime('%x')}} </p></td>
-        <td><p align = "center"> <a class="" href="{{url_for('demandas.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
+        <td><p align = "center"> {{pt.dataInicio.strftime('%d/%m/%Y')}} </p></td>
+        <td><p align = "center"> {{pt.dataFim.strftime('%d/%m/%Y')}} </p></td>
+        <td><p align = "center"> <a class="" href="{{url_for('pgs.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
           <abbr title="Clique aqui para ver atividades deste PG.">{{pt.qtd_ativs}} </abbr></a></p></td>
         <td><p align = "center"> 
             {% if pt.qtd_metas == None %}
               0
             {% else %}
-            <a class="" href="{{url_for('demandas.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
+            <a class="" href="{{url_for('pgs.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
               <abbr title="Clique aqui para ver as metas deste PG.">{{pt.qtd_metas}} </abbr></a>
             {% endif %}
         </p></td>
@@ -55,10 +58,21 @@
           {% if pt.qtd_pactos == None %}
             0
           {% else %}
-          <a class="" href="{{url_for('demandas.lista_pactos_pg',pg=pt.planoTrabalhoId)}}">
+          <a class="" href="{{url_for('pgs.lista_pactos_pg',pg=pt.planoTrabalhoId)}}">
             <abbr title="Clique aqui para ver os pactos deste PG.">{{pt.qtd_pactos}} </abbr></a>
           {% endif %}
-      </p></td>  
+        </p></td>
+  
+        <td><p align = "center"> 
+          <a class="" href="{{url_for('objetos.lista_objetos_pg',pg=pt.planoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver os objetos deste PG.">
+              {% if pt.qtd_objetos == None %}
+                0
+              {% else %}
+                {{pt.qtd_objetos}} 
+                {% endif %}  
+            </abbr></a>
+        </p></td>   
             
       </tr>
 

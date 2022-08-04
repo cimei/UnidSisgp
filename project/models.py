@@ -25,13 +25,13 @@
 """
 # models.py
 import locale
+from xmlrpc.client import Boolean
 from project import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from datetime import datetime, date
 
 from sqlalchemy.dialects.mssql import NUMERIC
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -99,6 +99,28 @@ class Log_Auto(db.Model):
 
         return f"{self.data_hora};{self.user_id};{self.msg}"        
 
+## tabela de registro das ações via UnidSisgp
+class Log_Unid(db.Model):
+
+    __tablename__ = 'log_unid'
+    __table_args__ = {"schema": "Apoio"}
+
+    id        = db.Column(db.Integer, primary_key=True)
+    data_hora = db.Column(db.DateTime,nullable=False,default=datetime.now())
+    user_id   = db.Column(db.Integer, db.ForeignKey('Apoio.User.id'),nullable=False)
+    msg       = db.Column(db.String)
+
+
+    def __init__(self, data_hora, user_id, msg):
+
+        self.data_hora = data_hora
+        self.user_id   = user_id
+        self.msg       = msg
+
+    def __repr__(self):
+
+        return f"{self.data_hora};{self.user_id};{self.msg}"
+
 # unidades
 
 class Unidades(db.Model):
@@ -142,6 +164,29 @@ class Unidades(db.Model):
                  {self.tipoUnidadeId};{self.situacaoUnidadeId};{self.ufId};{self.undNivel};\
                  {self.tipoFuncaoUnidadeId};{self.Email};{self.undCodigoSIORG};\
                  {self.pessoaIdChefe};{self.pessoaIdChefeSubstituto};"
+
+# view que monta a sigla completa das unidades
+
+class VW_Unidades(db.Model):
+
+    __tablename__ = 'VW_UNIDADE'
+    __table_args__ = {"schema": "dbo"}
+
+    id_unidade       = db.Column(db.BigInteger, primary_key = True)
+    undDescricao     = db.Column(db.String)
+    undSiglaCompleta = db.Column(db.String)
+    undCodigoSIORG   = db.Column(db.Integer)
+
+    def __init__(self, undDescricao, undSiglaCompleta, undCodigoSIORG):
+
+        self.undDescricao     = undDescricao
+        self.undSiglaCompleta = undSiglaCompleta
+        self.undCodigoSIORG   = undCodigoSIORG
+
+
+    def __repr__ (self):
+        return f"{self.undDescricao};{self.undSiglaCompleta};{self.undCodigoSIORG}"
+
 
 # pessoas
 
@@ -238,6 +283,23 @@ class Tipo_Vinculo_Pessoa(db.Model):
 
     def __repr__ (self):
         return f"{self.tvnDescricao};"            
+
+# unidades da federação
+class UFs(db.Model):
+
+    __tablename__ = 'UF'
+    __table_args__ = {"schema": "dbo"}
+
+    ufId        = db.Column(db.String, primary_key = True)
+    ufDescricao = db.Column(db.String)
+
+    def __init__(self, ufId, ufDescricao):
+
+        self.ufId         = ufId
+        self.ufDescricao = ufDescricao
+
+    def __repr__ (self):
+        return f"{self.ufId};{self.ufDescricao}"
 
 # feriados
 
@@ -424,6 +486,30 @@ class Planos_de_Trabalho_Metas(db.Model):
         return f"{self.planoTrabalhoId};{self.meta};\
                  {self.indicador};{self.descricao}"
 
+# PG (planotrabalho) atividade candidato
+
+class Atividade_Candidato(db.Model):
+
+    __tablename__ = 'PlanoTrabalhoAtividadeCandidato'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    planoTrabalhoAtividadeCandidatoId = db.Column(db.String, primary_key = True)
+    planoTrabalhoAtividadeId          = db.Column(db.String)
+    pessoaId                          = db.Column(db.Integer)
+    situacaoId                        = db.Column(db.Integer)
+    termoAceite                       = db.Column(db.String)
+
+    def __init__(self,planoTrabalhoAtividadeId,pessoaId,situacaoId,termoAceite):
+        
+        self.planoTrabalhoAtividadeId = planoTrabalhoAtividadeId
+        self.pessoaId                 = pessoaId
+        self.situacaoId               = situacaoId
+        self.termoAceite              = termoAceite
+
+    def __repr__ (self):
+        return f"{self.planoTrabalhoAtividadeId};{self.pessoaId};{self.situacaoId};{self.termoAceite}"              
+
+
 # Pactos de Trabalho
 
 class Pactos_de_Trabalho(db.Model):
@@ -593,10 +679,11 @@ class Pactos_de_Trabalho_Atividades(db.Model):
     consideracoesConclusao   = db.Column(db.String)
     modalidadeExecucaoId     = db.Column(db.Integer)
 
-    def __init__(self,pactoTrabalhoId,itemCatalogoId,quantidade,tempoPrevistoPorItem,tempoPrevistoTotal,
+    def __init__(self,pactoTrabalhoAtividadeId,pactoTrabalhoId,itemCatalogoId,quantidade,tempoPrevistoPorItem,tempoPrevistoTotal,
                 dataInicio,dataFim,tempoRealizado,situacaoId,descricao,tempoHomologado,nota,justificativa,
                 consideracoesConclusao,modalidadeExecucaoId):
 
+        self.pactoTrabalhoAtividadeId = pactoTrabalhoAtividadeId
         self.pactoTrabalhoId        = pactoTrabalhoId
         self.itemCatalogoId         = itemCatalogoId
         self.quantidade             = quantidade
@@ -614,7 +701,7 @@ class Pactos_de_Trabalho_Atividades(db.Model):
         self.modalidadeExecucaoId   = modalidadeExecucaoId
 
     def __repr__ (self):
-        return f"{self.pactoTrabalhoId};{self.itemCatalogoId};{self.quantidade};{self.tempoPrevistoPorItem};\
+        return f"{self.pactoTrabalhoAtividadeId};{self.pactoTrabalhoId};{self.itemCatalogoId};{self.quantidade};{self.tempoPrevistoPorItem};\
                  {self.tempoPrevistoTotal};{self.dataInicio};{self.dataFim};{self.tempoRealizado};\
                  {self.situacaoId};{self.descricao};{self.tempoHomologado};\
                  {self.nota};{self.justificativa};{self.consideracoesConclusao};{self.modalidadeExecucaoId}"
@@ -639,22 +726,116 @@ class Pactos_de_Trabalho_Solic(db.Model):
     aprovado                   = db.Column(db.Boolean)
     observacoesAnalista        = db.Column(db.String)
 
-    def __init__(self,pactoTrabalhoId,tipoSolicitacaoId,dataSolicitacao,solicitante,dadosSolicitacao,
+    def __init__(self,pactoTrabalhoSolicitacaoId,pactoTrabalhoId,tipoSolicitacaoId,dataSolicitacao,solicitante,dadosSolicitacao,
                 observacoesSolicitante,analisado,dataAnalise,analista,aprovado,observacoesAnalista):
 
-        self.pactoTrabalhoId        = pactoTrabalhoId
-        self.tipoSolicitacaoId      = tipoSolicitacaoId
-        self.dataSolicitacao        = dataSolicitacao
-        self.solicitante            = solicitante
-        self.dadosSolicitacao       = dadosSolicitacao
-        self.observacoesSolicitante = observacoesSolicitante
-        self.analisado              = analisado
-        self.dataAnalise            = dataAnalise
-        self.analista               = analista
-        self.aprovado               = aprovado
-        self.observacoesAnalista    = observacoesAnalista 
+        self.pactoTrabalhoSolicitacaoId = pactoTrabalhoSolicitacaoId
+        self.pactoTrabalhoId            = pactoTrabalhoId
+        self.tipoSolicitacaoId          = tipoSolicitacaoId
+        self.dataSolicitacao            = dataSolicitacao
+        self.solicitante                = solicitante
+        self.dadosSolicitacao           = dadosSolicitacao
+        self.observacoesSolicitante     = observacoesSolicitante
+        self.analisado                  = analisado
+        self.dataAnalise                = dataAnalise
+        self.analista                   = analista
+        self.aprovado                   = aprovado
+        self.observacoesAnalista        = observacoesAnalista 
 
     def __repr__ (self):
-        return f"{self.pactoTrabalhoId};{self.tipoSolicitacaoId};{self.dataSolicitacao};{self.solicitante};\
+        return f"{self.pactoTrabalhoSolicitacaoId};{self.pactoTrabalhoId};{self.tipoSolicitacaoId};{self.dataSolicitacao};{self.solicitante};\
                  {self.dadosSolicitacao};{self.observacoesSolicitante};{self.analisado};{self.dataAnalise};\
-                 {self.analista};{self.aprovado};{self.observacoesAnalista}"                 
+                 {self.analista};{self.aprovado};{self.observacoesAnalista}" 
+
+# Histórico dos Pactos de Trabalho 
+
+class Pactos_de_Trabalho_Hist(db.Model):
+
+    __tablename__ = 'PactoTrabalhoHistorico'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    pactoTrabalhoHistoricoId = db.Column(db.String, primary_key = True)
+    pactoTrabalhoId          = db.Column(db.String)
+    situacaoId               = db.Column(db.Integer)
+    observacoes              = db.Column(db.String)
+    responsavelOperacao      = db.Column(db.Integer)
+    dataOperacao             = db.Column(db.Date)
+
+    def __init__(self,pactoTrabalhoHistoricoId,pactoTrabalhoId,situacaoId,observacoes,
+                responsavelOperacao,dataOperacao):
+        
+        self.pactoTrabalhoHistoricoId = pactoTrabalhoHistoricoId
+        self.pactoTrabalhoId          = pactoTrabalhoId
+        self.situacaoId               = situacaoId
+        self.observacoes              = observacoes
+        self.responsavelOperacao      = responsavelOperacao
+        self.dataOperacao             = dataOperacao
+
+    def __repr__ (self):
+        return f"{self.pactoTrabalhoHistoricoId};{self.pactoTrabalhoId};{self.situacaoId};{self.observacoes};\
+                 {self.responsavelOperacao};{self.dataOperacao}"
+
+# Objetos vinculados a atividades de pactos de trabalho 
+
+class Objeto_Atividade_Pacto(db.Model):
+
+    __tablename__ = 'PactoAtividadePlanoObjeto'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    pactoAtividadePlanoObjetoId = db.Column(db.String, primary_key = True)
+    planoTrabalhoObjetoId       = db.Column(db.String)
+    pactoTrabalhoAtividadeId    = db.Column(db.String)
+
+    def __init__(self,pactoAtividadePlanoObjetoId,planoTrabalhoObjetoId,pactoTrabalhoAtividadeId):
+        
+        self.pactoAtividadePlanoObjetoId = pactoAtividadePlanoObjetoId
+        self.planoTrabalhoObjetoId       = planoTrabalhoObjetoId
+        self.pactoTrabalhoAtividadeId    = pactoTrabalhoAtividadeId
+
+    def __repr__ (self):
+        return f"{self.pactoAtividadePlanoObjetoId};{self.planoTrabalhoObjetoId};{self.pactoTrabalhoAtividadeId}"   
+
+
+# Objetos vinculados a PGs (planos de trabalho) 
+
+class Objeto_PG(db.Model):
+
+    __tablename__ = 'PlanoTrabalhoObjeto'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    planoTrabalhoObjetoId = db.Column(db.String, primary_key = True)
+    planoTrabalhoId       = db.Column(db.String)
+    objetoId              = db.Column(db.String)
+
+    def __init__(self,planoTrabalhoObjetoId,planoTrabalhoId,objetoId):
+        
+        self.planoTrabalhoObjetoId = planoTrabalhoObjetoId
+        self.planoTrabalhoId       = planoTrabalhoId
+        self.objetoId              = objetoId
+
+    def __repr__ (self):
+        return f"{self.planoTrabalhoObjetoId};{self.planoTrabalhoId};{self.objetoId}"    
+
+# Objetos
+
+class Objetos(db.Model):
+
+    __tablename__ = 'Objeto'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    objetoId  = db.Column(db.String, primary_key = True)
+    descricao = db.Column(db.String)
+    tipo      = db.Column(db.Integer)
+    chave     = db.Column(db.String)
+    ativo     = db.Column(db.Boolean)
+
+    def __init__(self,objetoId,descricao,tipo,chave,ativo):
+        
+        self.objetoId  = objetoId
+        self.descricao = descricao
+        self.tipo      = tipo
+        self.chave     = chave
+        self.ativo     = ativo
+
+    def __repr__ (self):
+        return f"{self.objetoId};{self.descricao};{self.tipo};{self.chave};{self.ativo}"                          

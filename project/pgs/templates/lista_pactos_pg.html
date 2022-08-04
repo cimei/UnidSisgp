@@ -37,8 +37,8 @@
           <td><p align = "center"> {{p.undSigla}} </p></td>
           <td><p align = "left"> {{p.forma}} </p></td>
           <td><p align = "left"> {{p.descricao}} </p></td>
-          <td><p align = "center"> {{p.dataInicio.strftime('%x')}} </p></td>
-          <td><p align = "left"> {{p.dataFim.strftime('%x')}} </p></td>
+          <td><p align = "center"> {{p.dataInicio.strftime('%d/%m/%Y')}} </p></td>
+          <td><p align = "left"> {{p.dataFim.strftime('%d/%m/%Y')}} </p></td>
         </tr>
       {% endfor %}
     </tbody>

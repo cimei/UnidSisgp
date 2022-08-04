@@ -48,25 +48,26 @@ from sqlalchemy.orm import aliased
 from collections import Counter
 
 from project import db, mail, app
-from project.models import users, Log_Auto, catdom, Pessoas
+from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
+                           Log_Unid, catdom, Pessoas, Unidades, Planos_de_Trabalho,\
+                           Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG
 
-from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm,\
-                                LogForm, DefGestor
+from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm, LogForm
                                 
 
 usuarios = Blueprint('usuarios',__name__)
 
 
 # função para registrar comits no log
-def registra_log_auto(user_id,msg):
+def registra_log_unid(user_id,msg):
     """
     +---------------------------------------------------------------------------------------+
-    |Função que registra ação do usuário na tabela log_auto.                                |
+    |Função que registra ação do usuário na tabela log_unid.                                |
     |INPUT: user_id e msg                                                                   |
     +---------------------------------------------------------------------------------------+
     """
 
-    reg_log = Log_Auto(data_hora  = datetime.now(),
+    reg_log = Log_Unid(data_hora  = datetime.now(),
                        user_id    = user_id,
                        msg        = msg)
 
@@ -164,7 +165,7 @@ def register():
 
         last_id = db.session.query(users.id).order_by(users.id.desc()).first()
 
-        registra_log_auto(last_id[0],'Usuário '+ form.username.data +' registrado.')
+        registra_log_unid(last_id[0],'Usuário '+ form.username.data +' registrado.')
 
         send_confirmation_email(user.userEmail)
         
@@ -186,7 +187,7 @@ def confirm(userId):
 
     send_confirmation_email(user.userEmail)
 
-    registra_log_auto(current_user.id,'Novo e-mail de confirmação enviado para '+ user.userEmail +'.')
+    registra_log_unid(current_user.id,'Novo e-mail de confirmação enviado para '+ user.userEmail +'.')
 
     flash('Novo e-mail de confirmação enviado para '+ user.userEmail +'.','sucesso')
 
@@ -280,7 +281,7 @@ def reset_with_token(token):
 
         db.session.commit()
 
-        registra_log_auto(user.id,'Senha alterada.')
+        registra_log_unid(user.id,'Senha alterada.')
 
         flash('Sua senha foi atualizada!', 'sucesso')
 
@@ -362,7 +363,9 @@ def view_users():
     """
     lista = users.query.order_by(users.id).all()
 
-    return render_template('view_users.html', lista=lista)
+    logado = db.session.query(Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    return render_template('view_users.html', lista=lista, logado=logado)
 
 #
 ## alterações em users 
@@ -390,7 +393,7 @@ def update_user(user_id):
 
             db.session.commit()
 
-            registra_log_auto(current_user.id,'Usuário '+ user.userNome +' ativado.')
+            registra_log_unid(current_user.id,'Usuário '+ user.userNome +' ativado.')
 
             flash('Usuário '+ user.userNome +' ativado!','sucesso')
 
@@ -430,14 +433,14 @@ def log ():
         data_ini = form.data_ini.data
         data_fim = form.data_fim.data
 
-        log = db.session.query(Log_Auto.id,
-                               Log_Auto.data_hora,
+        log = db.session.query(Log_Unid.id,
+                               Log_Unid.data_hora,
                                users.userNome,
-                               Log_Auto.msg)\
-                        .join(users, Log_Auto.user_id == users.id)\
-                        .filter(Log_Auto.data_hora >= datetime.combine(data_ini,time.min),
-                                Log_Auto.data_hora <= datetime.combine(data_fim,time.max))\
-                        .order_by(Log_Auto.id.desc())\
+                               Log_Unid.msg)\
+                        .join(users, Log_Unid.user_id == users.id)\
+                        .filter(Log_Unid.data_hora >= datetime.combine(data_ini,time.min),
+                                Log_Unid.data_hora <= datetime.combine(data_fim,time.max))\
+                        .order_by(Log_Unid.id.desc())\
                         .all()
 
         return render_template('user_log.html', log=log, name=current_user.userNome,
@@ -447,16 +450,111 @@ def log ():
     # traz a log das últimas 24 horas e registra entrada manual de log, se for o caso.
     else:
 
-        log = db.session.query(Log_Auto.id,
-                               Log_Auto.data_hora,
+        log = db.session.query(Log_Unid.id,
+                               Log_Unid.data_hora,
                                users.userNome,
-                               Log_Auto.msg)\
-                        .join(users, Log_Auto.user_id == users.id)\
-                        .filter(Log_Auto.data_hora >= (datetime.now()-timedelta(days=1)))\
-                        .order_by(Log_Auto.id.desc())\
+                               Log_Unid.msg)\
+                        .join(users, Log_Unid.user_id == users.id)\
+                        .filter(Log_Unid.data_hora >= (datetime.now()-timedelta(days=1)))\
+                        .order_by(Log_Unid.id.desc())\
                         .all()
 
         return render_template('user_log.html', log=log, name=current_user.userNome,
                            form=form)
 
 #
+# qtd pgs e pts em um período log
+
+@usuarios.route("/seus_numeros/<id>")
+def seus_numeros(id):
+    """+--------------------------------------------------------------------------------------+
+       |Alguns números do usuário.                                                            |
+       |                                                                                      |
+       +--------------------------------------------------------------------------------------+
+    """
+
+    if id == '*':
+
+        #pega e-mail do usuário logado
+        email = current_user.userEmail
+
+        #pega id sisgp do usuário logado
+        usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first_or_404()
+        
+    else:
+        #pega id sisgp do usuário informado
+        usuario = db.session.query(Pessoas).filter(Pessoas.pessoaId == int(id)).first_or_404()
+
+    # unidade do usuário
+    unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == usuario.unidadeId).first()
+
+    catdom_sit = db.session.query(catdom).subquery()
+
+    # quantidade de programas de gestão da unidade
+    programas_de_gestao = db.session.query(catdom.descricao, 
+                                            label('qtd_pg',func.count(Planos_de_Trabalho.planoTrabalhoId)))\
+                                        .join(catdom,catdom.catalogoDominioId == Planos_de_Trabalho.situacaoId)\
+                                        .filter(Planos_de_Trabalho.unidadeId == usuario.unidadeId)\
+                                        .group_by(catdom.descricao)\
+                                        .all()
+
+    # quantidade de objetos nas atividade do usuário
+    objetos = db.session.query(Objeto_Atividade_Pacto.pactoAtividadePlanoObjetoId)\
+                        .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
+                        .join(Pactos_de_Trabalho, Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
+                        .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
+                        .count()    
+    print ("*** ", objetos)                                     
+    
+    # quantidade de candidaturas do usuário
+    candidaturas = db.session.query(catdom.descricao, 
+                                    label('qtd_cand',func.count(Atividade_Candidato.planoTrabalhoAtividadeCandidatoId)))\
+                              .join(catdom,catdom.catalogoDominioId == Atividade_Candidato.situacaoId)\
+                              .filter(Atividade_Candidato.pessoaId == usuario.pessoaId)\
+                              .group_by(catdom.descricao)\
+                              .all()
+
+    # quantidades de planos de trabalho por forma e situação
+    planos_de_trabalho_fs = db.session.query(label('forma',catdom.descricao),
+                                             label('sit',catdom_sit.c.descricao),   
+                                             label('qtd_planos',func.count(Pactos_de_Trabalho.pactoTrabalhoId)),
+                                             Pactos_de_Trabalho.formaExecucaoId,
+                                             Pactos_de_Trabalho.situacaoId)\
+                                    .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
+                                    .join(catdom_sit,catdom_sit.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                                    .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
+                                    .group_by(Pactos_de_Trabalho.formaExecucaoId,Pactos_de_Trabalho.situacaoId,
+                                              catdom.descricao,catdom_sit.c.descricao)\
+                                    .order_by(Pactos_de_Trabalho.formaExecucaoId,Pactos_de_Trabalho.situacaoId)\
+                                    .all()                                                                                        
+
+    # quantidades de solicitações
+    solicit = db.session.query(Pactos_de_Trabalho_Solic.analisado,
+                               Pactos_de_Trabalho_Solic.aprovado,
+                               catdom.descricao,
+                               label('qtd_solic',func.count(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId)))\
+                        .join(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Solic.pactoTrabalhoId)\
+                        .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho_Solic.tipoSolicitacaoId)\
+                        .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
+                        .group_by(Pactos_de_Trabalho_Solic.analisado,Pactos_de_Trabalho_Solic.aprovado,catdom.descricao)\
+                        .order_by(Pactos_de_Trabalho_Solic.analisado,Pactos_de_Trabalho_Solic.aprovado,catdom.descricao)\
+                        .all()
+                        
+    # quantidades de atividades em planos (pactos)
+    ativs = db.session.query(catdom.descricao, 
+                             label('qtd_ativs',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)))\
+                      .join(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
+                      .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
+                      .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
+                      .group_by(catdom.descricao)\
+                      .all()
+    
+    return render_template('seus_numeros.html', usuario=usuario,
+                                                programas_de_gestao=programas_de_gestao,
+                                                candidaturas=candidaturas,
+                                                planos_de_trabalho_fs=planos_de_trabalho_fs,
+                                                solicit=solicit,
+                                                ativs=ativs,
+                                                objetos=objetos,
+                                                unid=unid)
+

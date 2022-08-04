@@ -43,28 +43,32 @@
               Programas de Gestão
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Todas')}}">Todos</a>
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Concluído')}}">Concluídos</a>
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Em execução')}}">Em execução</a>
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Executado')}}">Executados</a>
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Habilitação')}}">Em habilitação</a>
-              <a class="dropdown-item" href="{{url_for('demandas.plano_trabalho', lista = 'Rascunho')}}">Em rascunho</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*')}}">Todos</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Concluído', coord = '*')}}">Concluídos</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Em execução', coord = '*')}}">Em execução</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Executado', coord = '*')}}">Executados</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Habilitação', coord = '*')}}">Em habilitação</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Rascunho', coord = '*')}}">Em rascunho</a>
             </div>
+          </li>
+
+          <li class="nav-item active">
+            <a class="nav-link" href="{{url_for('objetos.lista_objetos', coord='*', pessoa='*')}}">Objetos</a>
           </li>
 
           <li class="nav-item dropdown active">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Demandas (pactos)
+              Planos de Trabalho
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Todas')}}">Todas</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Aceito')}}">Aceitas</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Concluído')}}">Concluídas</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Em execução')}}">Em execução</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite')}}">Enviadas para aceite</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Executado')}}">Executadas</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rascunho')}}">Em Rascunho</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rejeitado')}}">Rejeitadas</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Todas', coord = '*')}}">Todos</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Aceito', coord = '*')}}">Aceitos</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Concluído', coord = '*')}}">Concluídos</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Em execução', coord = '*')}}">Em execução</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*')}}">Enviados para aceite</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Executado', coord = '*')}}">Executados</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rascunho', coord = '*')}}">Em Rascunho</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rejeitado', coord = '*')}}">Rejeitados</a>
             </div>
           </li>
 
@@ -77,7 +81,9 @@
             {{current_user.userNome}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown5">
-              <!-- <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a> -->
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Veja seus Planos</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',id='*')}}">Seus números</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a>
               {% if current_user.userAtivo %}
                 <a class="dropdown-item"  href="{{ url_for('usuarios.view_users') }}">Ver Usuários</a>
               {% endif %}

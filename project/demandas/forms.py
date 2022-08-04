@@ -32,101 +32,88 @@
 # forms.py na pasta demandas
 
 import datetime
+from email.policy import default
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField, SelectField, BooleanField, DecimalField,\
-                    DateField, DateTimeField, TextAreaField, SubmitField, RadioField
+                    TextAreaField, SubmitField, RadioField
+from wtforms.fields.html5 import DateField, DateTimeField                    
 from wtforms.validators import DataRequired, Regexp, Optional
 from project import db
-# from project.models import Tipos_Demanda, Coords, User, Plano_Trabalho
+from project.models import catdom
 
-class Tipos_DemandaForm(FlaskForm):
 
-    tipo       = StringField('Tipo de Demanda')
-    relevancia = SelectField('Relevância:',choices=[('3','Baixa'),('2','Média'),('1','Alta')],
-                              validators=[DataRequired(message="Defina a Relevância!")])
+class PreSolicitacaoForm(FlaskForm):
+
+    tipos = db.session.query(catdom.catalogoDominioId, catdom.descricao)\
+                      .filter(catdom.classificacao == 'TipoSolicitacaoPactoTrabalho')\
+                      .order_by(catdom.descricao).all()
+    lista_tipos = [(t[0],t[1]) for t in tipos]
+    lista_tipos.insert(0,('',''))
+
+    tipo        = SelectField('Tipo de solicitação:',choices= lista_tipos)
+
+    submit      = SubmitField('Verificar')
+
+class SolicitacaoForm601(FlaskForm):
+
+    tipos = db.session.query(catdom.catalogoDominioId, catdom.descricao)\
+                      .filter(catdom.classificacao == 'SituacaoAtividadePactoTrabalho')\
+                      .order_by(catdom.descricao).all()
+    lista_tipos = [(t[0],t[1]) for t in tipos]
+    lista_tipos.insert(0,('',''))
+
+    quantidade = IntegerField('Quantidade:',default=1,validators=[DataRequired(message="Informe a quantidade!")])
+    atividade  = SelectField('Atividade:')
+    remoto     = BooleanField('Execução remota?')
+    situacao   = SelectField('Situação:',choices= lista_tipos)
+    data_ini   = DateField('Data de início:',format='%Y-%m-%d', validators=(Optional(),))
+    data_fim   = DateField('Data de término:',format='%Y-%m-%d', validators=(Optional(),))
+    tempo_real = StringField('Tempo realizado:')
+    desc       = TextAreaField('Observações:',validators=[DataRequired(message="Insira observações!")])
 
     submit     = SubmitField('Registrar')
 
-class Passos_Tipos_Form(FlaskForm):
+class SolicitacaoForm602(FlaskForm):
 
-    ordem = IntegerField('Ordem do passo:', validators=[DataRequired(message="Defina a ordem do passo!")])
-    passo = StringField('Passo:', validators=[DataRequired(message="Identifique o passo!")])
-    desc  = TextAreaField('Descrição:', validators=[DataRequired(message="Descreva o passo!")])
+    data_fim   = DateField('Data de término:',format='%Y-%m-%d')
+    desc       = TextAreaField('Observações:',validators=[DataRequired(message="Insira observações!")])
 
-    submit = SubmitField('Registrar')
+    submit     = SubmitField('Registrar')
 
-class Admin_Altera_Demanda_Form(FlaskForm):
+class SolicitacaoForm603(FlaskForm):
 
-    data_conclu = DateField('Data de conclusão da demanda:',format='%d/%m/%Y',validators=[DataRequired(message="Informe data da conclusão!")])
+    atividade  = SelectField('Atividade:')
+    desc       = TextAreaField('Justificativa:',validators=[DataRequired(message="Insira justificativa!")])
 
-    submit      = SubmitField('Registrar')
-
-class DemandaForm1(FlaskForm):
-    # choices do campo tipo são definido na view
-    sei                 = StringField('SEI:',validators=[DataRequired(message="Informe o Processo!")]) # incluir regex para sei, talvez ?!?!
-    tipo                = SelectField('Tipo:', validators=[DataRequired(message="Escolha um Tipo!")])
-    submit              = SubmitField('Verificar')
+    submit     = SubmitField('Registrar')   
 
 
-class DemandaForm(FlaskForm):
+class SolicitacaoAnaliseForm(FlaskForm):
 
-    # programa            = StringField('Programa:',validators=[DataRequired(message="Escolha um Programa!")])
-    atividade             = SelectField('Atividade:', validators=[DataRequired(message="Escolha uma atividade do plano de trabalho!")])
-    convênio              = IntegerField('Convênio:', validators=[Optional()])
-    titulo                = StringField('Título:', validators=[DataRequired(message="Defina um Título!")])
-    desc                  = TextAreaField('Descrição:',validators=[DataRequired(message="Descreva a Demanda!")])
-    necessita_despacho    = BooleanField('Necessita despacho?')
-    necessita_despacho_cg = BooleanField('Necessita despacho superior?')
-    conclu                = SelectField('Concluída?',choices=[('0','Não'),('1','Sim, com sucesso'),('2','Sim, com insucesso')])
-    urgencia              = SelectField('Urgência:',choices=[('3','Baixa'),('2','Média'),('1','Alta')],
-                                       validators=[DataRequired(message="Defina a urgência!")])
-    submit                = SubmitField('Registrar')
+    aprovado    = RadioField("Aprovado?", choices=[(1,'Sim'),(0,'Não')],validators=[DataRequired(message="Escolha uma opção!")])
+    observacoes = TextAreaField('Observações:',validators=[DataRequired(message="Insira observações!")])
 
-#
-class Demanda_ATU_Form(FlaskForm):
+    submit       = SubmitField('Registrar')
 
-    # programa            = StringField('Programa:',validators=[DataRequired(message="Escolha um Programa!")])
-    atividade     = SelectField('Atividade:', validators=[DataRequired(message="Escolha uma atividade do plano de trabalho!")])
-    sei           = StringField('SEI:')
-    tipo          = SelectField('Tipo:')
-    convênio      = IntegerField('Convênio:', validators=[Optional()])
-    ano_convênio  = IntegerField('Ano do Convênio:', validators=[Optional()])
-    titulo        = StringField('Título:', validators=[DataRequired(message="Defina um Título!")])
-    desc          = TextAreaField('Descrição:',validators=[DataRequired(message="Descreva a Demanda!")])
-    tipo_despacho = RadioField('Necessita despacho?',choices=[('0','Nenhum'),('1','1º nível'),('2','Superior')])
-    conclu        = SelectField('Concluída?',choices=[('0','Não'),('1','Sim, com sucesso'),('2','Sim, com insucesso')])
-    urgencia      = SelectField('Urgência:',choices=[('3','Baixa'),('2','Média'),('1','Alta')],
-                                       validators=[DataRequired(message="Defina a urgência!")])
-    submit              = SubmitField('Registrar')
+class InciaConcluiAtivForm(FlaskForm):
 
-# class TransferDemandaForm(FlaskForm):
+    data_ini        = DateField('Data', format='%Y-%m-%d', validators=(Optional(),))
+    data_fim        = DateField('Data', format='%Y-%m-%d', validators=(Optional(),))
+    consi_conclu    = TextAreaField('',validators=[DataRequired(message="Insira considerações ou conclusão!")])
+    tempo_realizado = StringField('Tempo realizado:')
 
-    # pessoas = db.session.query(User.username, User.id)\
-    #                   .order_by(User.username).all()
-    # lista_pessoas = [(str(p[1]),p[0]) for p in pessoas]
-    # lista_pessoas.insert(0,('',''))
+    submit       = SubmitField('Registrar')   
 
-    # pessoa = SelectField('Novo responsável:',choices= lista_pessoas, validators=[DataRequired(message="Escolha alguém!")])
-    # submit = SubmitField('Transferir')
+class AvaliaAtivForm(FlaskForm):
 
-class DespachoForm(FlaskForm):
+    nota             = IntegerField('Nota: ', validators=[DataRequired(message="Informe a nota!")])
+    justificativa    = TextAreaField('Justificativa', validators=[DataRequired(message="Informe a justificativa!")])
+    tempo_homologado = StringField('Tempo homologado:')
 
-    texto                  = TextAreaField('Descrição:',validators=[DataRequired(message="Descreva o Despacho!")])
-    necessita_despacho_cg  = BooleanField('Necessita despacho superior?')
-    conclu                 = SelectField('Demanda concluída?',choices=[('0','Não'),('1','Sim, com sucesso'),('2','Sim, com insucesso')])
-    passo                  = SelectField('Passo:')
-    submit                 = SubmitField('Registrar')
+    submit       = SubmitField('Registrar')      
 
-class ProvidenciaForm(FlaskForm):
+   
 
-    data_hora           = DateTimeField('Momento:',format='%d/%m/%Y %H:%M:%S',validators=[DataRequired(message="O momento deve ser informado!")])
-    duracao             = IntegerField('Tempo (min.):')
-    agenda              = BooleanField("Marcar na agenda")
-    texto               = TextAreaField('Descrição:',validators=[DataRequired(message="Insira uma descrição!")])
-    necessita_despacho  = BooleanField('Necessita despacho?')
-    conclu              = SelectField('Demanda concluída?',choices=[('0','Não'),('1','Sim, com sucesso'),('2','Sim, com insucesso')], validators=[Optional()])
-    passo               = SelectField('Passo:')
-    submit              = SubmitField('Registrar')
 
 # class PesquisaForm(FlaskForm):
 
@@ -203,19 +190,5 @@ class Afere_Demanda_Form(FlaskForm):
 
     submit      = SubmitField('Registrar')
 
-# form com botão para gerar relatório pdf
-class Pdf_Form(FlaskForm):
 
-    submit      = SubmitField('Gerar pdf')
 
-# form para escolher coordenação
-# class CoordForm(FlaskForm):
-
-    # coords = db.session.query(Coords.sigla)\
-    #                   .order_by(Coords.sigla).all()
-    # lista_coords = [(c[0],c[0]) for c in coords]
-    # lista_coords.insert(0,('',''))
-
-    # coord  = SelectField('Coordenação:',choices= lista_coords)
-
-    # submit = SubmitField('Aplicar')

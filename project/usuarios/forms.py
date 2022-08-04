@@ -20,14 +20,15 @@
 """
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField,\
-                    DateField, TextAreaField, IntegerField
+                    TextAreaField, IntegerField
+from wtforms.fields.html5 import DateField                    
 from wtforms.validators import DataRequired, Email, EqualTo
 from wtforms import ValidationError
 from flask import flash
 
 from flask_login import current_user
 from project import db
-from project.models import users
+from project.models import users, Pessoas
 
 class LoginForm(FlaskForm):
 
@@ -47,6 +48,9 @@ class RegistrationForm(FlaskForm):
         if users.query.filter_by(userEmail=field.data).first():
             flash('Este e-mail já foi registrado!','erro')
             raise ValidationError('Este e-mail já foi registrado!')
+        if not Pessoas.query.filter_by(pesEmail=field.data).first():
+            flash('Este e-mail não consta no banco do SISGP!','erro')
+            raise ValidationError('Este e-mail não consta no banco do SISGP!!')    
 
     def check_username(self,field):
         if users.query.filter_by(userNome=field.data).first():
@@ -89,8 +93,8 @@ class AdminForm(FlaskForm):
 
 class LogForm(FlaskForm):
 
-    data_ini = DateField('Data Inicial: ', format='%d/%m/%Y')
-    data_fim = DateField('Data Final: ', format='%d/%m/%Y')
+    data_ini = DateField('Data Inicial: ', format='%Y/%m/%d')
+    data_fim = DateField('Data Final: ', format='%Y/%m/%d')
     submit   = SubmitField('Procurar')
 
 class DefGestor(FlaskForm):

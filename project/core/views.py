@@ -14,9 +14,7 @@
 
 # core/views.py
 
-from flask import render_template,url_for,flash, redirect,request,Blueprint
-
-from project.usuarios.views import registra_log_auto
+from flask import render_template, Blueprint
 
 
 core = Blueprint("core",__name__)

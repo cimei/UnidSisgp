@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+  <div class="jumbotron">
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Solicitação no Pacto {{pacto_id}}</h5>
+            
+            <p class="card-text text-success"> {{solicitacao.tipo[0:17]}}<b>{{solicitacao.tipo[16:]}}</b> por {{solicitacao.pesNome}}</p>
+                    <small class="text-muted"> Observações do Solicitante: </small>
+                    <p class="card-text"> {% if solicitacao.obs == None%}Não informada{% else %}{{solicitacao.obs}}{% endif %} </p>
+
+                        {% if solicitacao.tipo[18:22] == 'Nova' %}
+                          <p>
+                          <small class="text-muted"> Atividade: </small>
+                          <span class="card-text"> <b>{{dados_solic['itemCatalogo']}}</b></span>
+                          <br>
+                          <small class="text-muted"> Situação: </small>
+                          <span class="card-text"> <b>{{dados_solic['situacao']}}</b> </span>
+                          <br>
+                          {% if dados_solic['dataInicio'] != 'null' and dados_solic['dataInicio'] != None and dados_solic['dataInicio'] != '' %}
+                            <small class="text-muted"> Data Início: </small>
+                            <span class="card-text"> <b>{{(dados_solic['dataInicio']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          {% endif %}
+                          {% if dados_solic['dataFim'] != 'null' and dados_solic['dataFim'] != None and dados_solic['dataFim'] != '' %}
+                            <small class="text-muted"> Data Fim: </small>
+                            <span class="card-text"> <b>{{(dados_solic['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          {% endif %}
+                          </p>    
+                        {% elif solicitacao.tipo[18:22] == 'Alte' %}
+                          <p>
+                          <small class="text-muted"> Data Fim: </small>
+                          <span class="card-text"> <b>{{(dados_solic['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
+                          </p> 
+                        {% elif solicitacao.tipo[18:22] == 'Excl' %}
+                          <p>
+                            <small class="text-muted"> Atividade: </small>
+                            <span class="card-text"> <b>{{dados_solic['itemCatalogo']}}</b></span>
+                          </p>  
+                          
+                        {% endif %}
+
+                    <div class="row">
+                      <div class="col-6">
+                        {% if solicitacao.data != None%}
+                          <small class="text-muted"> Data Solicitação: {{solicitacao.data.strftime('%d/%m/%Y')}} </small>
+                        {% else %}  
+                          <small class="text-muted"> Data Solicitação não informada </small>
+                        {% endif %}
+                      </div>
+                      <div class="col-6">
+                        {% if solicitacao.dataFim != None and solicitacao.dataFim != '' %}
+                          <small class="text-muted">Data Análise: {{solicitacao.dataFim.strftime('%d/%m/%Y')}} </small>
+                        {% endif %}
+                      </div>
+                   </div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-title text-info font-weight-bold">Análise de solicitação</h6>
+
+              <h4>Analista: {{analista.pesNome}}</h4>
+
+              {% macro render_field(field,obr) %}
+                {% if obr == True %}
+                  <dt>{{ field.label(class="form-control-label") }}<span class="text-danger font-weight-bold">*</span>
+                {% else %}
+                  <dt>{{ field.label(class="form-control-label") }}
+                {% endif %}
+                <dd>{{ field(**kwargs)|safe }}
+                {% if field.errors %}
+                  <ul class=errors>
+                  {% for error in field.errors %}
+                    <li><span class="text-danger font-weight-bold">{{ error }}</span></li>
+                  {% endfor %}
+                  </ul>
+                {% endif %}
+                </dd>
+              {% endmacro %}
+
+              <form class="form-group" method='POST'>
+
+                {{ form.hidden_tag() }}
+
+                <div class="form-group col-5 px-md-2">
+                  {{ render_field(form.aprovado,class="",obr=True) }}
+                </div>
+
+                <div class="form-group">
+                  {{ render_field(form.observacoes,class="form-control form-control-lg", rows="3",obr=True) }}
+                </div>
+
+                  <div class="form-group">
+                    <br>
+                    {{ form.submit(class="btn btn-outline-primary") }}<span class="text-muted"> Atenção: campos marcados com * são obrigatórios.</span>
+                  </div>
+
+              </form>  
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+</div>
+{% endblock %}

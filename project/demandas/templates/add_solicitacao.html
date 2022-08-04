@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+  <div class="jumbotron">
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Pacto {{pacto.pactoTrabalhoId}}</h5>
+            <p class="small"> <b>({{pacto.undSigla}})</b></p>
+
+            <p><h6 class="">Resp.: <b>{{pacto.pesNome}}</b></h6></p>
+
+            <p><h6 class="text-muted">Forma: <b>{{pacto.forma}}</b> - Situação: <b>{{pacto.descricao}}</b></h6></p>  
+
+            <p class="small"><b>Data Início:</b> {{pacto.dataInicio.strftime('%d/%m/%Y')}}</p>
+            <p class="small"><b>Data Fim:</b> {{pacto.dataFim.strftime('%d/%m/%Y')}}</h7><br>
+
+            <h6>Carga horária diária: <b>{{pacto.cargaHorariaDiaria}}</b></h6>
+            
+            <h6>Percentual execução: <b>{{pacto.percentualExecucao|decimal_com_virgula}}</b></h6>
+            
+            <h6>Rel. previsto/realizado: <b>{{pacto.relacaoPrevistoRealizado|decimal_com_virgula}}</b></h6>
+
+            <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|decimal_com_virgula}} h</b> 
+              - Já comprometido: <b>{{sum_ativs_tempo_total|decimal_com_virgula}} h</b></h6>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-title text-info font-weight-bold">Solicitação: "{{tipo}}"</h6>
+              <h4>Fazer Solicitação</h4>
+
+              {% macro render_field(field,obr) %}
+                {% if obr == True %}
+                  <dt>{{ field.label(class="form-control-label") }}<span class="text-danger font-weight-bold">*</span>
+                {% else %}
+                  <dt>{{ field.label(class="form-control-label") }}
+                {% endif %}
+                <dd>{{ field(**kwargs)|safe }}
+                {% if field.errors %}
+                  <ul class=errors>
+                  {% for error in field.errors %}
+                    <li><span class="text-danger font-weight-bold">{{ error }}</span></li>
+                  {% endfor %}
+                  </ul>
+                {% endif %}
+                </dd>
+              {% endmacro %}
+
+              <form class="form-group" method='POST'>
+
+                {{ form.hidden_tag() }}
+
+                {% if tipo == 'Nova atividade' %}
+
+                  <div class="form-group">
+                    {{ render_field(form.atividade,class="form-control",obr=True) }}
+                  </div>
+
+                  <div class = "form-row">
+                    <div class="col-4">
+                      {{ render_field(form.situacao,class="form-control",obr=True) }}
+                    </div>
+                    <div class="col-4">
+                      {{ render_field(form.remoto,class="form-control",obr=True) }}
+                    </div>
+                  </div>
+
+                  <div class = "form-row">
+                    <div class="d-flex align-items-center col-5">
+                      Caso a atividade já esteja concluída:
+                    </div>
+                    <div class="col-4">
+                      {{ render_field(form.tempo_real,class="form-control",obr=False) }}
+                    </div>
+                  </div>
+
+                  <div class = "form-row">
+                    <div class="col-5">
+                      {{ render_field(form.data_ini,class="form-control",obr=False) }}
+                    </div>
+
+                    <div class="col-5">
+                      {{ render_field(form.data_fim,class="form-control",obr=False) }}
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    {{ render_field(form.desc,class="form-control form-control-lg", rows="3",obr=True) }}
+                  </div>
+
+                {% elif tipo == 'Alteração prazo'%}
+                  
+                  <div class="form-group col-5">
+                    {{ render_field(form.data_fim,class="form-control",obr=True) }}
+                  </div>
+
+                  <div class="form-group">
+                    {{ render_field(form.desc,class="form-control form-control-lg", rows="3",obr=True) }}
+                  </div>
+
+                {% else %}
+
+                  <div class="form-group">
+                    {{ render_field(form.atividade,class="form-control",obr=True) }}
+                  </div>
+                
+                  <div class="form-group">
+                    {{ render_field(form.desc,class="form-control form-control-lg", rows="3",obr=True) }}
+                  </div>
+                
+                {% endif %}  
+
+                  <div class="form-group">
+                    <br>
+                    {{ form.submit(class="btn btn-outline-primary") }}<span class="text-muted"> Atenção: campos marcados com * são obrigatórios.</span>
+                  </div>
+
+              </form>  
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+</div>
+{% endblock %}
