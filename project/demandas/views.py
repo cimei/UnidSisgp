@@ -833,7 +833,7 @@ def solicitacao_analise(solic_id,pacto_id):
 
             elif solicitacao.tipo[16:] == '"Prazo de atividade ultrapassado"':    
 
-                print('*** ', solicitacao.tipo)
+                print('*** ', solicitacao.tipo, ' - nada foi feito')
                 # nada a fazer?
 
             elif solicitacao.tipo[18:25] == 'Excluir':    

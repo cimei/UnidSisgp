@@ -83,6 +83,7 @@
             <div class="dropdown-menu" aria-labelledby="navbarDropdown5">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Veja seus Planos</a>
               <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',id='*')}}">Seus números</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
               <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a>
               {% if current_user.userAtivo %}
                 <a class="dropdown-item"  href="{{ url_for('usuarios.view_users') }}">Ver Usuários</a>

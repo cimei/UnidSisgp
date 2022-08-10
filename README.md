@@ -65,10 +65,10 @@ Como este sistema faz controle de acesso e registra o log dos commits realizados
 
 O aplicativo está preparado para ser executado via conteiner Docker. Com o ambiente pronto, a imagem pode ser gerada via 
 
-docker build -t unidsisgp . 
+      docker build -t unidsisgp . 
 
 Para executar o conteiner:
 
-docker run -dp 5002:5002 unidsisgp 
+      docker run -dp 5002:5002 unidsisgp 
 
-# UnidSisgp
+...

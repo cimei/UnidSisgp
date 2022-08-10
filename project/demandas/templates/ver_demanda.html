@@ -96,9 +96,9 @@
             <p><h6>Forma: <b>{{post.forma}}</b> - Situação: <b>{{post.descricao}}</b></h6></p>
             
             <p class="small">Carga horária diária: <b>{{post.cargaHorariaDiaria}}</b>
-              Percentual execução: <b>{{post.percentualExecucao|decimal_com_virgula}}</b>
+              Percentual execução: <b>{{post.percentualExecucao|string()|replace(".",",")}}</b>
               <br>
-              Rel. previsto/realizado: <b>{{post.relacaoPrevistoRealizado|decimal_com_virgula}}</b></h6>
+              Rel. previsto/realizado: <b>{{post.relacaoPrevistoRealizado|string()|replace(".",",")}}</b></h6>
               Tempo total disponível: <b>{{post.tempoTotalDisponivel}}</b> horas
             </p>
 
@@ -108,20 +108,20 @@
 
             <p class="small">
               {% if sum_ativs_tempo_total == post.tempoTotalDisponivel%}
-                <b>{{sum_ativs_tempo_total|decimal_com_virgula}}</b>
+                <b>{{sum_ativs_tempo_total|string()|replace(".",",")}}</b>
               {% else %}
-                <b><span class = "text-danger">{{sum_ativs_tempo_total|decimal_com_virgula}}</span></b>  
+                <b><span class = "text-danger">{{sum_ativs_tempo_total|string()|replace(".",",")}}</span></b>  
               {% endif %}  
                horas comprometidas com atividades<br>
-              ({{sum_ativs_p_tempo_total|decimal_com_virgula}}h programadas, 
-               {{sum_ativs_e_tempo_total|decimal_com_virgula}}h em execução e 
-               {{sum_ativs_c_tempo_total|decimal_com_virgula}}h concluídas)
+              ({{sum_ativs_p_tempo_total|string()|replace(".",",")}}h programadas, 
+               {{sum_ativs_e_tempo_total|string()|replace(".",",")}}h em execução e 
+               {{sum_ativs_c_tempo_total|string()|replace(".",",")}}h concluídas)
             </p>
             _______________________________________________________________
             <p class="small"><b>{{qtd_items_cat}}</b> Atividade(s) no PG: <br>
               {% for item in items_cat %}
-                {{ item.titulo }} - {{item.tempoPresencial|decimal_com_virgula}}h (P)
-                {% if item.permiteRemoto %} - {{item.tempoRemoto|decimal_com_virgula}}h (R) {% endif %}<br>
+                {{ item.titulo }} - {{item.tempoPresencial|string()|replace(".",",")}}h (P)
+                {% if item.permiteRemoto %} - {{item.tempoRemoto|string()|replace(".",",")}}h (R) {% endif %}<br>
               {% endfor %}  
             </p>
 
@@ -243,13 +243,13 @@
 
                     <small class="text-muted"> Modalidade: {% if item.descricao == None%}N.I.{% else %}{{item.descricao}}{% endif %} - </small>
                     <small class="text-muted"> Quantidade: {% if item.quantidade == None%}0{% else %}{{item.quantidade}}{% endif %}</small> <br>
-                    <small class="text-muted"> Tempo previsto por item: {% if item.tempoPrevistoPorItem == None%}0{% else %}{{item.tempoPrevistoPorItem|decimal_com_virgula}}{% endif %} - </small>
-                    <small class="text-muted"> Tempo previsto total: {% if item.tempoPrevistoTotal == None%}0{% else %}{{item.tempoPrevistoTotal|decimal_com_virgula}}{% endif %}</small><br>
+                    <small class="text-muted"> Tempo previsto por item: {% if item.tempoPrevistoPorItem == None%}0{% else %}{{item.tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </small>
+                    <small class="text-muted"> Tempo previsto total: {% if item.tempoPrevistoTotal == None%}0{% else %}{{item.tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</small><br>
                     {% if item.situa == 'Concluída' %}
                       <br>
-                      <small class="text-muted"> Tempo realizado: {% if item.tempoRealizado == None%}0{% else %}{{item.tempoRealizado|decimal_com_virgula}}{% endif %} - </small>
-                      <small class="text-muted"> Tempo homologado: {% if item.tempoHomologado == None%}0{% else %}{{item.tempoHomologado|decimal_com_virgula}}{% endif %} - </small>
-                      <small class="text-muted"> Nota: {% if item.nota == None%}0{% else %}{{item.nota|decimal_com_virgula}}{% endif %} </small>
+                      <small class="text-muted"> Tempo realizado: {% if item.tempoRealizado == None%}0{% else %}{{item.tempoRealizado|string()|replace(".",",")}}{% endif %} - </small>
+                      <small class="text-muted"> Tempo homologado: {% if item.tempoHomologado == None%}0{% else %}{{item.tempoHomologado|string()|replace(".",",")}}{% endif %} - </small>
+                      <small class="text-muted"> Nota: {% if item.nota == None%}0{% else %}{{item.nota|string()|replace(".",",")}}{% endif %} </small>
                       {% if item.justificativa != None and item.justificativa !='' %}
                         <small class="text-muted"> Justificativa: {{item.justificativa}} </small>
                       {% endif %}
@@ -308,7 +308,7 @@
                           <br>
                           {% if d[1]['tempoPrevistoPorItem'] != None %}
                             <small class="text-muted"> Tempo previsto: </small>
-                            <span class="card-text"> <b>{{d[1]['tempoPrevistoPorItem']|decimal_com_virgula}}</b> </span>
+                            <span class="card-text"> <b>{{d[1]['tempoPrevistoPorItem']|string()|replace(".",",")}}</b> </span>
                           {% endif %}
                           <small class="text-muted"> Situação: </small>
                           <span class="card-text"> <b>{{d[1]['situacao']}}</b> </span>

@@ -93,8 +93,8 @@ class AdminForm(FlaskForm):
 
 class LogForm(FlaskForm):
 
-    data_ini = DateField('Data Inicial: ', format='%Y/%m/%d')
-    data_fim = DateField('Data Final: ', format='%Y/%m/%d')
+    data_ini = DateField('Data Inicial: ', format='%Y-%m-%d')
+    data_fim = DateField('Data Final: ', format='%Y-%m-%d')
     submit   = SubmitField('Procurar')
 
 class DefGestor(FlaskForm):

@@ -463,8 +463,8 @@ def log ():
                            form=form)
 
 #
-# qtd pgs e pts em um período log
-
+# numeros do usuario
+#
 @usuarios.route("/seus_numeros/<id>")
 def seus_numeros(id):
     """+--------------------------------------------------------------------------------------+
@@ -472,6 +472,7 @@ def seus_numeros(id):
        |                                                                                      |
        +--------------------------------------------------------------------------------------+
     """
+    lista = 'pessoa'
 
     if id == '*':
 
@@ -504,7 +505,7 @@ def seus_numeros(id):
                         .join(Pactos_de_Trabalho, Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
                         .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
                         .count()    
-    print ("*** ", objetos)                                     
+                                   
     
     # quantidade de candidaturas do usuário
     candidaturas = db.session.query(catdom.descricao, 
@@ -549,12 +550,115 @@ def seus_numeros(id):
                       .group_by(catdom.descricao)\
                       .all()
     
-    return render_template('seus_numeros.html', usuario=usuario,
-                                                programas_de_gestao=programas_de_gestao,
-                                                candidaturas=candidaturas,
-                                                planos_de_trabalho_fs=planos_de_trabalho_fs,
-                                                solicit=solicit,
-                                                ativs=ativs,
-                                                objetos=objetos,
-                                                unid=unid)
+    return render_template('numeros.html', pes_nome=usuario.pesNome,
+                                           pes_id=usuario.pessoaId,
+                                           programas_de_gestao=programas_de_gestao,
+                                           candidaturas=candidaturas,
+                                           planos_de_trabalho_fs=planos_de_trabalho_fs,
+                                           solicit=solicit,
+                                           ativs=ativs,
+                                           objetos=objetos,
+                                           unid=unid,
+                                           id = id,
+                                           lista = lista)
+
+#
+# números da unidade
+#
+@usuarios.route("/unidade_numeros/<id>")
+def unidade_numeros(id):
+    """+--------------------------------------------------------------------------------------+
+       |Alguns números da unidade.                                                            |
+       |                                                                                      |
+       +--------------------------------------------------------------------------------------+
+    """
+    lista = 'unidade'
+
+    if id == '*':
+
+        #pega e-mail do usuário logado
+        email = current_user.userEmail
+
+        #pega id sisgp do usuário logado
+        usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first_or_404()
+
+        # unidade do usuário
+        unid = db.session.query(Unidades).filter(Unidades.unidadeId == usuario.unidadeId).first()
+        
+    else:
+        #dados da unidade selecionada
+        unid = db.session.query(Unidades).filter(Unidades.undSigla == id).first()
+
+    catdom_sit = db.session.query(catdom).subquery()
+
+    # quantidade de programas de gestão da unidade
+    programas_de_gestao = db.session.query(catdom.descricao, 
+                                            label('qtd_pg',func.count(Planos_de_Trabalho.planoTrabalhoId)))\
+                                        .join(catdom,catdom.catalogoDominioId == Planos_de_Trabalho.situacaoId)\
+                                        .filter(Planos_de_Trabalho.unidadeId == unid.unidadeId)\
+                                        .group_by(catdom.descricao)\
+                                        .all()
+
+    # quantidade de objetos nas atividade do usuário
+    objetos = db.session.query(Objeto_PG.objetoId)\
+                        .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Objeto_PG.planoTrabalhoId)\
+                        .filter(Planos_de_Trabalho.unidadeId == unid.unidadeId)\
+                        .count()    
+    
+    # quantidade de candidaturas do usuário
+    candidaturas = db.session.query(catdom.descricao, 
+                                    label('qtd_cand',func.count(Atividade_Candidato.planoTrabalhoAtividadeCandidatoId)))\
+                              .join(catdom,catdom.catalogoDominioId == Atividade_Candidato.situacaoId)\
+                              .join(Pessoas,Pessoas.pessoaId == Atividade_Candidato.pessoaId)\
+                              .join(Unidades, Unidades.unidadeId == Pessoas.unidadeId)\
+                              .filter(Unidades.unidadeId == unid.unidadeId)\
+                              .group_by(catdom.descricao)\
+                              .all()
+
+    # quantidades de planos de trabalho por forma e situação
+    planos_de_trabalho_fs = db.session.query(label('forma',catdom.descricao),
+                                             label('sit',catdom_sit.c.descricao),   
+                                             label('qtd_planos',func.count(Pactos_de_Trabalho.pactoTrabalhoId)),
+                                             Pactos_de_Trabalho.formaExecucaoId,
+                                             Pactos_de_Trabalho.situacaoId)\
+                                    .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
+                                    .join(catdom_sit,catdom_sit.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                                    .filter(Pactos_de_Trabalho.unidadeId == unid.unidadeId)\
+                                    .group_by(Pactos_de_Trabalho.formaExecucaoId,Pactos_de_Trabalho.situacaoId,
+                                              catdom.descricao,catdom_sit.c.descricao)\
+                                    .order_by(Pactos_de_Trabalho.formaExecucaoId,Pactos_de_Trabalho.situacaoId)\
+                                    .all()                                                                                        
+
+    # quantidades de solicitações
+    solicit = db.session.query(Pactos_de_Trabalho_Solic.analisado,
+                               Pactos_de_Trabalho_Solic.aprovado,
+                               catdom.descricao,
+                               label('qtd_solic',func.count(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId)))\
+                        .join(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Solic.pactoTrabalhoId)\
+                        .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho_Solic.tipoSolicitacaoId)\
+                        .filter(Pactos_de_Trabalho.unidadeId == unid.unidadeId)\
+                        .group_by(Pactos_de_Trabalho_Solic.analisado,Pactos_de_Trabalho_Solic.aprovado,catdom.descricao)\
+                        .order_by(Pactos_de_Trabalho_Solic.analisado,Pactos_de_Trabalho_Solic.aprovado,catdom.descricao)\
+                        .all()
+                        
+    # quantidades de atividades em planos (pactos)
+    ativs = db.session.query(catdom.descricao, 
+                             label('qtd_ativs',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)))\
+                      .join(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
+                      .join(catdom,catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
+                      .filter(Pactos_de_Trabalho.unidadeId == unid.unidadeId)\
+                      .group_by(catdom.descricao)\
+                      .all()
+    
+    return render_template('numeros.html', pes_nome='',
+                                           pes_id=0,
+                                           programas_de_gestao=programas_de_gestao,
+                                           candidaturas=candidaturas,
+                                           planos_de_trabalho_fs=planos_de_trabalho_fs,
+                                           solicit=solicit,
+                                           ativs=ativs,
+                                           objetos=objetos,
+                                           unid=unid,
+                                           id = id,
+                                           lista = lista)
 

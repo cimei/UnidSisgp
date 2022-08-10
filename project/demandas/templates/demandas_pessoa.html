@@ -33,8 +33,8 @@
           <p><h6 class="text-muted">Forma: <b>{{demanda.forma}}</b> - Situação: <b>{{demanda.descricao}}</b></h6></p>
 
           <h6>Carga horária diária: <b>{{demanda.cargaHorariaDiaria}}</b> - 
-            Percentual execução: <b>{{demanda.percentualExecucao|decimal_com_virgula}}</b> - 
-            Rel. previsto/realizado: <b>{{demanda.relacaoPrevistoRealizado|decimal_com_virgula}}</b> - 
+            Percentual execução: <b>{{demanda.percentualExecucao|string()|replace(".",",")}}</b> - 
+            Rel. previsto/realizado: <b>{{demanda.relacaoPrevistoRealizado|string()|replace(".",",")}}</b> - 
             Tempo total disponível: <b>{{demanda.tempoTotalDisponivel}}</b>
           </h6>
 

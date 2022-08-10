@@ -21,12 +21,12 @@
 
             <h6>Carga horária diária: <b>{{pacto.cargaHorariaDiaria}}</b></h6>
             
-            <h6>Percentual execução: <b>{{pacto.percentualExecucao|decimal_com_virgula}}</b></h6>
+            <h6>Percentual execução: <b>{{pacto.percentualExecucao|string()|replace(".",",")}}</b></h6>
             
-            <h6>Rel. previsto/realizado: <b>{{pacto.relacaoPrevistoRealizado|decimal_com_virgula}}</b></h6>
+            <h6>Rel. previsto/realizado: <b>{{pacto.relacaoPrevistoRealizado|string()|replace(".",",")}}</b></h6>
 
-            <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|decimal_com_virgula}} h</b> 
-              - Já comprometido: <b>{{sum_ativs_tempo_total|decimal_com_virgula}} h</b></h6>
+            <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|string()|replace(".",",")}} h</b> 
+              - Já comprometido: <b>{{sum_ativs_tempo_total|string()|replace(".",",")}} h</b></h6>
           </div>
         </div>
       </div>

@@ -5,7 +5,12 @@
 
 <div class="jumbotron">
 
-<h5 align = "center"><b>Números do Usuário {{usuario.pesNome}} ({{ unid.undSigla }})</b>
+  {% if lista == "pessoa" %}
+    <h5 align = "center"><b>Números do Usuário {{pes_nome}} ({{ unid.undSigla }})</b>
+  {% else %}  
+    <h5 align = "center"><b>Números da Unidade {{ unid.undSigla }}</b>
+  {% endif %}    
+  
 <br><br>
 
 
@@ -48,7 +53,7 @@
       <div class="card bg-transparent border-dark">
 
         <div class="card-header bg-transparent">
-          <p align = "center"><b>Suas Candidaturas</b></p>
+          <p align = "center"><b>Candidaturas</b></p>
         </div>
 
         <div class="card-body bg-transparent">
@@ -81,7 +86,7 @@
       <div class="card bg-transparent border-dark">
 
         <div class="card-header bg-transparent">
-          <p align = "center"><b>Seus Planos de Trabalho</b></p>
+          <p align = "center"><b>Planos de Trabalho</b></p>
         </div>
 
         <div class="card-body bg-transparent">
@@ -99,10 +104,12 @@
                   <td><p align = "center"> {{ pl.forma }} </p></td>
                   <td><p align = "center"> {{ pl.sit }} </p></td>
                   <td><p align = "right">
-                        <a class="" href="{{url_for('demandas.list_demandas_usu',lista=[pl.formaExecucaoId,pl.situacaoId],pessoa_id=usuario.pessoaId)}}">
+                    {% if lista == "pessoa" %}
+                        <a class="" href="{{url_for('demandas.list_demandas_usu',lista=[pl.formaExecucaoId,pl.situacaoId],pessoa_id=pes_id)}}">
                         <abbr title="Clique aqui para ver as demandas.">
                          {{ pl.qtd_planos }} 
                         </abbr></a>
+                    {% else %} {{ pl.qtd_planos }} {% endif %}   
                       </p></td>
                 </tr>
               {% endfor %}
@@ -125,7 +132,7 @@
       <div class="card bg-transparent border-dark">
 
         <div class="card-header bg-transparent">
-          <p align = "center"><b>Suas Solicitações</b></p>
+          <p align = "center"><b>Solicitações</b></p>
         </div>
 
         <div class="card-body bg-transparent">
@@ -167,7 +174,7 @@
       <div class="card bg-transparent border-dark">
 
         <div class="card-header bg-transparent">
-          <p align = "center"><b>Suas Atividades</b></p>
+          <p align = "center"><b>Atividades em Planos de Trabalho</b></p>
         </div>
 
         <div class="card-body bg-transparent">
@@ -201,11 +208,11 @@
 
         <div class="card-body bg-transparent">
           <b>Objetos:</b> 
-          {% if objetos != 0 %}
-            <a class="" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=usuario.pessoaId)}}">
-              <abbr title="Clique aqui para ver os objetos deste PG.">
-                {{objetos}} 
-              </abbr></a>
+          {% if objetos != 0 and lista == "pessoa" %}
+              <a class="" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=pes_id)}}">
+                <abbr title="Clique aqui para ver os objetos deste PG.">
+                  {{objetos}} 
+                </abbr></a>
           {% else %}
             {{objetos}}
           {% endif %}  

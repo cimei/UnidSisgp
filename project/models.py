@@ -24,7 +24,6 @@
     Abaixo seguem os Modelos e respectivos campos.
 """
 # models.py
-import locale
 from xmlrpc.client import Boolean
 from project import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
