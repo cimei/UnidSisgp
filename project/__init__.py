@@ -1,7 +1,5 @@
 # __init__.py dentro da pasta project
 
-import sys
-import os
 import locale
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -13,7 +11,7 @@ import pyodbc
 
 pyodbc.setDecimalSeparator('.')
 
-TOP_LEVEL_DIR = os.path.abspath(os.curdir)
+#TOP_LEVEL_DIR = os.path.abspath(os.curdir)
 
 app = Flask (__name__, static_url_path=None, instance_relative_config=True)
 

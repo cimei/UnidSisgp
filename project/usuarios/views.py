@@ -42,7 +42,7 @@ from flask_mail import Message
 from threading import Thread
 from datetime import datetime, date, timedelta, time
 from werkzeug.security import generate_password_hash
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from collections import Counter
@@ -149,29 +149,33 @@ def register():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-
-        form.check_username(form.username)
-
-        form.check_email(form.email)
-
-        user = users(userNome                   = form.username.data,
-                    userEmail                  = form.email.data,
-                    plaintext_password         = form.password.data,
-                    email_confirmation_sent_on = datetime.now(),
-                    userAtivo                  = False)
-
-        db.session.add(user)
-        db.session.commit()
-
-        last_id = db.session.query(users.id).order_by(users.id.desc()).first()
-
-        registra_log_unid(last_id[0],'Usuário '+ form.username.data +' registrado.')
-
-        send_confirmation_email(user.userEmail)
         
-        flash('Usuário '+ form.username.data +' registrado! Verifique sua caixa de e-mail para confirmar o endereço.','sucesso')
-        
-        return redirect(url_for('core.index'))
+        if form.check_username(form.username) and form.check_email(form.email) and form.check_sisgp(form.email):
+
+            # primeiro usuário é cadastrado como ativo
+            if users.query.count() == 0:
+                ativo = True
+            else:
+                ativo = False
+
+            user = users(userNome                  = form.username.data,
+                        userEmail                  = form.email.data,
+                        plaintext_password         = form.password.data,
+                        email_confirmation_sent_on = datetime.now(),
+                        userAtivo                  = ativo)
+
+            db.session.add(user)
+            db.session.commit()
+
+            last_id = db.session.query(users.id).order_by(users.id.desc()).first()
+
+            registra_log_unid(last_id[0],'Usuário '+ form.username.data +' registrado.')
+
+            send_confirmation_email(user.userEmail)
+            
+            flash('Usuário '+ form.username.data +' registrado! Verifique sua caixa de e-mail para confirmar o endereço.','sucesso')
+            
+            return redirect(url_for('core.index'))
 
     return render_template('register.html',form=form)
 
@@ -361,9 +365,32 @@ def view_users():
        |Mostra lista dos usuários cadastrados.                                                |
        +--------------------------------------------------------------------------------------+
     """
-    lista = users.query.order_by(users.id).all()
+
+    pessoas_sub = db.session.query(Pessoas).subquery()
+
+    lista = db.session.query(users.id,
+                             users.userNome,
+                             users.userEmail,
+                             pessoas_sub.c.unidadeId,
+                             users.registered_on,
+                             users.email_confirmed,
+                             users.email_confirmed_on,
+                             users.current_logged_in,
+                             users.userAtivo,
+                             users.avaliadorId,
+                             label('avalNome',Pessoas.pesNome),
+                             label('avalUnid',Pessoas.unidadeId))\
+                      .outerjoin(Pessoas, Pessoas.pessoaId == users.avaliadorId)\
+                      .outerjoin(pessoas_sub, pessoas_sub.c.pesEmail == users.userEmail)\
+                      .order_by(users.userNome).all()
 
     logado = db.session.query(Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    # pega pessoas da unidade do usuário
+    # pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
+    #                     .filter(Pessoas.unidadeId == user_pes.unidadeId,
+    #                             Pessoas.pessoaId != user_pes.pessoaId)\
+    #                     .all()
 
     return render_template('view_users.html', lista=lista, logado=logado)
 
@@ -380,22 +407,38 @@ def update_user(user_id):
     |Recebe o id do user como parâmetro.                                                           |
     +----------------------------------------------------------------------------------------------+
     """
-
+    # pega usuário 
     user = users.query.get_or_404(user_id)
 
+    # pega unidadeId e pessoaId do usuário
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == user.userEmail).first()
+
+    # pega pessoas da unidade do usuário
+    pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
+                        .filter(Pessoas.unidadeId == user_pes.unidadeId,
+                                Pessoas.pessoaId != user_pes.pessoaId)\
+                        .all()
+
+    # o choices do campo atividade são definidos aqui e não no form
+    lista_avalia = [(p.pessoaId,p.pesNome) for p in pessoas]
+    lista_avalia.insert(0,('',''))                    
+
     form = AdminForm()
+
+    form.avaliador.choices = lista_avalia
 
     if form.validate_on_submit():
 
         if current_user.userAtivo:
 
-            user.userAtivo = form.ativo.data
+            user.userAtivo   = form.ativo.data
+            user.avaliadorId = form.avaliador.data
 
             db.session.commit()
 
-            registra_log_unid(current_user.id,'Usuário '+ user.userNome +' ativado.')
+            registra_log_unid(current_user.id,'Usuário '+ user.userNome +' atualizado.')
 
-            flash('Usuário '+ user.userNome +' ativado!','sucesso')
+            flash('Usuário '+ user.userNome +' atualizado!','sucesso')
 
             return redirect(url_for('usuarios.view_users'))
 
@@ -409,7 +452,8 @@ def update_user(user_id):
     # traz a informação atual do usuário
     elif request.method == 'GET':
 
-        form.ativo.data       = user.userAtivo
+        form.ativo.data     = user.userAtivo
+        form.avaliador.data = str(user.avaliadorId)
 
     return render_template('update_user.html', title='Update', name=user.userNome,
                             form=form)
@@ -437,7 +481,7 @@ def log ():
                                Log_Unid.data_hora,
                                users.userNome,
                                Log_Unid.msg)\
-                        .join(users, Log_Unid.user_id == users.id)\
+                        .outerjoin(users, Log_Unid.user_id == users.id)\
                         .filter(Log_Unid.data_hora >= datetime.combine(data_ini,time.min),
                                 Log_Unid.data_hora <= datetime.combine(data_fim,time.max))\
                         .order_by(Log_Unid.id.desc())\
@@ -499,8 +543,9 @@ def seus_numeros(id):
                                         .group_by(catdom.descricao)\
                                         .all()
 
-    # quantidade de objetos nas atividade do usuário
-    objetos = db.session.query(Objeto_Atividade_Pacto.pactoAtividadePlanoObjetoId)\
+    # quantidade de objetos distintos nas atividade do usuário
+    objetos = db.session.query(distinct(Objeto_PG.objetoId))\
+                        .join(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.planoTrabalhoObjetoId == Objeto_PG.planoTrabalhoObjetoId)\
                         .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
                         .join(Pactos_de_Trabalho, Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
                         .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\

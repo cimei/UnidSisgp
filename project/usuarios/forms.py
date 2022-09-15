@@ -46,16 +46,24 @@ class RegistrationForm(FlaskForm):
 
     def check_email(self,field):
         if users.query.filter_by(userEmail=field.data).first():
-            flash('Este e-mail já foi registrado!','erro')
-            raise ValidationError('Este e-mail já foi registrado!')
+            flash('O e-mail ' + field.data + ' já foi registrado!','erro')
+            return False
+        else:
+            return True
+
+    def check_sisgp(self,field):        
         if not Pessoas.query.filter_by(pesEmail=field.data).first():
-            flash('Este e-mail não consta no banco do SISGP!','erro')
-            raise ValidationError('Este e-mail não consta no banco do SISGP!!')    
+            flash('O e-mail ' + field.data + ' não consta no banco do SISGP!','erro')
+            return False
+        else:
+            return True
 
     def check_username(self,field):
         if users.query.filter_by(userNome=field.data).first():
-            flash('Este nome de usuário já foi registrado! Por favor, escolha outro.','erro')
-            raise ValidationError('Este nome de usuário já foi registrado!')
+            flash('Nome de usuário ' + field.data + ' já foi registrado! Por favor, escolha outro.','erro')
+            return False
+        else:
+            return True
 
 
 class UpdateUserForm(FlaskForm):
@@ -76,29 +84,27 @@ class UpdateUserForm(FlaskForm):
 
 class EmailForm(FlaskForm):
 
-    email    = StringField('E-mail: ', validators=[DataRequired(message="Informe seu e-mail!"),Email()])
-    submit   = SubmitField('Enviar')
+    email = StringField('E-mail: ', validators=[DataRequired(message="Informe seu e-mail!"),Email()])
+
+    submit = SubmitField('Enviar')
 
 class PasswordForm(FlaskForm):
 
     password     = PasswordField('Senha: ', validators=[DataRequired(message="Forneça uma senha!"),EqualTo('pass_confirm',message='Senhas devem ser iguais!')])
     pass_confirm = PasswordField('Confirmar senha: ', validators=[DataRequired(message="Confirme a senha!")])
+
     submit       = SubmitField('Enviar')
 
 class AdminForm(FlaskForm):
 
-    ativo        = BooleanField('Usuário está ativo?')
+    ativo     = BooleanField('Usuário está ativo?')
+    avaliador = SelectField('Avaliador:')
 
-    submit       = SubmitField('Atualizar')
+    submit    = SubmitField('Atualizar')
 
 class LogForm(FlaskForm):
 
     data_ini = DateField('Data Inicial: ', format='%Y-%m-%d')
     data_fim = DateField('Data Final: ', format='%Y-%m-%d')
+
     submit   = SubmitField('Procurar')
-
-class DefGestor(FlaskForm):
-
-    gestor = SelectField('Gestor do SISGP:',coerce=int)
-    
-    submit = SubmitField('Submeter')

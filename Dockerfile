@@ -2,16 +2,17 @@
 
 FROM python:3.9-bullseye
 WORKDIR /app
-# ADD requirements.txt .
-# ADD app.py .
 
-#Optional
-#ENV https_proxy=http://[proxy]:[port]
-#ENV http_proxy=http://[proxy]:[port]
+RUN apt-get update
+
+# estabelece padrão brasileiro no locale
+RUN apt-get install -y locales locales-all
+ENV LC_ALL pt_BR.UTF-8
+ENV LANG pt_BR.UTF-8
+ENV LANGUAGE pt_BR.UTF-8
 
 # install FreeTDS and dependencies
-RUN apt-get update \
- && apt-get install unixodbc -y \
+RUN apt-get install unixodbc -y \
  && apt-get install unixodbc-dev -y \
  && apt-get install freetds-dev -y \
  && apt-get install freetds-bin -y \
@@ -31,14 +32,7 @@ RUN pip install --upgrade pip
 #Pip command without proxy setting
 RUN pip install -r requirements.txt
 
-#Use this one if you have proxy setting
-#RUN pip --proxy http://[proxy:port] install -r requirements.txtCMD ["python","-i","main.py"]
-
 COPY . .
-
-# ENTRYPOINT [ "python" ]
-
-# CMD ["app.py", "--host=0.0.0.0"]
 
 RUN chmod +x ./entrypoint.sh
 ENTRYPOINT ["sh", "entrypoint.sh"]

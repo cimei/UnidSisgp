@@ -16,10 +16,10 @@
 
 from flask import render_template, url_for, flash, request, redirect, Blueprint, abort
 from flask_login import current_user, login_required
-from sqlalchemy import func, literal
+from sqlalchemy import func, literal, distinct
 from sqlalchemy.sql import label
 from project import db 
-from project.models import Objetos, Objeto_Atividade_Pacto, Objeto_PG, Pactos_de_Trabalho, Pactos_de_Trabalho_Atividades, Pessoas, Planos_de_Trabalho, Planos_de_Trabalho_Reuniao, Unidades, VW_Unidades,\
+from project.models import Atividades, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Pactos_de_Trabalho, Pactos_de_Trabalho_Atividades, Pessoas, Planos_de_Trabalho, Planos_de_Trabalho_Reuniao, Unidades, VW_Unidades,\
                            Planos_de_Trabalho
 
 from project.objetos.forms import ObjetoEscolhaForm, ObjetoForm                               
@@ -141,7 +141,7 @@ def lista_objetos_pessoa(pessoa):
     unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == usuario.unidadeId).first()
 
     # resgata objetos 
-    objetos = db.session.query(Objetos.objetoId,
+    objetos = db.session.query(distinct(Objetos.objetoId),
                                Objetos.descricao,
                                Objetos.tipo,
                                Objetos.chave,
@@ -257,7 +257,16 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
     +---------------------------------------------------------------------------------------+
     """
 
-    # permite a associação de um objeto do PG a uma atividade do Pacto
+    # pega ocorrências da atividade no pacto de trabalho (plano)
+    ativ = db.session.query(Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                     .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
+                     .first()
+
+    ocorrencias = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                           .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId)\
+                           .all()
+
+    # pega objetos do pg
     objetos = db.session.query(Objetos.descricao,
                                Objeto_PG.planoTrabalhoObjetoId)\
                         .join(Objeto_PG, Objeto_PG.objetoId == Objetos.objetoId)\
@@ -272,16 +281,31 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
 
     form.obj.choices = lista_obj 
 
-    if form.validate_on_submit():                   
+    if form.validate_on_submit(): 
 
-        obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId= uuid.uuid4(),
-                                                planoTrabalhoObjetoId= form.obj.data,
-                                                pactoTrabalhoAtividadeId= pacto_ativ_id)
+        if form.replicar.data:
 
-        db.session.add(obj_ativ_pacto)
-        db.session.commit()                        
+            for ocorrencia in ocorrencias:
 
-        registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho.')                
+                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId= uuid.uuid4(),
+                                                        planoTrabalhoObjetoId= form.obj.data,
+                                                        pactoTrabalhoAtividadeId= ocorrencia.pactoTrabalhoAtividadeId)
+
+                db.session.add(obj_ativ_pacto)
+                db.session.commit()
+
+            registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e todas as demais ocorrências.')  
+
+        else:                  
+
+            obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId= uuid.uuid4(),
+                                                    planoTrabalhoObjetoId= form.obj.data,
+                                                    pactoTrabalhoAtividadeId= pacto_ativ_id)
+
+            db.session.add(obj_ativ_pacto)
+            db.session.commit()                        
+
+            registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')                
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 

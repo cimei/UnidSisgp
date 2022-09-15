@@ -5,7 +5,7 @@
 
   <div class="jumbotron">
 
-    <h4>Relacionar objeto com atividade de Pacto de Trabalho ou com Reunião</h4>
+    <h4>Assunto - Inserir ou Alterar</h4>
 
     {% macro render_field(field,obr) %}
       {% if obr == True %}
@@ -28,19 +28,13 @@
 
       {{ form.hidden_tag() }}
 
-        <div class="form-group col-8" >
-          {{ render_field(form.obj,class="form-control",obr=True) }}
-        </div>
-
-        <div class="form-group col-5" >
-          {{ render_field(form.replicar,class="form-control",obr=False) }}
+        <div class="form-group">
+          {{ render_field(form.valor,class="form-control",obr=True) }}
         </div>
 
         <div class="form-group" align="center">
           {{ form.submit(class="btn btn-primary") }}<span class="text-muted"> Atenção: campos marcados com * são obrigatórios.</span>
         </div>
-
-        
       
     </form>  
 

@@ -25,7 +25,7 @@
         <div class="card-body">
 
           <p><h6 class="">Responsável: <b>{{demanda.pesNome}}</b> <b>({{demanda.undSigla}})</b></h6> </p>
-          <p class="small"><b>Data Início:</b> {{demanda.dataInicio.strftime('%d/%m/%Y')}} - <b>Data Fim:</b> {{demanda.dataFim.strftime('%d/%m/%Y')}}</p>
+          <p class="small">Início: <b>{{demanda.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{demanda.dataFim.strftime('%d/%m/%Y')}}</b></p>
 
 
           <p class=""><a class="card-title" href="{{url_for('demandas.demanda',pacto_id=demanda.pactoTrabalhoId)}}">
@@ -34,10 +34,10 @@
 
           <p><h6 class="text-muted">Forma: <b>{{demanda.forma}}</b> - Situação: <b>{{demanda.descricao}}</b></h6></p>
 
-          <h6>Carga horária diária: <b>{{demanda.cargaHorariaDiaria}}</b> - 
-            Percentual execução: <b>{{demanda.percentualExecucao|string()|replace(".",",")}}</b> - 
-            Rel. previsto/realizado: <b>{{demanda.relacaoPrevistoRealizado|string()|replace(".",",")}}</b> - 
-            Tempo total disponível: <b>{{demanda.tempoTotalDisponivel}}</b>
+          <h6><small>Carga horária diária:</small> <b>{{demanda.cargaHorariaDiaria}}</b> - 
+            <small>Percentual execução:</small> {% if demanda.percentualExecucao == None %}N.C.{% else %}<b>{{demanda.percentualExecucao|string()|replace(".",",")}}</b>{% endif %} - 
+            <small>Rel. previsto/realizado:</small> {% if demanda.relacaoPrevistoRealizado == None %}N.C.{% else %}<b>{{demanda.relacaoPrevistoRealizado|string()|replace(".",",")}}</b>{% endif %} - 
+            <small>Tempo total disponível:</small> <b>{{demanda.tempoTotalDisponivel}}</b>
           </h6>
 
         </div>

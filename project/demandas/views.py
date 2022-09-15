@@ -19,34 +19,41 @@ from flask import render_template, url_for, flash, request, redirect, Blueprint,
 from flask_login import current_user, login_required
 from flask_mail import Message
 from threading import Thread
-from sqlalchemy import or_, and_, func, literal
+from sqlalchemy import or_, and_, func, literal, case, distinct
 from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db, mail, app
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho, \
                            Atividades, VW_Unidades, cat_item_cat, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Reuniao,\
                            Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades, Planos_de_Trabalho_Metas,\
-                           Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs
+                           Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
+                           Assuntos, Atividade_Pacto_Assunto
 
 from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, SolicitacaoForm603, SolicitacaoAnaliseForm,\
-                                   PreSolicitacaoForm, InciaConcluiAtivForm, AvaliaAtivForm                               
+                                   PreSolicitacaoForm, InciaConcluiAtivForm, AvaliaAtivForm, AddAssuntoForm                              
 
 from project.usuarios.views import registra_log_unid                                   
 
 from datetime import datetime, date, timedelta
 # from fpdf import FPDF
 
-import pickle
-import os.path
-import sys
-
 import uuid
 import ast
 import numpy as np
 import ast
+import math
+
+import random
+import string
 
 demandas = Blueprint("demandas",__name__,template_folder='templates')
 
+
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
 
 #lendo uma demanda
 
@@ -92,7 +99,12 @@ def demanda(pacto_id):
                                catdom_1.c.descricao,
                                label('forma',catdom.descricao),
                                Planos_de_Trabalho.planoTrabalhoId,
-                               UFs.ufId)\
+                               UFs.ufId,
+                               Pessoas.pesEmail,
+                               Pactos_de_Trabalho.unidadeId,
+                               Unidades.pessoaIdChefe,
+                               Unidades.pessoaIdChefeSubstituto,
+                               users.avaliadorId)\
                          .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
                          .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
                          .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
@@ -100,6 +112,7 @@ def demanda(pacto_id):
                          .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                          .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Pactos_de_Trabalho.planoTrabalhoId)\
+                         .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
 
     #pega hierarquia superior da unidade da demanda
@@ -110,27 +123,36 @@ def demanda(pacto_id):
     tree_sup = unid.undSiglaCompleta.split('/')
     tree_sup_ids = [u.unidadeId for u in Unidades.query.filter(Unidades.undSigla.in_(tree_sup))]
     
-    # calcula a quantidade de dias úteis entre as datas de início e fim do pacto
+    # pega feriados do DBSISGP
     feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==demanda.ufId,Feriados.ufId==None)).all()
     feriados = [f.ferData for f in feriados]
 
+    # calcula a quantidade de dias úteis entre as datas de início e fim do pacto - com feriados
     qtd_dias_uteis = 1 + np.busday_count(demanda.dataInicio,demanda.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados)
+    # calcula a quantidade de dias úteis entre as datas de início e fim do pacto - sem feriados
     qtd_dias_uteis_sf = 1 + np.busday_count(demanda.dataInicio,demanda.dataFim,weekmask=[1,1,1,1,1,0,0])
 
+    # calcula a quantidade de dias úteis entre hoje e o fim do pacto - com feriados
+    qtd_dias_rest = 1 + np.busday_count(date.today(),demanda.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados)
 
-    # pega as atividades do PG no a partir do qual o pacto selecionado foi criado
-    items_cat = db.session.query(Planos_de_Trabalho_Ativs.planoTrabalhoId,
-                                 Atividades.titulo,
-                                 Atividades.tempoPresencial,
-                                 Atividades.tempoRemoto,
-                                 Atividades.permiteRemoto)\
-                          .filter(Planos_de_Trabalho_Ativs.planoTrabalhoId == demanda.planoTrabalhoId)\
-                          .join(Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Ativs_Items.planoTrabalhoAtividadeId == Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId)\
-                          .join(Atividades, Atividades.itemCatalogoId == Planos_de_Trabalho_Ativs_Items.itemCatalogoId)\
+    # pega as atividades no plano do cidadão
+    items_cat = db.session.query(Atividades.titulo,
+                                 label('tam_grupo',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)),
+                                 label('conclu',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 503, 1)], else_=0))),
+                                 label('exec',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 502, 1)], else_=0))),
+                                 Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
+                                 Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+                                 Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                          .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
+                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                          .group_by(Atividades.titulo,
+                                    Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
+                                    Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+                                    Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                           .order_by(Atividades.titulo)\
                           .all()
 
-    # conta quantas atividades foram vincualdas ao pacto
+    # conta quantas atividades estão no plano
     qtd_items_cat = len(items_cat)
 
     # conta o número de objetos do PG ao qual o pacto está vinculado
@@ -138,7 +160,6 @@ def demanda(pacto_id):
                         .filter(Objeto_PG.planoTrabalhoId == demanda.planoTrabalhoId)\
                         .count()
 
-    
     # histórico, reuniões, solicitações e atividades são agrupadas para uma visualização conjunta, para tal, 
     # todos tem que ter a mesma quandidade de campos
 
@@ -198,29 +219,36 @@ def demanda(pacto_id):
                           .order_by(Planos_de_Trabalho_Reuniao.data.desc())\
                           .all()
 
-    qtd_reun = len(reunioes)                      
+    qtd_reun = len(reunioes)  
+
+    grupo_ativs = db.session.query(Pactos_de_Trabalho_Atividades.itemCatalogoId,
+                                   label('tam_grupo',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)))\
+                            .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
+                            .group_by(Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                            .subquery()                    
 
     ativs    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
-                                 label('situa',catdom_2.c.descricao),
-                                 literal('Atividade').label("tipo"),
-                                 label('data',Pactos_de_Trabalho_Atividades.dataInicio),
-                                 Pactos_de_Trabalho_Atividades.dataFim,
-                                 label('tit',Pactos_de_Trabalho_Atividades.descricao),
-                                 literal(None).label('obs'),
-                                 label('desc',Pactos_de_Trabalho_Atividades.consideracoesConclusao),
-                                 Pactos_de_Trabalho_Atividades.tempoRealizado,
-                                 Pactos_de_Trabalho_Atividades.nota,
-                                 literal(None).label("pesNome"),
-                                 Atividades.titulo,
-                                 Pactos_de_Trabalho_Atividades.quantidade,
-                                 Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
-                                 Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
-                                 Pactos_de_Trabalho_Atividades.tempoHomologado,
-                                 Pactos_de_Trabalho_Atividades.justificativa,
-                                 catdom.descricao,
-                                 label('obj',Objetos.descricao),
-                                 Objetos.chave,
-                                 literal(None).label("analist"))\
+                                label('situa',catdom_2.c.descricao),
+                                literal('Atividade').label("tipo"),
+                                label('data',Pactos_de_Trabalho_Atividades.dataInicio),
+                                Pactos_de_Trabalho_Atividades.dataFim,
+                                label('tit',Pactos_de_Trabalho_Atividades.descricao),
+                                literal(None).label('obs'),
+                                label('desc',Pactos_de_Trabalho_Atividades.consideracoesConclusao),
+                                Pactos_de_Trabalho_Atividades.tempoRealizado,
+                                Pactos_de_Trabalho_Atividades.nota,
+                                literal(None).label("pesNome"),
+                                Atividades.titulo,
+                                Pactos_de_Trabalho_Atividades.quantidade,
+                                Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
+                                Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+                                Pactos_de_Trabalho_Atividades.tempoHomologado,
+                                Pactos_de_Trabalho_Atividades.justificativa,
+                                catdom.descricao,
+                                label('obj',Objetos.descricao),
+                                Objetos.chave,
+                                literal(None).label("analist"),
+                                grupo_ativs.c.tam_grupo)\
                          .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.modalidadeExecucaoId)\
@@ -228,13 +256,19 @@ def demanda(pacto_id):
                          .outerjoin(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                          .outerjoin(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId == Objeto_Atividade_Pacto.planoTrabalhoObjetoId)\
                          .outerjoin(Objetos, Objetos.objetoId == Objeto_PG.objetoId)\
+                         .outerjoin(grupo_ativs,grupo_ativs.c.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                          .order_by(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                          .all()
 
     qtd_ativs_pacto = len(ativs)   
 
     # gera lista das atividades do pacto acrescentando número de sequência para facilitar sua identificação
-    seq_ativs = list(enumerate([(a.id,a.titulo) for a in ativs],1))
+    ativs_simp    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
+                                     Atividades.titulo,
+                                     label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId))))\
+                         .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
+                         .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                         .all()
 
     # calcula a soma dos tempos previstos das atividades no pacto por situação e totaliza tudo no final
     ativs_p_tempo_total = [float(t.tempoPrevistoTotal) for t in ativs if t.situa == 'Programada']
@@ -278,6 +312,27 @@ def demanda(pacto_id):
 
     qtd_solic = len(solicit) 
 
+    #totalizar horas em pedidos de exclusão pendentes
+    solic_exclu_pend = db.session.query(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId,
+                                        Pactos_de_Trabalho_Solic.dadosSolicitacao)\
+                                 .filter(Pactos_de_Trabalho_Solic.tipoSolicitacaoId == 604,
+                                         Pactos_de_Trabalho_Solic.pactoTrabalhoId == pacto_id,
+                                         Pactos_de_Trabalho_Solic.analisado == False)\
+                                 .all()
+
+    tempo_exclu = 0.0                             
+
+    for solic in solic_exclu_pend:
+        ativ_exclu_id = ast.literal_eval(str(solic.dadosSolicitacao).replace('null','None').replace('true','True').replace('false','False')) 
+
+        tempo_ativ_exclu = db.session.query(Pactos_de_Trabalho_Atividades.tempoPrevistoTotal)\
+                                        .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_exclu_id['pactoTrabalhoAtividadeId'])\
+                                        .first()
+
+        tempo_exclu += float(tempo_ativ_exclu.tempoPrevistoTotal)  
+
+    print ('**** na pre solic ', tempo_exclu)
+
     # monta dicionários com o campo dadosSolicitacao das solicitações do pacto que está sendo visto
     dados_solic = [[s.id,ast.literal_eval(str(s.tit).replace('null','None').replace('true','True').replace('false','False'))] for s in solicit]
                
@@ -295,7 +350,7 @@ def demanda(pacto_id):
 
         # caso a solicitação seja de nova atividade, verifica se há tempo disponível no pacto
         if form1.tipo.data == '601':
-            if sum_ativs_tempo_total < demanda.tempoTotalDisponivel:
+            if sum_ativs_tempo_total < demanda.tempoTotalDisponivel or tempo_exclu > 0:
                 return redirect(url_for('demandas.solicitacao',pacto_id=pacto_id,tipo=form1.tipo.data))
             else:
                 flash('Não há como solicitar nova atividade, pois o tempo total disponível no pacto já está todo comprometido','erro')
@@ -317,6 +372,36 @@ def demanda(pacto_id):
                 return redirect(url_for('demandas.solicitacao',pacto_id=pacto_id,tipo=form1.tipo.data))
 
 
+    # calcular %execução e relação previsto/executado
+    # pega as atividades no plano do cidadão
+    itens_plano = db.session.query(label('tam_grupo',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)),
+                                   label('tempo_prev_tot',func.sum((Pactos_de_Trabalho_Atividades.tempoPrevistoTotal))),
+                                   label('tempo_realiz',func.sum((Pactos_de_Trabalho_Atividades.tempoRealizado))),
+                                   label('tempo_prev_conclu',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 503, Pactos_de_Trabalho_Atividades.tempoPrevistoTotal)], else_=0))),
+                                   label('conclu',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 503, 1)], else_=0))),
+                                   label('exec',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 502, 1)], else_=0))))\
+                            .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                            .first()
+
+    if itens_plano.tempo_realiz == None:
+        tempo_realiz = 0
+    else:
+        tempo_realiz = itens_plano.tempo_realiz 
+
+    if itens_plano.tempo_prev_conclu == None:
+        tempo_prev_conclu = 0
+    else:
+        tempo_prev_conclu = itens_plano.tempo_prev_conclu    
+
+    percentual_qtd_ativs_executado = round(100 * float(itens_plano.conclu) / float(itens_plano.tam_grupo),2)
+    percentual_tempo_realizado = round(100 * float(tempo_realiz) / float(itens_plano.tempo_prev_tot),2)
+    if tempo_prev_conclu != 0:
+        rel_prev_realiz = round(100 * float(tempo_realiz) / float(tempo_prev_conclu),2)
+    else:
+        rel_prev_realiz = 0
+
+
+
     return render_template('ver_demanda.html',
                             id           = pacto_id,
                             post         = demanda,
@@ -329,16 +414,94 @@ def demanda(pacto_id):
                             qtd_items_cat = qtd_items_cat,
                             qtd_dias_uteis = qtd_dias_uteis,
                             qtd_dias_uteis_sf = qtd_dias_uteis_sf,
+                            qtd_dias_rest = qtd_dias_rest,
                             sum_ativs_p_tempo_total = sum_ativs_p_tempo_total,
                             sum_ativs_e_tempo_total = sum_ativs_e_tempo_total,
                             sum_ativs_c_tempo_total = sum_ativs_c_tempo_total,
                             sum_ativs_tempo_total   = sum_ativs_tempo_total,
-                            seq_ativs = seq_ativs,
+                            ativs_simp = ativs_simp,
                             qtd_hist = qtd_hist,
                             qtd_reun = qtd_reun,
                             qtd_solic = qtd_solic,
                             qtd_ativs_pacto = qtd_ativs_pacto,
-                            tree_sup_ids = tree_sup_ids)
+                            tree_sup_ids = tree_sup_ids,
+                            percentual_qtd_ativs_executado = percentual_qtd_ativs_executado)
+
+# ocorrências de uma atividade
+
+@demandas.route('/<pacto_id>/<item_cat_id>/ativ_ocor')
+def ativ_ocor(pacto_id,item_cat_id):
+
+    """
+        +------------------------------------------------------------------------+
+        |Mostra as ocorrências de uma determinada atividade no plano de trabalho |
+        |                                                                        |
+        |Recebe o id da atividade como parâmetro.                                |
+        +------------------------------------------------------------------------+
+    """
+
+    #pega e-mail do usuário logado
+    email = current_user.userEmail
+
+    #pega dados em Pessoas do usuário logado
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
+
+    # pega o pacto selecionado
+    demanda = db.session.query(Pactos_de_Trabalho.pactoTrabalhoId,
+                               Pessoas.pesNome)\
+                         .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
+                         .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
+                         .first()
+
+    # subquery das situações de atividades de pactos de trabalho
+    catdom_2 = db.session.query(catdom.catalogoDominioId,
+                                catdom.descricao)\
+                         .filter(catdom.classificacao == 'SituacaoAtividadePactoTrabalho')\
+                         .subquery()                     
+              
+    ativs    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
+                                label('situa',catdom_2.c.descricao),
+                                Pactos_de_Trabalho_Atividades.nota,
+                                Atividades.titulo,
+                                Pactos_de_Trabalho_Atividades.quantidade,
+                                Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
+                                Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+                                Pactos_de_Trabalho_Atividades.dataInicio,
+                                Pactos_de_Trabalho_Atividades.dataFim,
+                                Objetos.chave,
+                                label('tit',Pactos_de_Trabalho_Atividades.descricao),
+                                label('desc',Pactos_de_Trabalho_Atividades.consideracoesConclusao),
+                                catdom.descricao,
+                                Pactos_de_Trabalho_Atividades.tempoRealizado,
+                                Pactos_de_Trabalho_Atividades.tempoHomologado,
+                                Pactos_de_Trabalho_Atividades.justificativa)\
+                         .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
+                                 Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id)\
+                         .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                         .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.modalidadeExecucaoId)\
+                         .join(catdom_2, catdom_2.c.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
+                         .outerjoin(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                         .outerjoin(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId == Objeto_Atividade_Pacto.planoTrabalhoObjetoId)\
+                         .outerjoin(Objetos, Objetos.objetoId == Objeto_PG.objetoId)\
+                         .order_by(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                         .all()
+
+    qtd_ativs = len(ativs)
+
+    qtd_ativs_sqr = math.modf(math.sqrt(qtd_ativs))
+
+    qtd_linhas = int(qtd_ativs_sqr[1])
+
+    if qtd_ativs_sqr[0] == 0:
+        qtd_colunas = qtd_linhas
+    else:
+        qtd_colunas = math.ceil(qtd_ativs/qtd_linhas)
+
+    return render_template('ativ_ocorrencias.html', ativs=ativs, qtd_ativs=qtd_ativs,
+                                                    qtd_linhas=qtd_linhas, qtd_colunas=qtd_colunas,
+                                                    usuario=usuario, demanda=demanda,
+                                                    pacto_id=pacto_id)                   
+
 
 # vendo todas as demandas da unidade
 
@@ -406,36 +569,81 @@ def list_demandas(lista,coord):
                          .filter(catdom.classificacao == 'SituacaoPactoTrabalho')\
                          .subquery()
 
-    demandas = db.session.query(Pactos_de_Trabalho.pactoTrabalhoId,
-                               Pactos_de_Trabalho.planoTrabalhoId,
-                               Pactos_de_Trabalho.dataInicio,
-                               Pactos_de_Trabalho.dataFim,
-                               Pactos_de_Trabalho.cargaHorariaDiaria,
-                               Pactos_de_Trabalho.percentualExecucao,
-                               Pactos_de_Trabalho.relacaoPrevistoRealizado,
-                               Pactos_de_Trabalho.tempoTotalDisponivel,
-                               Pessoas.pesNome,
-                               Unidades.unidadeId,
-                               Unidades.undSigla,
-                               catdom_1.c.descricao,
-                               label('forma',catdom.descricao))\
-                         .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]), catdom_1.c.descricao.like(lista))\
-                         .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
-                         .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
-                         .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
-                         .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
-                         .order_by(Unidades.unidadeId,catdom_1.c.descricao,Pactos_de_Trabalho.dataInicio.desc())\
-                         .paginate(page=page,per_page=8)
+    if lista == 'solic_pend':
 
-    demandas_count = db.session.query(Pactos_de_Trabalho)\
-                               .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
-                               .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]), catdom_1.c.descricao.like(lista))\
-                               .count()
+        demandas = db.session.query(distinct(Pactos_de_Trabalho.pactoTrabalhoId),
+                                    Pactos_de_Trabalho.pactoTrabalhoId,
+                                    Pactos_de_Trabalho.planoTrabalhoId,
+                                    Pactos_de_Trabalho.dataInicio,
+                                    Pactos_de_Trabalho.dataFim,
+                                    Pactos_de_Trabalho.cargaHorariaDiaria,
+                                    Pactos_de_Trabalho.percentualExecucao,
+                                    Pactos_de_Trabalho.relacaoPrevistoRealizado,
+                                    Pactos_de_Trabalho.tempoTotalDisponivel,    
+                                    Pessoas.pesNome,
+                                    Unidades.unidadeId,
+                                    Unidades.undSigla,
+                                    catdom_1.c.descricao,
+                                    label('forma',catdom.descricao))\
+                            .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]),
+                                    Pactos_de_Trabalho_Solic.analisado == False,
+                                    catdom_1.c.descricao == 'Em execução')\
+                            .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
+                            .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
+                            .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                            .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
+                            .join(Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Solic.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
+                            .order_by(Unidades.unidadeId,catdom_1.c.descricao,Pactos_de_Trabalho.dataInicio.desc())\
+                            .paginate(page=page,per_page=8)
 
-    demandas_count_pai = db.session.query(Pactos_de_Trabalho)\
+        demandas_count = db.session.query(label('pactoTrabahoId',distinct(Pactos_de_Trabalho.pactoTrabalhoId)))\
+                                   .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]),
+                                           Pactos_de_Trabalho_Solic.analisado == False,
+                                           catdom_1.c.descricao == 'Em execução')\
                                    .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
-                                   .filter(Pactos_de_Trabalho.unidadeId == unid, catdom_1.c.descricao.like(lista))\
-                                   .count()                           
+                                   .join(Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Solic.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
+                                   .count()
+
+        demandas_count_pai = db.session.query(label('pactoTrabahoId',distinct(Pactos_de_Trabalho.pactoTrabalhoId)))\
+                                       .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]),
+                                               Pactos_de_Trabalho_Solic.analisado == False,
+                                               catdom_1.c.descricao == 'Em execução')\
+                                       .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                                       .join(Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Solic.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
+                                       .count()                    
+
+    else:    
+
+        demandas = db.session.query(Pactos_de_Trabalho.pactoTrabalhoId,
+                                    Pactos_de_Trabalho.planoTrabalhoId,
+                                    Pactos_de_Trabalho.dataInicio,
+                                    Pactos_de_Trabalho.dataFim,
+                                    Pactos_de_Trabalho.cargaHorariaDiaria,
+                                    Pactos_de_Trabalho.percentualExecucao,
+                                    Pactos_de_Trabalho.relacaoPrevistoRealizado,
+                                    Pactos_de_Trabalho.tempoTotalDisponivel,
+                                    Pessoas.pesNome,
+                                    Unidades.unidadeId,
+                                    Unidades.undSigla,
+                                    catdom_1.c.descricao,
+                                    label('forma',catdom.descricao))\
+                            .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]), catdom_1.c.descricao.like(lista))\
+                            .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
+                            .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
+                            .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                            .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
+                            .order_by(Unidades.unidadeId,catdom_1.c.descricao,Pactos_de_Trabalho.dataInicio.desc())\
+                            .paginate(page=page,per_page=8)
+
+        demandas_count = db.session.query(Pactos_de_Trabalho)\
+                                .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                                .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]), catdom_1.c.descricao.like(lista))\
+                                .count()
+
+        demandas_count_pai = db.session.query(Pactos_de_Trabalho)\
+                                    .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                                    .filter(Pactos_de_Trabalho.unidadeId == unid, catdom_1.c.descricao.like(lista))\
+                                    .count()                           
 
     # pega as atividades de cada demanda
     dem = db.session.query(Pactos_de_Trabalho.planoTrabalhoId)\
@@ -519,14 +727,11 @@ def solicitacao(pacto_id,tipo):
                                  Atividades.titulo,
                                  Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
                                  Pactos_de_Trabalho_Atividades.dataInicio,
-                                 Pactos_de_Trabalho_Atividades.situacaoId)\
+                                 Pactos_de_Trabalho_Atividades.situacaoId,
+                                 label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId))))\
                           .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
                           .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
-                          .order_by(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                           .all()
-
-    # gera lista das atividades do pacto acrescentando número de sequência para facilitar sua identificação
-    seq_ativs = list(enumerate([[a.pactoTrabalhoAtividadeId,a.titulo,a.situacaoId] for a in items_cat],1))
 
     # calcula a soma dos tempos previstos das atividades no pacto por situação e totaliza tudo no final
     ativs_tempo_total = [float(t.tempoPrevistoTotal) for t in items_cat]
@@ -557,7 +762,7 @@ def solicitacao(pacto_id,tipo):
         
     else:
         # o choices do campo atividade são definidos aqui e não no form
-        lista_ativs = [(i[1][0],'('+str(i[0])+') '+i[1][1]) for i in seq_ativs]
+        lista_ativs = [(i.pactoTrabalhoAtividadeId, str(i.seq)+'. '+i.titulo) for i in items_cat]
         lista_ativs.insert(0,('',''))
 
         form = SolicitacaoForm603()
@@ -584,7 +789,28 @@ def solicitacao(pacto_id,tipo):
             
             folga_tempo_pacto = float(pacto.tempoTotalDisponivel) - (sum_ativs_tempo_total + form.quantidade.data * float(tempo_ativ))
 
-            if folga_tempo_pacto < 0:
+            #totalizar horas em pedidos de exclusão pendentes
+            solic_exclu_pend = db.session.query(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId,
+                                                Pactos_de_Trabalho_Solic.dadosSolicitacao)\
+                                         .filter(Pactos_de_Trabalho_Solic.tipoSolicitacaoId == 604,
+                                                 Pactos_de_Trabalho_Solic.pactoTrabalhoId == pacto_id,
+                                                 Pactos_de_Trabalho_Solic.analisado == False)\
+                                         .all()
+
+            tempo_exclu = 0.0                             
+
+            for solic in solic_exclu_pend:
+                ativ_exclu_id = ast.literal_eval(str(solic.dadosSolicitacao).replace('null','None').replace('true','True').replace('false','False')) 
+
+                tempo_ativ_exclu = db.session.query(Pactos_de_Trabalho_Atividades.tempoPrevistoTotal)\
+                                             .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_exclu_id['pactoTrabalhoAtividadeId'])\
+                                             .first()
+
+                tempo_exclu += float(tempo_ativ_exclu.tempoPrevistoTotal)  
+
+            print ('**** na solic', tempo_exclu)
+
+            if folga_tempo_pacto < 0 and float(tempo_ativ) > tempo_exclu:
                 flash('Solicitação de nova atividade estoura tempo disponível no pacto!','erro')
 
                 return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
@@ -672,7 +898,7 @@ def solicitacao(pacto_id,tipo):
         elif tipo_solic.descricao == 'Prazo de atividade ultrapassado':
             
             dados_dic = {"pactoTrabalhoId":pacto_id.lower(),\
-                         "pactoTrabalhoAtividadeId":form.atividade.data,\
+                         "pactoTrabalhoAtividadeId":form.atividade.data.lower(),\
                          "justificativa":form.desc.data}
         
         elif tipo_solic.descricao == 'Excluir atividade':
@@ -904,9 +1130,7 @@ def list_demandas_usu(lista,pessoa_id):
                         .filter(Unidades.unidadeId == pes.unidadeId)\
                         .join(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
                         .first()
-
-    # unid = pes.unidadeId    
-      
+    
     if lista == 'Todas':
         lista = '%'
 
@@ -971,31 +1195,9 @@ def list_demandas_usu(lista,pessoa_id):
                             .order_by(Pactos_de_Trabalho.dataInicio.desc())\
                             .paginate(page=page,per_page=8)
 
-        # demandas_count = db.session.query(Pactos_de_Trabalho)\
-        #                         .filter(Pactos_de_Trabalho.pessoaId == pes.pessoaId)\
-        #                         .count()
-
         demandas_count = demandas.total                        
 
-                         
-
-    # pega as atividades de cada demanda
-    # dem = db.session.query(Pactos_de_Trabalho.planoTrabalhoId)\
-    #                 .filter(Pactos_de_Trabalho.unidadeId == unid)\
-    #                 .all()
-    
-    # pts = [item.planoTrabalhoId for item in dem]
-
-    # items_cat = db.session.query(Planos_de_Trabalho_Ativs.planoTrabalhoId, Atividades.titulo)\
-    #                       .filter(Planos_de_Trabalho_Ativs.planoTrabalhoId.in_(pts))\
-    #                       .join(Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Ativs_Items.planoTrabalhoAtividadeId == Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId)\
-    #                       .join(Atividades, Atividades.itemCatalogoId == Planos_de_Trabalho_Ativs_Items.itemCatalogoId)\
-    #                       .order_by(Atividades.titulo)\
-    #                       .all()
-    #
-
     return render_template ('demandas_pessoa.html', lista=lista, 
-                                                    # items_cat=items_cat, 
                                                     demandas=demandas, 
                                                     demandas_count=demandas_count,
                                                     unid_dados = unid_dados,
@@ -1034,6 +1236,8 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             ativ.situacaoId = 502
             ativ.dataInicio = form.data_ini.data
             ativ.consideracoesConclusao = form.consi_conclu.data
+
+            db.session.commit()
             
         elif acao == 'f':
             ativ.situacaoId     = 503
@@ -1043,7 +1247,42 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             ativ.tempoRealizado = form.tempo_realizado.data.replace(',','.')
             ativ.consideracoesConclusao = consid + ' - Conclusão: ' + form.consi_conclu.data
 
-        db.session.commit()
+            db.session.commit()
+
+            # calcular %execução e relação previsto/executado
+            # pega as atividades no plano do cidadão
+            itens_plano = db.session.query(label('tempo_prev_tot',func.sum((Pactos_de_Trabalho_Atividades.tempoPrevistoTotal))),
+                                           label('tempo_realiz',func.sum((Pactos_de_Trabalho_Atividades.tempoRealizado))),
+                                           label('tempo_prev_conclu',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 503, Pactos_de_Trabalho_Atividades.tempoPrevistoTotal)], else_=0))))\
+                                    .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                                    .first()
+
+            if itens_plano.tempo_realiz == None:
+                tempo_realiz = 0
+            else:
+                tempo_realiz = itens_plano.tempo_realiz   
+
+            if itens_plano.tempo_prev_conclu == None:
+                tempo_prev_conclu = 0
+            else:
+                tempo_prev_conclu = itens_plano.tempo_prev_conclu                          
+
+            percentual_tempo_realizado = round(100 * float(tempo_realiz) / float(itens_plano.tempo_prev_tot),2)
+
+            if tempo_prev_conclu != 0:
+                rel_prev_realiz = round(100 * float(tempo_realiz) / float(tempo_prev_conclu),2)
+            else:
+                rel_prev_realiz = 0
+
+            # gravar em Pactos_de_Trabalho (plano)
+            plano = db.session.query(Pactos_de_Trabalho)\
+                              .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
+                              .first()
+
+            plano.percentualExecucao = percentual_tempo_realizado
+            plano.relacaoPrevistoRealizado = rel_prev_realiz
+
+            db.session.commit()
 
         if acao == 'i':
             registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
@@ -1054,6 +1293,8 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
+    form.tempo_realizado.data = str(ativ.tempoPrevistoTotal).replace('.',',')    
+
     return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId)
 
 #avaliando uma solicitação
@@ -1063,7 +1304,7 @@ def avalia_atividade(pacto_id,ativ_pacto_id):
     """+---------------------------------------------------------------------------------+
        |Avalia uma atividade concluida em um pacto de trabalho.                          |
        |                                                                                 |
-       |Recebe o ID da atividade no pacto e ID da atividade como parâmetros.             |
+       |Recebe o ID do pacto e ID da atividade no pacto como parâmetros.                 |
        +---------------------------------------------------------------------------------+
     """
 
@@ -1097,6 +1338,77 @@ def avalia_atividade(pacto_id,ativ_pacto_id):
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
     return render_template('avalia_atividade.html', form=form, avaliador = avaliador)
+
+#registrar assuntos
+@demandas.route('/add_assunto/<pacto_id>/<ativ_pacto_id>',methods=['GET','POST'])
+@login_required
+def add_assunto(pacto_id,ativ_pacto_id):
+    """+---------------------------------------------------------------------------------+
+       |Registra assuntos para atividades de um pacto.                                   |
+       |                                                                                 |
+       |Recebe o ID do pacto e ID da atividade no pacto como parâmetros.                 |
+       +---------------------------------------------------------------------------------+
+    """
+
+    form = AddAssuntoForm()
+
+    if form.validate_on_submit():
+
+        assunto = Assuntos(assuntoId    = uuid.uuid4(),
+                           assuntoPaiId = None,
+                           valor        = form.valor.data,
+                           chave        = get_random_string(10),
+                           ativo        = True)
+
+        db.session.add(assunto)
+        db.session.commit()
+
+        assunto_ativ = Atividade_Pacto_Assunto(pactoTrabalhoAtividadeAssuntoId = uuid.uuid4(),
+                                               pactoTrabalhoAtividadeId        = ativ_pacto_id,
+                                               assuntoId                       = assunto.assuntoId)                 
+
+        db.session.add(assunto_ativ)
+        db.session.commit()                      
+
+        registra_log_unid(current_user.id,'Assunto '+ assunto.assuntoId +' inserido no banco de dados.')
+
+        flash('Assunto registrado!','sucesso')
+
+        return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+
+    return render_template('add_assunto.html', form=form, ativ_pacto_id = ativ_pacto_id)
+
+## lista assuntos associadas a uma atividade de um plano de trabalho
+
+@demandas.route('/<item_cat_id>/<pacto_id>/lista_assuntos')
+def lista_assuntos(item_cat_id,pacto_id):
+    """
+    +---------------------------------------------------------------------------------------+
+    |Lista os assuntos que foram registrados para uma atividade em um plano de trabalho.    |
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """
+
+    # restata nome da atividade
+
+    ativ = db.session.query(Atividades.titulo).filter(Atividades.itemCatalogoId == item_cat_id).first()
+
+    # resgata assuntos
+    
+    assuntos = db.session.query(Assuntos.valor,
+                                Pactos_de_Trabalho_Atividades.dataInicio)\
+                         .join(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.assuntoId == Assuntos.assuntoId)\
+                         .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
+                         .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
+                                 Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                         .all()
+
+    quantidade = len(assuntos)
+
+
+    return render_template('lista_assuntos.html', assuntos=assuntos, quantidade=quantidade, ativ=ativ)
+
+
 
 # # procurando uma demanda
 

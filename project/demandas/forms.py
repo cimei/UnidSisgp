@@ -112,7 +112,13 @@ class AvaliaAtivForm(FlaskForm):
 
     submit       = SubmitField('Registrar')      
 
-   
+class AddAssuntoForm(FlaskForm):
+
+    valor = StringField('Descrição:', validators=[DataRequired(message="Insira uma descrição!")])
+    # chave = StringField('Chave:', validators=[DataRequired(message="Insira uma chave!")])
+    # ativo = BooleanField('Ativo?')
+
+    submit      = SubmitField('Registrar')    
 
 
 # class PesquisaForm(FlaskForm):

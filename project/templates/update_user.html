@@ -25,11 +25,17 @@
 <form class="needs-validation" method='POST' >
   {{ form.hidden_tag() }}
   
-<br>
+  <br>
 
   <div class="form-group col-3">
     {{ render_field(form.ativo,class="form-control", obr=True) }}
   </div>
+
+  <br>
+
+  <div class="form-group col-3">
+    {{ render_field(form.avaliador,class="form-control", obr=False) }}
+  </div>  
 
 
   <br>

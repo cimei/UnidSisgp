@@ -11,21 +11,22 @@
       <table class="table table-striped" id="admin_list_of_users">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Usuário</th>
-            <th>E-mail</th>
-            <th align="center">Data reg.</th>
-            <th align="center">E-mail conf.?</th>
-            <th align="center">E-mail conf. em</th>
-            <th align="center">Último login</th>
-            <th align="center">Ativo?</th>
+            <th style="text-align:center; vertical-align:middle">ID</th>
+            <th style="text-align:left; vertical-align:middle">Usuário</th>
+            <th style="text-align:left; vertical-align:middle">E-mail</th>
+            <th style="text-align:center; vertical-align:middle">Data reg.</th>
+            <th style="text-align:center; vertical-align:middle">E-mail conf.?</th>
+            <th style="text-align:center; vertical-align:middle">E-mail conf. em</th>
+            <th style="text-align:center; vertical-align:middle">Último login</th>
+            <th style="text-align:center; vertical-align:middle">Ativo?</th>
+            <th style="text-align:center; vertical-align:middle">Avaliador</th>
             </tr>
         </thead>
         <tbody>
           {% for user in lista %}
             <tr>
               {% if logado.tipoFuncaoId != None and logado.tipoFuncaoId != '' %}
-                <td> <a href="{{url_for('usuarios.update_user', user_id=user.id)}}"><abbr title="Clique aqui atualizar">{{ user.id }} </td>
+                <td> <a href="{{url_for('usuarios.update_user', user_id=user.id)}}"><abbr title="Clique aqui para atualizar">{{ user.id }} </abbr></a></td>
               {% else %}
                 <td>{{ user.id }}</td>
               {% endif %}  
@@ -41,6 +42,15 @@
               </td>
               <td align="center"> {% if user.current_logged_in != None %} {{user.current_logged_in.strftime('%c')}} {% endif %}</td>
               <td align="center"> {% if user.userAtivo == True %} Sim {% else %} Não {% endif %} </td>
+              <td align="center"> {% if user.avaliadorId == None %}
+                                    Chefe da unidade 
+                                  {% else %}
+                                    {% if user.unidadeId == user.avalUnid %} 
+                                      {{user.avalNome}} 
+                                    {% else %}
+                                      <span class="text-danger"><abbr title="Esta pessoa é de uma unidade distinta da unidade do usuário">{{user.avalNome}}</abbr></span>
+                                    {% endif %}  
+                                  {% endif %} </td>
             </tr>
           {% endfor %}
         </tbody>

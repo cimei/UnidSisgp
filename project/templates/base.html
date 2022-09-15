@@ -65,10 +65,11 @@
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Aceito', coord = '*')}}">Aceitos</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Concluído', coord = '*')}}">Concluídos</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Em execução', coord = '*')}}">Em execução</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*')}}">Enviados para aceite</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*')}}"><span class="text-warning">Enviados para aceite</span></a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Executado', coord = '*')}}">Executados</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rascunho', coord = '*')}}">Em Rascunho</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rejeitado', coord = '*')}}">Rejeitados</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'solic_pend', coord = '*')}}"><span class="text-warning">Com solicitações pendentes</span></a>
             </div>
           </li>
 
@@ -117,7 +118,7 @@
         {% endif %}
 
           {% set ver = namespace(num = '1.0.0') %}
-          {% set amb = namespace(tipo = 'testes') %}
+          {% set amb = namespace(tipo = 'prod') %}
 
         </ul>
 
@@ -137,10 +138,12 @@
       {% if erros %}
 
         {% for message in erros %}
+        <div class="container">
           <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{message}}
           </div>
+        </div>  
         {% endfor %}
 
       {% endif %}
@@ -150,10 +153,12 @@
       {% if sucessos %}
 
         {% for message in sucessos %}
+        <div class="container">
           <div class="alert alert-primary">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{message}}
           </div>
+        </div>  
         {% endfor %}
 
       {% endif %}
@@ -163,10 +168,12 @@
       {% if perigos %}
 
         {% for message in perigos %}
+        <div class="container">
           <div class="alert alert-danger">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{message}}
           </div>
+        </div>  
         {% endfor %}
 
       {% endif %}

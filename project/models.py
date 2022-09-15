@@ -39,7 +39,7 @@ def load_user(user_id):
 
 class users(db.Model, UserMixin):
 
-    __tablename__ = 'User'
+    __tablename__ = 'User_Unid'
     __table_args__ = {"schema": "Apoio"}
 
     id                         = db.Column(db.Integer,primary_key=True)
@@ -53,9 +53,9 @@ class users(db.Model, UserMixin):
     last_logged_in             = db.Column(db.DateTime, nullable=True)
     current_logged_in          = db.Column(db.DateTime, nullable=True)
     userAtivo                  = db.Column(db.Boolean)
+    avaliadorId                = db.Column(db.Integer, nullable=True)
 
-    def __init__(self,userNome,userEmail,plaintext_password,userAtivo,\
-                 email_confirmation_sent_on=None):
+    def __init__(self,userNome,userEmail,plaintext_password,userAtivo,email_confirmation_sent_on=None):
 
         self.userNome                   = userNome
         self.userEmail                  = userEmail
@@ -67,6 +67,7 @@ class users(db.Model, UserMixin):
         self.last_logged_in             = None
         self.current_logged_in          = datetime.now()
         self.userAtivo                  = userAtivo
+        self.avaliadorId                = None
 
     def check_password (self,plaintext_password):
 
@@ -106,7 +107,7 @@ class Log_Unid(db.Model):
 
     id        = db.Column(db.Integer, primary_key=True)
     data_hora = db.Column(db.DateTime,nullable=False,default=datetime.now())
-    user_id   = db.Column(db.Integer, db.ForeignKey('Apoio.User.id'),nullable=False)
+    user_id   = db.Column(db.Integer,nullable=False)
     msg       = db.Column(db.String)
 
 
@@ -837,4 +838,48 @@ class Objetos(db.Model):
         self.ativo     = ativo
 
     def __repr__ (self):
-        return f"{self.objetoId};{self.descricao};{self.tipo};{self.chave};{self.ativo}"                          
+        return f"{self.objetoId};{self.descricao};{self.tipo};{self.chave};{self.ativo}"   
+
+# Assuntos
+
+class Assuntos(db.Model):
+
+    __tablename__ = 'Assunto'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    assuntoId    = db.Column(db.String, primary_key = True)
+    assuntoPaiId = db.Column(db.String)
+    valor        = db.Column(db.String)
+    chave        = db.Column(db.String)
+    ativo        = db.Column(db.Boolean)
+
+    def __init__(self,assuntoId,assuntoPaiId,valor,chave,ativo):
+        
+        self.assuntoId    = assuntoId
+        self.assuntoPaiId = assuntoPaiId
+        self.valor        = valor
+        self.chave        = chave
+        self.ativo        = ativo
+
+    def __repr__ (self):
+        return f"{self.assuntoId};{self.assuntoPaiId};{self.valor};{self.chave};{self.ativo}"   
+
+# Assuntos vinculados a atividades de pactos de trabalho 
+
+class Atividade_Pacto_Assunto(db.Model):
+
+    __tablename__ = 'PactoTrabalhoAtividadeAssunto'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    pactoTrabalhoAtividadeAssuntoId = db.Column(db.String, primary_key = True)
+    pactoTrabalhoAtividadeId        = db.Column(db.String)
+    assuntoId                       = db.Column(db.String)
+
+    def __init__(self,pactoTrabalhoAtividadeAssuntoId,pactoTrabalhoAtividadeId,assuntoId):
+        
+        self.pactoTrabalhoAtividadeAssuntoId = pactoTrabalhoAtividadeAssuntoId
+        self.pactoTrabalhoAtividadeId        = pactoTrabalhoAtividadeId
+        self.assuntoId                       = assuntoId
+
+    def __repr__ (self):
+        return f"{self.planoTrabalhoObjetoId};{self.pactoTrabalhoAtividadeId};{self.assuntoId}"                                      
