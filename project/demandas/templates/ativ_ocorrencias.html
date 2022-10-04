@@ -6,93 +6,139 @@
     <br>
 
     <div class="container d-flex justify-content-center">
-      <div class="row justify-content-center">
-        <div class="col align-self-center" style="width: 150px;">Legenda:</div>
-        <div class="col align-self-center" style="width: 100px;"><span class="badge badge-secondary"><small>Programada</small></span></div>
-        <div class="col align-self-center" style="width: 100px;"><span class="badge badge-primary"><small>Em execução</small></span></div>
-        <div class="col align-self-center" style="width: 100px;"><span class="badge badge-success"><small>Concluída</small></span></div>
+      <div class="row justify-content-center border border-secondary">
+        <div class="col-1 align-self-center d-flex justify-content-center" style="width: 30px;">Legenda</div>
+        <div class="col-1 align-self-center" style="width: 40px;">
+          <div class="row d-flex justify-content-center"><small>Situações: </small></div>
+          <div class="row d-flex justify-content-center"><small>Ações: </small></div>
+        </div>
+        <div class="col align-self-center" style="width: 950px;">
+          <div class = "row d-flex justify-content-center">
+            <div class="col d-flex justify-content-center" style="width: 100px;"><span class="badge badge-secondary"><small>Programada</small></span></div>
+            <div class="col d-flex justify-content-center" style="width: 100px;"><span class="badge badge-primary"><small>Em execução</small></span></div>
+            <div class="col d-flex justify-content-center" style="width: 100px;"><span class="badge badge-success"><small>Concluída</small></span></div>
+          </div>
+          <div class="row d-flex justify-content-center">
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-primary"><small>i</small></span><small> iniciar</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-success"><small>f</small></span><small> finalizar</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-info"><small>a</small></span><small> assunto</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>o</small></span><small> objeto</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>A</small></span><small> Avaliar</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>R</small></span><small> Reavaliar</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="text-danger"><small>c</small></span><small>  Corrigir</small></div>
+          </div> 
+        </div> 
       </div>
     </div>
+
 <br>
     <div class="container">
-      {% set cont = namespace(i = 0) %}
-      {% set conclu = namespace(i = 0) %}
+      {% set ns_cont = namespace(i = 0) %}
+      {% set ns_conclu = namespace(i = 0) %}
+      {% set ns_programada = namespace(i = 0) %}
 
       {% for l in range(1,qtd_linhas+1)%}
 
         <div class="row justify-content-md-center">
 
           {% for c in range(1,qtd_colunas+1)%}
-            {% set cont.i =  cont.i + 1 %}
+            {% set ns_cont.i =  ns_cont.i + 1 %}
 
             <div class="card text-center" style="width: 8rem;">
 
-              {% if cont.i > qtd_ativs %}
+              {% if ns_cont.i > qtd_ativs %}
                 <!-- não faça nada -->
               
-              {% elif ativs[cont.i-1].situa == 'Programada' %}
+              {% elif ativs[ns_cont.i-1].situa == 'Programada' %}
+
+                {% set ns_programada.i = ns_programada.i + 1 %}
+
                 <div class="card-body text-white bg-secondary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{cont.i}}/{{qtd_ativs}}</abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{ns_cont.i}}/{{qtd_ativs}}</abbr></a>
                   </span><br>
 
-                  <small>{{ativs[cont.i-1].quantidade}} - {{ativs[cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                    {% if ativs[cont.i-1].quantidade > 1 %}
-                     - {{ativs[cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
+                  <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
+                    {% if ativs[ns_cont.i-1].quantidade > 1 %}
+                     - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
                     {% endif %} </small>
  
                     {% if usuario.pesNome == demanda.pesNome %}
-                      <div class="card-footer text-white bg-secondary">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                          <div class="col"><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></div>
-                          <div class="col"><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></div>
-                        </div>
-                      </div>
+                    <p></p>
+                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></small>
+                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
+
                     {% endif %}  
                 </div>
 
-              {% elif ativs[cont.i-1].situa == 'Em execução' %}
+              {% elif ativs[ns_cont.i-1].situa == 'Em execução' %}
 
                 <div class="card-body text-white bg-primary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{cont.i}}/{{qtd_ativs}}</abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{ns_cont.i}}/{{qtd_ativs}}</abbr></a>
                   <span><br>
-                    <small>{{ativs[cont.i-1].quantidade}} - {{ativs[cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                      {% if ativs[cont.i-1].quantidade > 1 %}
-                       - {{ativs[cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
+                    <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
+                      {% if ativs[ns_cont.i-1].quantidade > 1 %}
+                       - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
                       {% endif %} </small><br>
-                  <small>(i) {{ativs[cont.i-1].dataInicio.strftime('%d/%m/%Y')}}</small>
+                  <small>(i) {{ativs[ns_cont.i-1].dataInicio.strftime('%d/%m/%Y')}}</small>
 
                   {% if usuario.pesNome == demanda.pesNome %}
-                    <div class="card-footer text-white bg-primary">
-                      <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                          <div class="col"><small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small></div>
-                          <div class="col"><small><a href="{{url_for('demandas.add_assunto',pacto_id=pacto_id,ativ_pacto_id=ativs[cont.i-1].id)}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">a</a></small></div>
-                      </div>
-                    </div>  
-                    {% endif %}
+
+                    <p></p>
+                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
+                    <small><a href="{{url_for('demandas.add_assunto',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">a</a></small>
+                    <small><a href="{{url_for('objetos.objeto_ativ_pacto',plano_id=demanda.planoTrabalhoId,pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-secondary btn-sm" role="button" aria-pressed="true">o</a></small>
+                    
+                  {% endif %}
+
                 </div> 
                 
-              {% elif ativs[cont.i-1].situa == 'Concluída' %}
+              {% elif ativs[ns_cont.i-1].situa == 'Concluída' %}
 
-                {% set conclu.i =  conclu.i + 1 %}
+                {% set ns_conclu.i =  ns_conclu.i + 1 %}
 
                 <div class="card-body text-white bg-success">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{cont.i}}/{{qtd_ativs}}</abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes">{{ns_cont.i}}/{{qtd_ativs}}</abbr></a>
                   </span><br>
-                  <small>{{ativs[cont.i-1].quantidade}} - {{ativs[cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                    {% if ativs[cont.i-1].quantidade > 1 %}
-                     - {{ativs[cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
+                  <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
+                    {% if ativs[ns_cont.i-1].quantidade > 1 %}
+                     - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
                     {% endif %} </small><br>
-                  <small>(i) {{ativs[cont.i-1].dataInicio.strftime('%d/%m/%Y')}}</small><br>
-                  <small>(f) {{ativs[cont.i-1].dataFim.strftime('%d/%m/%Y')}}</small>
+                  <small>(i) {% if ativs[ns_cont.i-1].dataInicio == None or ativs[ns_cont.i-1].dataInicio == '' %}
+                              ?
+                             {% else %} 
+                              {{ativs[ns_cont.i-1].dataInicio.strftime('%d/%m/%Y')}}
+                             {% endif %}
+                  </small><br>
+                  <small>(f) {% if ativs[ns_cont.i-1].dataFim == None or ativs[ns_cont.i-1].dataFim == '' %}
+                              ?
+                             {% else %}
+                              {{ativs[ns_cont.i-1].dataFim.strftime('%d/%m/%Y')}}
+                             {% endif %}
+                  </small>
+
+                  {% if (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
+                        <p></p>
+                        {% if ativs[ns_cont.i-1].nota != None and ativs[ns_cont.i-1].nota != '' %}
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">R</a></small>
+                        {% else %}
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">A</a></small>
+                        {% endif %}
+                  {% endif %}
+
+                  {% if usuario.pesNome == demanda.pesNome %}
+                    <p></p>
+                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='c')}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">c</a></small>
+                  {% endif %}
+
                 </div>  
 
               {% else %}
               
                 <div class="card-body text-white bg-warning">
-                    <div class="col">{{cont.i}} <small>{{ativs[cont.i-1].tempoPrevistoTotal}}</small></div>
+                    <div class="col">{{ns_cont.i}} <small>{{ativs[ns_cont.i-1].tempoPrevistoTotal}}</small></div>
                 </div>
               
               {% endif %}
@@ -100,67 +146,80 @@
             </div> 
 
 
-            {% if cont.i <= qtd_ativs %}
+            {% if ns_cont.i <= qtd_ativs %}
             {# modal para verificar tipo de solicitação #}
 
-            <div class="modal" tabindex="-1" role="dialog" id="ativ_modal{{cont.i}}">
+            <div class="modal" tabindex="-1" role="dialog" id="ativ_modal{{ns_cont.i}}">
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
                   <div class="modal-body">
 
                     <ul class="small list-group">
-                      {% if ativs[cont.i-1].chave != None and ativs[cont.i-1].chave != '' %}
+                      {% if ativs[ns_cont.i-1].chave != None and ativs[ns_cont.i-1].chave != '' %}
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            <div>Objeto:<b> {{ativs[cont.i-1].chave}}</b></div>
+                            Objeto:<b> {{ativs[ns_cont.i-1].chave}}</b>
+                            <br>{{ativs[ns_cont.i-1].obj_desc}}
                           </div>
                         </li> 
                       {% endif %}
 
                       <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Descrição: </span><br> {% if ativs[cont.i-1].tit == None%}Não informada{% else %}{{ativs[cont.i-1].tit}}{% endif %} </div>
+                          <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
                         </div>
                       </li> 
                       
-                      {% if ativs[cont.i-1].situa == 'Em execução' %}
+                      {% if ativs[ns_cont.i-1].situa == 'Em execução' %}
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Considerações: </span><br> {% if ativs[cont.i-1].desc == None%}Não informada{% else %}{{ativs[cont.i-1].desc}}{% endif %} </div>
+                            <div><span class="text-muted"> Considerações: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
                           </div>
                         </li>
-                      {% elif ativs[cont.i-1].situa == 'Concluída' %}
+                      {% elif ativs[ns_cont.i-1].situa == 'Concluída' %}
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Conclusão: </span><br> {% if ativs[cont.i-1].desc == None%}Não informada{% else %}{{ativs[cont.i-1].desc}}{% endif %} </div>
+                            <div><span class="text-muted"> Conclusão: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
                           </div>
                         </li>
                       {% endif %}
 
                       <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Modalidade: {% if ativs[cont.i-1].descricao == None%}N.I.{% else %}{{ativs[cont.i-1].descricao}}{% endif %} - </span>
-                              <span class="text-muted"> Quantidade: {% if ativs[cont.i-1].quantidade == None%}0{% else %}{{ativs[cont.i-1].quantidade}}{% endif %}</span> <br>
-                              <span class="text-muted"> Tempo previsto por item: {% if ativs[cont.i-1].tempoPrevistoPorItem == None%}0{% else %}{{ativs[cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
-                              <span class="text-muted"> Tempo previsto total: {% if ativs[cont.i-1].tempoPrevistoTotal == None%}0{% else %}{{ativs[cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
+                          <div><span class="text-muted"> Modalidade: {% if ativs[ns_cont.i-1].descricao == None%}N.I.{% else %}{{ativs[ns_cont.i-1].descricao}}{% endif %} - </span>
+                              <span class="text-muted"> Quantidade: {% if ativs[ns_cont.i-1].quantidade == None%}0{% else %}{{ativs[ns_cont.i-1].quantidade}}{% endif %}</span> <br>
+                              <span class="text-muted"> Tempo previsto por item: {% if ativs[ns_cont.i-1].tempoPrevistoPorItem == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
+                              <span class="text-muted"> Tempo previsto total: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
                         </div>
                       </li>
 
-                      {% if ativs[cont.i-1].situa == 'Concluída' %}
+                      {% if ativs[ns_cont.i-1].situa == 'Concluída' %}
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Tempo realizado: {% if ativs[cont.i-1].tempoRealizado == None%}0{% else %}{{ativs[cont.i-1].tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
-                                <span class="text-muted"> Tempo homologado: {% if ativs[cont.i-1].tempoHomologado == None%}0{% else %}{{ativs[cont.i-1].tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
-                                <span class="text-muted"> Nota: {% if ativs[cont.i-1].nota == None%}0{% else %}{{ativs[cont.i-1].nota|string()|replace(".",",")}}{% endif %} </span>
+                            <div><span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
+                                <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
+                                <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}0{% else %}{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}{% endif %} </span>
                           </div>
                         </li>
-                        {% if ativs[cont.i-1].justificativa != None and ativs[cont.i-1].justificativa !='' %}
+                        {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Justificativa: </span><br> {{ativs[cont.i-1].justificativa}} </div>
+                              <div><span class="text-muted"> Justificativa: </span><br> {{ativs[ns_cont.i-1].justificativa}} </div>
                             </div>
                           </li>
                         {% endif %}
+                      {% endif %}
+
+                      {% if qtd_assuntos > 0 %}
+                          <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                              <div><span class="text-muted"> Assuntos: </span>
+                                {% for a in assuntos %}
+                                  <br> {{a.valor}} 
+                                {% endfor %}  
+                              </div>
+                            </div>
+                          </li>
                       {% endif %}
 
                     </ul>
@@ -171,8 +230,6 @@
             </div>
 
             {% endif %}
-
-
           
             {% endfor %}
         </div>
@@ -180,10 +237,56 @@
 
       <br>
       <div class="progress" style="height: 18px; background-color: rgb(255, 255, 255);">
-        <div class="progress-bar bg-success" role="progressbar" aria-label="Progresso da atividade" style="width: {{(100 * conclu.i / qtd_ativs)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            {{(100 * conclu.i / qtd_ativs)|round|int}}%
+        <div class="progress-bar bg-success" role="progressbar" aria-label="Progresso da atividade" style="width: {{(100 * ns_conclu.i / qtd_ativs)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            {{(100 * ns_conclu.i / qtd_ativs)|round|int}}%
         </div>    
       </div>
+
+      {% if ns_conclu.i >0 and (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
+      <br>
+      <div class="row justify-content-center">
+        <a href="{{url_for('demandas.avalia_lote_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[0].id,item_cat_id=item_cat_id)}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">Avaliar, ou reavaliar, todas as concluídas?</a>
+      </div>
+      {% endif %}
+
+      {% if ns_programada.i > 0 and usuario.pesNome == demanda.pesNome %}
+      <br>
+      <div class="row justify-content-center">
+        <a data-toggle='modal' data-target='#finaliza_lote' class="btn btn-outline-secondary btn-sm" role="button" aria-pressed="true">Finalizar todas as programadas?</a>
+      </div>
+
+      {# modal para deleção de pg #}
+
+      <div class="modal" tabindex="-1" role="dialog" id="finaliza_lote">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <div class="p-3 mb-2 bg-danger text-white">
+              <h5 class="modal-title">Finalizar lote de atividade?</h5>
+              </div>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>Deseja realmente finalizar o lote de atividade programadas em tela?</p>
+              <p>As datas de início e fim serão as mesmas do Plano de Trabalho.</p>
+              <p>O tempo realizado será igual ao tempo previsto para cada uma.</p>
+              <p>A conclusão será registrada como "Atividade concluída".</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+              <form action="{{url_for('demandas.finaliza_lote_atividade',pacto_id=pacto_id,item_cat_id=item_cat_id)}}" method="post">
+                <input class="btn btn-danger" type="submit" name="" value="Finalizar">
+              </form>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% endif %}
 
     </div>
 

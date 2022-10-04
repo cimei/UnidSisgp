@@ -5,7 +5,11 @@
 
   <div class="jumbotron">
 
-    <h4>Avalia Atividade Concluída</h4>
+    <h4>Avalia Atividade Concluída
+      {% if tipo == 'lote' %}
+        (todas as ocorrências)
+      {% endif %}  
+    </h4>
 
     {% macro render_field(field,obr) %}
       {% if obr == True %}

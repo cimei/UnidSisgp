@@ -29,19 +29,35 @@
   </div>
 </caption>
 
-<div class="container" style="overflow-y:auto; width:2000px; height:400px">
+<div class="container" style="overflow-y:auto; width:2000px; height:600px">
 
-  <table class="table table-striped table-hover table-sm">
+  <table id="table"
+        data-toggle="table"
+        data-filter-control="true"
+        data-show-search-clear-button="true"
+        data-sortable="true"
+        classes="table-sm"
+        data-pagination="true"
+        data-show-columns="true"
+        data-show-columns-toggle-all="true"
+        class="table table-striped table-hover table-sm">
+  <!-- class="table-responsive">   -->
+    
     <caption>Objetos</caption>
     <thead>
       <tr>
+        
+        <!-- <th data-field="columnA" data-filter-control="input" data-sortable="true">column A</th>
+        <th data-field="columnB" data-filter-control="select" data-sortable="true">column B</th>
+        <th data-field="columnC" data-filter-control="input" data-sortable="true">column C</th> -->
+    
         <th scope="col"><p align = "center">#</p></th>
         {% if unid_dados != None%} 
           <th scope="col"><p align = "center">Unidade</p></th>
         {% endif %}  
-        <th scope="col"><p align = "center">Descrição</p></th>
+        <th data-field="Descrição" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Descrição</p></th>
         <th scope="col"><p align = "center">Tipo</p></th>
-        <th scope="col"><p align = "center">Chave</p></th>
+        <th scope="col" data-field="Chave" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Chave</p></th>
         <th scope="col"><p align = "center">Ativo</p></th>
       </tr>
     </thead>
@@ -52,10 +68,10 @@
       <tr>
         
         <th scope="row"><p align = "center"> 
-          {% if unid_dados != None or usuario != None %}
-            {{objetos.index(o) + 1}} 
+          {% if usuario == None %}
+            <a href="{{url_for('objetos.altera_objeto', objeto_id = o.objetoId)}}"><abbr title="Clique aqui atualizar">{{objetos.index(o) + 1}}</abbr></a>
           {% else %}
-            <a href="{{url_for('objetos.altera_objeto', objeto_id = o.objetoId, plano_id = pg)}}"><abbr title="Clique aqui atualizar">{{objetos.index(o) + 1}}</abbr></a>  
+            {{objetos.index(o) + 1}}
           {% endif %}
         </p></th>
 

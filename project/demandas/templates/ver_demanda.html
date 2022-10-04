@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container">
-
-  <div class="jumbotron">
+<div class="container-fluid">
+<div class="jumbotron">
 
     <div class="row">
 
       <div class="col-sm">
+
+        <!-- cartão do plano de trabalho -->
+        
         <div class="card border-primary">
 
           <div class="card-body" style="overflow-y:auto; height:616px">
@@ -87,25 +89,20 @@
             {% endif %}
             <p></p>
 
-
-            <!-- <p class="small">
-              <small>PG: {{post.planoTrabalhoId}}</small><br>
-              <small>PT: {{id}}</small> <br> 
-            </p> -->
-
             <p align="center">Plano de Trabalho</p>
 
             <ul class="small list-group">
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                  <div>Resp.: <b>{{post.pesNome}}</b> - Unidade: <b>{{post.undSigla}}</b></div>
+                    <p>Resp.: <b>{{post.pesNome}}</b></p>
+                    <span>Unidade: <b>{{post.undSigla}}</b></span>
                 </div>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                  <div>Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b><br>
-                    (período com <b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)</div>
-                </div>
+                  <p>Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b></p>
+                    (período com <b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)
+                 </div>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
@@ -137,60 +134,89 @@
               </li>
             </ul>
 
-            <br>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- card das atividades -->
+
+      <div class="col-sm">
+        <div class="card border-secondary">
+
+          <div class="card-body" style="overflow-y:auto; height:616px">
+
+            
             <p align="center"><b>{{qtd_items_cat}}</b>
               {% if qtd_items_cat == 1 %}
                 Atividade
               {% else %}
                 Atividades
               {% endif %}
-                no Plano (<b>{{qtd_dias_rest}}</b> 
-              {% if qtd_dias_rest == 1 %}
-                dia útil restante)
-              {% else %}
-                dias úteis restantes)
-              {% endif %}
+                - <b>{{qtd_ativs_pacto}}</b> ocorrências
+                {% if qtd_dias_rest < 0 %}
+                  - Prazo encerrado
+                {% else %}
+                    - <b>{{qtd_dias_rest}}</b> 
+                  {% if qtd_dias_rest == 1 %}
+                    dia útil restante
+                  {% else %}
+                    dias úteis restantes
+                  {% endif %}
+                {% endif %}  
             </p>
 
             <ul class="small list-group">
+
               {% for item in items_cat %}
+
                 <li class="list-group-item d-flex justify-content-between align-items-start">
+
                   <div class="ms-2 me-auto">
-                    <div><b>{{ item.titulo }}</b></div>
+
+                    <div>
+                      <b>{{ item.titulo }}</b>
+                    </div>
+
                     <div class="row">
-                      <div class="col">
+
+                      <div class="col-3">
                         {{item.tempoPrevistoPorItem|string()|replace(".",",")}} h item
                       </div>
-                      <div class="col">
+                      <div class="col-3">
                         {% if item.tam_grupo > 1 %}
                           {{(item.tam_grupo * item.tempoPrevistoPorItem)|string()|replace(".",",")}} h total
                         {% else %}
                           {{item.tempoPrevistoTotal|string()|replace(".",",")}} h total
                         {% endif %}
                       </div>
+                      {% if tem_assunto[item.titulo] or tem_objeto[item.titulo] %}
                       <div class="col">    
-                        <a href="{{url_for('demandas.lista_assuntos', pacto_id=id,item_cat_id=item.itemCatalogoId)}}"><abbr title="Clique aqui para ver informações sobre a execução desta atividade"></abbr><span>Assunto</span></abbr></a>
+                        <a href="{{url_for('demandas.lista_assuntos', pacto_id=id,item_cat_id=item.itemCatalogoId)}}"><abbr title="Clique aqui para ver informações sobre a execução desta atividade"></abbr><span>Assuntos e Objetos</span></abbr></a>
                       </div>
+                      {% endif %}
+
                     </div>
 
-                    <div class="progress" style="height: 12px;">
-                      <div class="progress-bar bg-success" role="progressbar" aria-label="Progresso da atividade" style="width: {{(100 * item.conclu / item.tam_grupo)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        {% if item.exec > 0 and item.conclu == 0 %}
-                          <span class="text-primary">{{(100 * item.conclu / item.tam_grupo)|round|int}}%</span>
-                        {% else %}
-                          {{(100 * item.conclu / item.tam_grupo)|round|int}}%
-                        {% endif %}
+                      <div class="progress" style="height: 12px; width: 500px;">
+                        <div class="progress-bar bg-success" role="progressbar" aria-label="Progresso da atividade" style="width: {{(100 * item.conclu / item.tam_grupo)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                          {% if item.exec > 0 and item.conclu == 0 %}
+                            <span class="text-primary">{{(100 * item.conclu / item.tam_grupo)|round|int}}%</span>
+                          {% else %}
+                            {{(100 * item.conclu / item.tam_grupo)|round|int}}%
+                          {% endif %}
+                        </div>
                       </div>
-                           
-                    </div>
                     
                   </div>
-                 
+               
                   <a href="{{url_for('demandas.ativ_ocor', pacto_id=id,item_cat_id=item.itemCatalogoId)}}"><abbr title="Clique aqui para ver ocorrências">
                   <span class="btn btn-outline-dark btn-sm">{{item.tam_grupo}}</span></abbr></a>
 
                 </li>
               {% endfor %} 
+            
             </ul>
 
           </div>
@@ -198,14 +224,17 @@
         </div>
       </div>
 
+<!-- Cartão de histórico, reuniões e solicitações -->
+
       <div class="col-sm">
         <div class="card border-info">
         <div class="card bg-light mb-3">
-          <div class="card-header"><div class="text-info">Histórico (<b>{{qtd_hist}}</b>), Reuniões (<b>{{qtd_reun}}</b>), Solicitações (<b>{{qtd_solic}}</b>) e Atividades (<b>{{qtd_ativs_pacto}}</b>)</div></div>
+          <div class="card-header"><div class="text-info">Histórico (<b>{{qtd_hist}}</b>), Reuniões (<b>{{qtd_reun}}</b>) e Solicitações (<b>{{qtd_solic}}</b>)</div></div>
           <div class="card-body"  style="overflow-y:auto; height:550px">
             <div class="list-group">
 
             {% for item in pro_des %}
+            {% if item.tipo != "Atividade" %}
 
                 <div class="list-group-item list-group-item-action">
 
@@ -237,6 +266,7 @@
                   <!-- Reuniões -->
 
                   {% elif item.tipo == 'Reunião' %}
+
                     {% if item.data != None%}
                       <div class="text-muted" style="text-align:right"> Data: {{item.data.strftime('%d/%m/%Y')}} </div>
                     {% else %}  
@@ -266,132 +296,11 @@
                     {% endif %}
 
 
-                  <!-- Atividades -->
-
-                  {% elif item.tipo == 'Atividade' %}
-
-                    {% if item.data != None %}
-                      <div class="text-muted" style="text-align:right"> Início: <b>{{item.data.strftime('%d/%m/%Y')}}</b> </div>
-                    {% elif item.situa != "Programada"  %}  
-                      <div class="text-muted" style="text-align:right"> Início não informado </div>
-                    {% endif %}
-
-                    <p><span class="card-text text-primary"> Atividade <b>{{item.situa}}</b></span><br>
-                      
-                    {% for a in ativs_simp %}
-                      {% if item.id|lower == a.id|lower %}  
-                        <span class="card-text">
-                          {% if item.situa == 'Concluída' %}  
-                            <b><span class="text-secondary">{{a.titulo}} - [{{a.seq}} de {{item.tam_grupo}}]</span></b>
-                          {% else %}
-                            <b>{{a.titulo}} - [{{a.seq}} de {{item.tam_grupo}}]</b>
-                          {% endif %}
-                        </span> </p>
-                      {% endif %}  
-                    {% endfor %}
-                    
-
-                    <ul class="small list-group">
-                      {% if item.obj != None and item.obj != '' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div>Objeto:<b> {{item.chave}}</b></div>
-                          </div>
-                        </li> 
-                      {% endif %}
-
-                      <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Descrição: </span><br> {% if item.tit == None%}Não informada{% else %}{{item.tit}}{% endif %} </div>
-                        </div>
-                      </li> 
-                      
-                      {% if item.situa == 'Em execução' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Considerações: </span><br> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </div>
-                          </div>
-                        </li>
-                      {% elif item.situa == 'Concluída' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Conclusão: </span><br> {% if item.desc == None%}Não informada{% else %}{{item.desc}}{% endif %} </div>
-                          </div>
-                        </li>
-                      {% endif %}
-
-                      <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Modalidade: {% if item.descricao == None%}N.I.{% else %}{{item.descricao}}{% endif %} - </span>
-                               <span class="text-muted"> Quantidade: {% if item.quantidade == None%}0{% else %}{{item.quantidade}}{% endif %}</span> <br>
-                               <span class="text-muted"> Tempo previsto por item: {% if item.tempoPrevistoPorItem == None%}0{% else %}{{item.tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
-                               <span class="text-muted"> Tempo previsto total: {% if item.tempoPrevistoTotal == None%}0{% else %}{{item.tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
-                        </div>
-                      </li>
-
-                      {% if item.situa == 'Concluída' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Tempo realizado: {% if item.tempoRealizado == None%}0{% else %}{{item.tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
-                                 <span class="text-muted"> Tempo homologado: {% if item.tempoHomologado == None%}0{% else %}{{item.tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
-                                 <span class="text-muted"> Nota: {% if item.nota == None%}0{% else %}{{item.nota|string()|replace(".",",")}}{% endif %} </span>
-                          </div>
-                        </li>
-                        {% if item.justificativa != None and item.justificativa !='' %}
-                          <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Justificativa: </span><br> {{item.justificativa}} </div>
-                            </div>
-                          </li>
-                        {% endif %}
-                      {% endif %}
-
-                    </ul>     
-
-                    {% if item.situa == 'Concluída' %} 
-                    <p>
-                      {% if item.dataFim != None%}
-                        <div class="text-muted" style="text-align:right"> Fim: <b>{{item.dataFim.strftime('%d/%m/%Y')}}</b> </div>
-                      {% else %}  
-                        <div class="text-muted" style="text-align:right"> Fim não informado </div>
-                      {% endif %}
-                    </p>
-                    {% else %}
-                    <br>
-                    {% endif %}
-
-                    {% if usuario.unidadeId == post.unidadeId %}
-                      <div class="row">
-                        <div class="col-3">
-                        </div>
-                        <div class="col-3" align="right">
-                          {% if item.situa == 'Programada' and usuario.pesNome == post.pesNome %}
-                            <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=id,ativ_pacto_id=item.id,acao='i')}}" class="btn btn-outline-success btn-sm" role="button" aria-pressed="true">Iniciar?</a>
-                          {% endif %}  
-                        </div>
-                        <div class="col-3" align="right">
-                          {% if (item.situa == 'Programada' or item.situa == 'Em execução') and usuario.pesNome == post.pesNome %}
-                            <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=id,ativ_pacto_id=item.id,acao='f')}}" class="btn btn-outline-info btn-sm" role="button" aria-pressed="true">Concluir?</a>
-                          {% endif %}
-                          {% if item.situa == 'Concluída' and (usuario.tipoFuncaoId != None or usuario.pessoaId == post.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != post.pesNome %}
-                            {% if item.nota != None and item.nota != '' %}
-                              <a href="{{url_for('demandas.avalia_atividade',pacto_id=id,ativ_pacto_id=item.id)}}" class="btn btn-outline-warning btn-sm" role="button" aria-pressed="true">Reavaliar?</a>
-                            {% else %}
-                              <a href="{{url_for('demandas.avalia_atividade',pacto_id=id,ativ_pacto_id=item.id)}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">Avaliar?</a>
-                            {% endif %}  
-                          {% endif %}
-                        </div>
-                        <div class="col-3" align="right">
-                          {% if item.obj == None and current_user.is_authenticated and obj_pg_count != 0 %}
-                            <a href="{{url_for('objetos.objeto_ativ_pacto',plano_id=post.planoTrabalhoId,pacto_id=id,pacto_ativ_id=item.id)}}" class="btn btn-secondary btn-sm" role="button" aria-pressed="true">Objeto</a>
-                          {% endif %}  
-                        </div>
-                      </div>
-                    {% endif %}   
                     
                   <!-- Solicitações -->
 
-                  {% else %}  
+                  {% elif item.tipo[:7] == 'Solicit' %} 
+
                     {% if item.data != None%}
                       <div class="text-muted" style="text-align:right"> Data: {{item.data.strftime('%d/%m/%Y')}} </div>
                     {% else %}  
@@ -450,7 +359,7 @@
                                 {% if d[1]['pactoTrabalhoAtividadeId'] == a.id|lower %}
                                   <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-2 me-auto">
-                                      <div><span class="text-muted"> Atividade: </span><br> <b>({{a.seq}}) {{a.titulo}}</b>  </div>
+                                      <div><span class="text-muted"> Atividade: </span><br> <b>{{a.titulo}}</b>  </div>
                                     </div>
                                   </li>
                                 {% endif %}   
@@ -504,9 +413,7 @@
                       {% endif %}
 
                     </ul>
-
-                    
-
+                    <br>
                     {% if usuario.unidadeId in tree_sup_ids %}
                       <div class="row">
                         <div class="col-6">
@@ -520,12 +427,12 @@
                         </div>
                     </div>
                    {% endif %}  
-
-
+                
                   {% endif %}  
                   
                 </div>
 
+            {% endif %}    
             {% endfor %}
             </div>
           </div>
@@ -534,7 +441,7 @@
       </div>
     </div>
 
-  </div>
+</div>
 </div>
 
 {% endblock %}

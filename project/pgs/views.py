@@ -141,8 +141,18 @@ def plano_trabalho(lista,coord):
 
     quantidade = len(planos_trab_unid)
 
+    sit_pg_dict = {}
+    sit_pg = db.session.query(catdom.descricao).filter(catdom.classificacao == 'SituacaoPlanoTrabalho').all()
+    for s in sit_pg:
+        sit_pg_dict[s.descricao] = s.descricao
 
-    return render_template('plano_trabalho.html', lista=lista, unid_dados = unid_dados, planos_trab_unid=planos_trab_unid, quantidade=quantidade)
+    print('*** ', sit_pg_dict)
+
+    return render_template('plano_trabalho.html', lista=lista, 
+                                                  unid_dados = unid_dados,
+                                                  planos_trab_unid=planos_trab_unid,
+                                                  quantidade=quantidade,
+                                                  sit_pg_dict=sit_pg_dict)
 
 
 

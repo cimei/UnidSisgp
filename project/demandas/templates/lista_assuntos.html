@@ -1,8 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="container">
+
 <div class="jumbotron">
 
-  <h5><b>Assuntos na atividade</b> {{ativ.titulo}} <b>do plano informado </b></h5>
+  <h5><b>Assuntos e Objetos</b> na atividade <b>{{ativ.titulo}}</b> do plano informado</h5>
+
+  {% if qtd_objetos > 0 %}
+    <hr>
+    {% for o in objetos  %}
+      {% if o.chave != None %}  
+        <p><b>Objeto:</b> {{o.chave}} - {{o.descricao}} ({{o.qtd_ativs}})</p>
+      {% endif %}
+    {% endfor %}
+    <hr>
+  {% endif %}
 
   <caption>
     <div class="row">
@@ -12,14 +24,13 @@
     </div>
   </caption>
 
-  <div class="container" style="overflow-y:auto; width:2000px; height:400px">
+  <div class="container" style="overflow-y:auto; height:400px">
 
     <table class="table table-striped table-hover table-sm">
       <caption>Assuntos</caption>
       <thead>
         <tr>
           <th scope="col"><p align = "center">#</p></th>
-          <th scope="col"><p align = "center">Início</p></th>
           <th scope="col"><p align = "left">Registros</p></th>
         </tr>
       </thead>
@@ -30,7 +41,6 @@
         <tr>
           
           <th scope="row"><p align = "center">{{assuntos.index(a) + 1}}</p></th>
-          <td><p align = "center"> {{a.dataInicio.strftime('%d/%m/%Y')}} </p></td>
           <td><p align = "left"> {{a.valor}} </p></td>
 
         </tr>
@@ -41,6 +51,8 @@
     </table>
 
   </div>
+
+</div>
 
 </div>
 {% endblock %}

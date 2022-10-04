@@ -81,7 +81,8 @@ def lista_objetos(coord):
         pai =  prox_pai    
 
     # resgata objetos 
-    objetos = db.session.query(Objetos.descricao,
+    objetos = db.session.query(Objetos.objetoId,
+                               Objetos.descricao,
                                Objetos.tipo,
                                Objetos.chave,
                                Objetos.ativo,
@@ -125,7 +126,7 @@ def lista_objetos_pg(pg):
 
 ## lista objetos por Pessoa
 
-@objetos.route('/<pessoa>/lista_objetos_pessoa')
+@objetos.route('/<int:pessoa>/lista_objetos_pessoa')
 def lista_objetos_pessoa(pessoa):
     """
     +---------------------------------------------------------------------------------------+
@@ -134,11 +135,23 @@ def lista_objetos_pessoa(pessoa):
     +---------------------------------------------------------------------------------------+
     """
 
-    # usuário selecionado
-    usuario = db.session.query(Pessoas).filter(Pessoas.pessoaId == int(pessoa)).first_or_404()
+    #pega e-mail do usuário logado
+    email = current_user.userEmail
+
+    # possibilidade de consultar outra pessoa
+    if pessoa != 0:
+        #pega dados da pessoa informada
+        pes = db.session.query(Pessoas.unidadeId,Pessoas.pessoaId,Pessoas.pesNome)\
+                        .filter(Pessoas.pessoaId == pessoa).first()
+        if pes == None:
+            abort(404)
+    else:
+        #pega dados da pessoa logada
+        pes = db.session.query(Pessoas.unidadeId,Pessoas.pessoaId,Pessoas.pesNome)\
+                        .filter(Pessoas.pesEmail == email).first()
 
     # unidade do usuário
-    unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == usuario.unidadeId).first()
+    unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == pes.unidadeId).first()
 
     # resgata objetos 
     objetos = db.session.query(distinct(Objetos.objetoId),
@@ -150,14 +163,14 @@ def lista_objetos_pessoa(pessoa):
                         .join(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.planoTrabalhoObjetoId == Objeto_PG.planoTrabalhoObjetoId)\
                         .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
                         .join(Pactos_de_Trabalho, Pactos_de_Trabalho.pactoTrabalhoId == Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
-                        .filter(Pactos_de_Trabalho.pessoaId == pessoa)\
+                        .filter(Pactos_de_Trabalho.pessoaId == pes.pessoaId)\
                         .all()
 
     quantidade = len(objetos)
 
 
     return render_template('lista_objetos.html', unid_dados=None, objetos=objetos, quantidade=quantidade, pg=None,
-                                                 usuario=usuario, unid=unid)
+                                                 usuario=pes, unid=unid)
 
 
 ## cria objeto
@@ -209,9 +222,9 @@ def add_objeto(plano_id,pacto_id):
 
 ## altera objeto
 
-@objetos.route('/<objeto_id>/<plano_id>/altera_objeto',methods=['GET','POST'])
+@objetos.route('/<objeto_id>/altera_objeto',methods=['GET','POST'])
 @login_required
-def altera_objeto(objeto_id,plano_id):
+def altera_objeto(objeto_id):
     """
     +---------------------------------------------------------------------------------------+
     |Altera dados de um objeto.                                                             |
@@ -236,14 +249,14 @@ def altera_objeto(objeto_id,plano_id):
 
         flash('Objeto alterado!','sucesso')
 
-        return redirect(url_for('objetos.lista_objetos_pg',pg=plano_id))
+        return redirect(url_for('objetos.lista_objetos',coord='*'))
 
     form.desc.data  = objeto.descricao
     form.tipo.data  = objeto.tipo
     form.chave.data = objeto.chave
     form.ativo.data = objeto.ativo    
 
-    return render_template('add_objeto.html', form=form, plano_id=plano_id)    
+    return render_template('add_objeto.html', form=form)    
 
 ## relacionar objeto com atividade de um Pacto
 
@@ -263,18 +276,25 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
                      .first()
 
     ocorrencias = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
-                           .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId)\
+                           .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
+                                   Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
                            .all()
 
-    # pega objetos do pg
-    objetos = db.session.query(Objetos.descricao,
+    # pega a unidade do pacto
+    pacto = db.session.query(Pactos_de_Trabalho.unidadeId).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
+
+    # identifica objetos da unidade
+    objetos = db.session.query(Objetos.chave,
+                               Objetos.descricao,
                                Objeto_PG.planoTrabalhoObjetoId)\
                         .join(Objeto_PG, Objeto_PG.objetoId == Objetos.objetoId)\
-                        .filter(Objeto_PG.planoTrabalhoId == plano_id)\
-                        .all()
+                        .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Objeto_PG.planoTrabalhoId)\
+                        .filter(Planos_de_Trabalho.unidadeId == pacto.unidadeId)\
+                        .order_by(Objetos.descricao)\
+                        .all()                    
 
     # o choices do campo obj são definidos aqui e não no form
-    lista_obj = [(o.planoTrabalhoObjetoId,o.descricao) for o in objetos]
+    lista_obj = [(o.planoTrabalhoObjetoId,(o.chave +' - '+ o.descricao)) for o in objetos]
     lista_obj.insert(0,('',''))
 
     form = ObjetoEscolhaForm()
@@ -283,31 +303,36 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
 
     if form.validate_on_submit(): 
 
-        if form.replicar.data:
+        for ocorrencia in ocorrencias:
 
-            for ocorrencia in ocorrencias:
+            obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+                                .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
+                                .first()
 
-                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId= uuid.uuid4(),
-                                                        planoTrabalhoObjetoId= form.obj.data,
-                                                        pactoTrabalhoAtividadeId= ocorrencia.pactoTrabalhoAtividadeId)
+            if obj_atual:
+                obj_atual.planoTrabalhoObjetoId = form.obj.data
+            else:
+                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
+                                                        planoTrabalhoObjetoId = form.obj.data,
+                                                        pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
 
                 db.session.add(obj_ativ_pacto)
-                db.session.commit()
 
-            registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e todas as demais ocorrências.')  
+            db.session.commit()
 
-        else:                  
+            if form.replicar.data:
+                registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e todas as demais ocorrências.')  
+            else:
+                registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
 
-            obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId= uuid.uuid4(),
-                                                    planoTrabalhoObjetoId= form.obj.data,
-                                                    pactoTrabalhoAtividadeId= pacto_ativ_id)
-
-            db.session.add(obj_ativ_pacto)
-            db.session.commit()                        
-
-            registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')                
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+
+    obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+                                .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == pacto_ativ_id)\
+                                .first()
+    if obj_atual:
+        form.obj.data = obj_atual.planoTrabalhoObjetoId
 
     return render_template('obj_ativ_pacto.html',form=form)
 
@@ -323,15 +348,21 @@ def objeto_reuniao(plano_id,reuniao_id,pacto_id):
     +---------------------------------------------------------------------------------------+
     """
 
+    # pega a unidade do pacto
+    pacto = db.session.query(Pactos_de_Trabalho.unidadeId).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
+
     # identifica objetos do PG
-    objetos = db.session.query(Objetos.descricao,
+    objetos = db.session.query(Objetos.chave,
+                               Objetos.descricao,
                                Objeto_PG.planoTrabalhoObjetoId)\
                         .join(Objeto_PG, Objeto_PG.objetoId == Objetos.objetoId)\
-                        .filter(Objeto_PG.planoTrabalhoId == plano_id)\
+                        .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Objeto_PG.planoTrabalhoId)\
+                        .filter(Planos_de_Trabalho.unidadeId == pacto.unidadeId)\
+                        .order_by(Objetos.descricao)\
                         .all()
 
     # o choices do campo obj são definidos aqui e não no form
-    lista_obj = [(o.planoTrabalhoObjetoId,o.descricao) for o in objetos]
+    lista_obj = [(o.planoTrabalhoObjetoId,(o.chave +' - '+ o.descricao)) for o in objetos]
     lista_obj.insert(0,('',''))
 
     form = ObjetoEscolhaForm()
