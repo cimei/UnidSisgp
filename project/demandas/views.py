@@ -415,6 +415,7 @@ def demanda(pacto_id):
                             sum_ativs_c_tempo_total = sum_ativs_c_tempo_total,
                             sum_ativs_tempo_total   = sum_ativs_tempo_total,
                             ativs_simp = ativs_simp,
+                            qtd_ativs_pacto = qtd_ativs_pacto,
                             qtd_hist = qtd_hist,
                             qtd_reun = qtd_reun,
                             qtd_solic = qtd_solic,

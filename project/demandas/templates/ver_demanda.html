@@ -106,7 +106,14 @@
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                  <div>Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b> - Sit.: <b>{{post.descricao}}</b></div>
+                  <div>
+                    Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b> - Sit.: 
+                    {% if post.descricao == 'Em execução' %}
+                      <span class="text-success"><b>{{post.descricao}}</b></span>
+                    {% else %}
+                      <b>{{post.descricao}}</b>
+                    {% endif %}
+                  </div>
                 </div>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-start">

@@ -3,6 +3,9 @@ from flask import render_template
 from datetime import datetime
 import os
 
+import webbrowser
+from threading import Timer
+
 # filtros cusomizado para o jinja
 #
 @app.template_filter('verifica_serv_bd')
@@ -20,5 +23,9 @@ def str_to_date(valor):
 def index():
     return render_template('home.html')
 
+def open_browser():
+    webbrowser.open_new('http://127.0.0.1:5002/')
+
 if __name__ == '__main__':
-    app.run(port = 5002, host='0.0.0.0')
+    Timer(1, open_browser).start();
+    app.run(port = 5002)
