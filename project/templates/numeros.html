@@ -52,33 +52,18 @@
     <div class="col-3"> 
       <div class="card bg-transparent border-dark">
 
-        <div class="card-header bg-transparent">
-          <p align = "center"><b>Candidaturas</b></p>
-        </div>
-
         <div class="card-body bg-transparent">
-          <table class="table table-striped table-hover table-sm">
-            <thead>
-              <tr>
-                <th scope="col"><p align = "center">Situação</p></th>
-                <th scope="col"><p align = "right">qtd</p></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in candidaturas %}
-                <tr>
-                  <td><p align = "center"> {{ c.descricao }} </p></td>
-                  <td><p align = "right"> {{ c.qtd_cand }} </p></td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          </div>
-
-        <div class="card-footer bg-transparent">
-          <p align = "right">Total: {{ candidaturas|sum(attribute='qtd_cand') }}</p>
+          <b>Objetos:</b> 
+          {% if objetos != 0 and lista == "pessoa" %}
+              <a class="" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=pes_id)}}">
+                <abbr title="Clique aqui para ver os objetos deste PG.">
+                  {{objetos}} 
+                </abbr></a>
+          {% else %}
+            {{objetos}}
+          {% endif %}  
         </div>
-        
+
       </div>    
     </div>
 
@@ -170,7 +155,7 @@
       </div>    
     </div>
 
-    <div class="col-3">
+    <div class="col-6">
       <div class="card bg-transparent border-dark">
 
         <div class="card-header bg-transparent">
@@ -202,25 +187,6 @@
 
       </div>    
     </div>
-
-    <div class="col-3">
-      <div class="card bg-transparent border-dark">
-
-        <div class="card-body bg-transparent">
-          <b>Objetos:</b> 
-          {% if objetos != 0 and lista == "pessoa" %}
-              <a class="" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=pes_id)}}">
-                <abbr title="Clique aqui para ver os objetos deste PG.">
-                  {{objetos}} 
-                </abbr></a>
-          {% else %}
-            {{objetos}}
-          {% endif %}  
-        </div>
-
-      </div>    
-    </div>
-  
 
   </div>
 

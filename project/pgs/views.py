@@ -19,28 +19,27 @@ from flask import render_template, url_for, flash, request, redirect, Blueprint,
 from flask_login import current_user, login_required
 from flask_mail import Message
 from threading import Thread
-from sqlalchemy import or_, and_, func, literal
+from sqlalchemy import or_, and_, func, literal, cast, type_coerce, String
 from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db, mail, app
-from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho,\
-                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Metas, Objeto_PG
+from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Hist, Unidades, Pessoas, Planos_de_Trabalho,\
+                           Atividades, VW_Unidades, cat_item_cat, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Metas, Objeto_PG, unidade_ativ
+
+from project.pgs.forms import PGForm                               
+
+from project.usuarios.views import registra_log_unid                           
 
 from datetime import datetime, date, timedelta
-# from fpdf import FPDF
-
-import pickle
-import os.path
-import sys
 
 import uuid
-import ast
 
 pgs = Blueprint("pgs",__name__,template_folder='templates')
 
 ## lista plano de trabalho
 
 @pgs.route('/<lista>/<coord>/plano_trabalho')
+@login_required
 def plano_trabalho(lista,coord):
     """
     +---------------------------------------------------------------------------------------+
@@ -50,6 +49,9 @@ def plano_trabalho(lista,coord):
     """
     #pega e-mail do usuário logado
     email = current_user.userEmail
+
+    #pega dados em Pessoas do usuário logado
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
 
     #pega unidade do usuário logado
     unid_id    = db.session.query(Pessoas.unidadeId).filter(Pessoas.pesEmail == email).first()
@@ -135,7 +137,7 @@ def plano_trabalho(lista,coord):
                                  .outerjoin(pactos,pactos.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .outerjoin(objetos,objetos.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .filter(Planos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]), catdom.descricao.like(lista))\
-                                 .order_by(Unidades.unidadeId,catdom.descricao, Planos_de_Trabalho.dataInicio.desc())\
+                                 .order_by(Unidades.unidadeId,Planos_de_Trabalho.situacaoId, Planos_de_Trabalho.dataInicio.desc())\
                                  .all() 
 
 
@@ -146,19 +148,19 @@ def plano_trabalho(lista,coord):
     for s in sit_pg:
         sit_pg_dict[s.descricao] = s.descricao
 
-    print('*** ', sit_pg_dict)
-
     return render_template('plano_trabalho.html', lista=lista, 
                                                   unid_dados = unid_dados,
                                                   planos_trab_unid=planos_trab_unid,
                                                   quantidade=quantidade,
-                                                  sit_pg_dict=sit_pg_dict)
+                                                  sit_pg_dict=sit_pg_dict,
+                                                  usuario=usuario)
 
 
 
 ## lista atividades de um pg
 
 @pgs.route('/<pg>/lista_atividades_pg')
+@login_required
 
 def lista_atividades_pg(pg):
     """
@@ -188,6 +190,7 @@ def lista_atividades_pg(pg):
 ## lista metas de um pg
 
 @pgs.route('/<pg>/lista_metas_pg')
+@login_required
 
 def lista_metas_pg(pg):
     """
@@ -215,6 +218,7 @@ def lista_metas_pg(pg):
 ## lista pactos de um pg
 
 @pgs.route('/<pg>/lista_pactos_pg')
+@login_required
 
 def lista_pactos_pg(pg):
     """
@@ -253,4 +257,169 @@ def lista_pactos_pg(pg):
 
     return render_template('lista_pactos_pg.html', pg=pg, quantidade = quantidade,
                                                 pactos_lista = pactos_lista)                                                
+
+
+## criar um pg
+
+@pgs.route('/cria_pg', methods=['GET','POST'])
+@login_required
+
+def cria_pg():
+    """
+    +---------------------------------------------------------------------------------------+
+    |Criando um programa de gestão (plano de trabalho no DBSISGP).                          |
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """ 
+
+    hoje = datetime.now()
+
+    #pega unidade e id pessoa do usuário logado
+    unid = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    #pega total de servidores do setor
+    total_serv_setor = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).count()
+
+    #pega atividades associadas a unidade do usuário
+    ativs_unid = db.session.query(Atividades.itemCatalogoId,
+                                  label('desc',Atividades.titulo+' - '+Atividades.complexidade+' - (R: '+\
+                                        cast(Atividades.tempoRemoto, String)+'h - P: '+ cast(Atividades.tempoPresencial, String)+'h)'))\
+                           .join(cat_item_cat, cat_item_cat.itemCatalogoId == Atividades.itemCatalogoId)\
+                           .join(unidade_ativ, unidade_ativ.catalogoId == cat_item_cat.catalogoId)\
+                           .filter(unidade_ativ.unidadeId == unid.unidadeId)\
+                           .order_by(Atividades.titulo)\
+                           .all()          
+
+    #pega modalidades de execução
+    mod = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all() 
+
+    form = PGForm()
+
+    form.ativs.choices = [(a.itemCatalogoId,a.desc) for a in ativs_unid]
+
+    lista_modalidades = [(m.catalogoDominioId,m.descricao) for m in mod]
+    lista_modalidades.insert(0,('',''))
+    form.modalidade.choices = lista_modalidades
+
+    if form.validate_on_submit():
+
+        #cria registro em Planos_de_Trabalho já como "Em Execução"
+        pg = Planos_de_Trabalho(planoTrabalhoId = uuid.uuid4(),
+                                unidadeId            = unid.unidadeId,
+                                situacaoId           = 309,
+                                avaliacaoId          = None,
+                                dataInicio           = form.data_ini.data,
+                                dataFim              = form.data_fim.data,
+                                tempoComparecimento  = form.tempo_comp.data,
+                                totalServidoresSetor = total_serv_setor,
+                                tempoFaseHabilitacao = 1,
+                                termoAceite          = form.termo_aceite.data)
+
+        db.session.add(pg)
+
+        #cria registro em Planos_de_Trabalho_Hist
+        hist = Planos_de_Trabalho_Hist(planoTrabalhoHistoricoId = uuid.uuid4(),
+                                       planoTrabalhoId     = pg.planoTrabalhoId,
+                                       situacaoId          = pg.situacaoId,
+                                       observacoes         = 'Criado de forma direta',
+                                       responsavelOperacao = unid.pessoaId,
+                                       DataOperacao        = hoje)
+
+        db.session.add(hist)
+
+        #cria registros em Planos_de_Trabalho_Ativs
+        pg_ativs = Planos_de_Trabalho_Ativs(planoTrabalhoAtividadeId = uuid.uuid4(),
+                                            planoTrabalhoId         = pg.planoTrabalhoId,
+                                            modalidadeExecucaoId    = form.modalidade.data,
+                                            quantidadeColaboradores = total_serv_setor,
+                                            descricao               = None)
+
+        db.session.add(pg_ativs)
+
+        #cria registros em Planos_de_Trabalho_Ativs_Itens
+        for a in form.ativs.data:
+
+            pg_ativs_item = Planos_de_Trabalho_Ativs_Items (planoTrabalhoAtividadeItemId = uuid.uuid4(),
+                                                            planoTrabalhoAtividadeId = pg_ativs.planoTrabalhoAtividadeId,
+                                                            itemCatalogoId = a)
+
+            db.session.add(pg_ativs_item)
+
+        db.session.commit()                                                  
+          
+        registra_log_unid(current_user.id,'Programa de Gestão criado.')                                 
+
+        return redirect(url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*'))
+
+    return render_template('add_pg.html',form=form)
+
+
+
+## finalizar programas de gestão vencidos
+
+@pgs.route('/finaliza_pgs',methods=['GET','POST'])
+@login_required
+
+def finaliza_pgs():
+    """
+    +---------------------------------------------------------------------------------------+
+    |Finaliza programas de gestão que estão com vigência expirada.                          |
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """
+
+    hoje = datetime.now()
+
+    #pega e-mail do usuário logado
+    email = current_user.userEmail
+
+    #pega unidade do usuário logado
+    unid = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
+
+    # subquery para identificar PGs que tem planos(pactos) associados
+    pactos = db.session.query(Pactos_de_Trabalho.planoTrabalhoId,
+                              label('qtd_pactos',func.count(Pactos_de_Trabalho.pactoTrabalhoId)))\
+                       .filter(Pactos_de_Trabalho.unidadeId == unid.unidadeId)\
+                       .group_by(Pactos_de_Trabalho.planoTrabalhoId)\
+                       .subquery()
+
+    pgs_unid = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
+                                Planos_de_Trabalho.unidadeId,
+                                Planos_de_Trabalho.dataFim,
+                                Planos_de_Trabalho.situacaoId,
+                                pactos.c.qtd_pactos)\
+                         .filter(Planos_de_Trabalho.unidadeId == unid.unidadeId, Planos_de_Trabalho.dataFim < hoje)\
+                         .outerjoin(pactos,pactos.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
+                         .order_by(Planos_de_Trabalho.situacaoId)\
+                         .all() 
+
+    quantidade = len(pgs_unid)
+
+    for pg in pgs_unid:
+
+        pg_finalizar = db.session.query(Planos_de_Trabalho).filter(Planos_de_Trabalho.planoTrabalhoId == pg.planoTrabalhoId).first()
+
+        if pg.qtd_pactos == 0 or pg.qtd_pactos == None:
+            pg_finalizar.situacaoId = 311  ## Concluído
+        else:
+            pg_finalizar.situacaoId = 310  ## Executado
+
+        #cria registro em Planos_de_Trabalho_Hist
+        hist = Planos_de_Trabalho_Hist(planoTrabalhoHistoricoId = uuid.uuid4(),
+                                       planoTrabalhoId     = pg_finalizar.planoTrabalhoId,
+                                       situacaoId          = pg_finalizar.situacaoId,
+                                       observacoes         = 'Finalizado por vigência expirada',
+                                       responsavelOperacao = unid.pessoaId,
+                                       DataOperacao        = hoje)
+
+        db.session.add(hist)
+
+        db.session.commit()    
+
+    registra_log_unid(current_user.id,'Procedimento de finalização de PGs vencidos foi realizado. '+str(quantidade)+' registros afetados.')
+    flash(str(quantidade) +' Programas de Gestão foram Concluídos ou Executados por estarem com vigência encerrada!','sucesso')
+
+    return redirect(url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*'))
+
+
 

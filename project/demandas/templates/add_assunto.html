@@ -41,11 +41,14 @@
           </div>
       
       </form>  
-<hr>
-      {% if ativ.chave != None %}  
-        <p><b>Objeto:</b> {{ativ.chave}} - {{ativ.descricao}}</p>
+      {% if objetos != None %}  
+      <hr>
+      <h6><b>Objetos:</b></h6>
+        {% for o in objetos %}
+          <p>{{o.chave}} - {{o.descricao}}</p>
+        {% endfor %}
+      <hr>
       {% endif %}
-<hr>
       <caption>
               <p>Lista do(s) <span class="badge badge-pill badge-primary">{{quantidade}}</span> assunto(s) registrado(s). </p>
       </caption>

@@ -5,7 +5,7 @@
 
   <div class="jumbotron">
 
-    <h4>Relacionar objeto com atividade de Pacto de Trabalho ou com Reunião</h4>
+    <h4>Relacionar objeto com atividade de Plano de Trabalho ou com Reunião</h4>
 
     {% macro render_field(field,obr) %}
       {% if obr == True %}
@@ -43,6 +43,15 @@
         
       
     </form>  
+
+    {% if obj_atual != None %}  
+    <hr>
+    <h5>Objetos já relacionados:</h5>
+      {% for o in obj_atual %}
+        <p>{{o.chave}} - {{o.descricao}}</p>
+      {% endfor %}
+    <hr>
+    {% endif %}
 
   </div>
 

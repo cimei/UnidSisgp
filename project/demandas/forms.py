@@ -35,7 +35,7 @@ import datetime
 from email.policy import default
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField, SelectField, BooleanField, DecimalField,\
-                    TextAreaField, SubmitField, RadioField
+                    TextAreaField, SubmitField, RadioField, SelectMultipleField, FieldList, FormField, Form
 from wtforms.fields.html5 import DateField, DateTimeField                    
 from wtforms.validators import DataRequired, Regexp, Optional
 from project import db
@@ -118,7 +118,32 @@ class AddAssuntoForm(FlaskForm):
     # chave = StringField('Chave:', validators=[DataRequired(message="Insira uma chave!")])
     # ativo = BooleanField('Ativo?')
 
-    submit      = SubmitField('Registrar')    
+    submit      = SubmitField('Registrar')  
+
+
+class AtivForm(Form):
+    ativ_id    = StringField('itemCatalogoId')
+    titulo     = StringField('Titulo')
+    tempo_rem  = StringField('Tempo remoto')
+    tempo_pre  = StringField('Tempo presencial')
+    modalidade = SelectField('Modalidade', choices=[(103, 'Remoto'), (101, 'Presencial')])
+    quantidade = IntegerField('Quantidade')
+    selecionar = SelectField(choices=[('n', 'Não'), ('s', 'Sim')])
+
+class CriaPlanoForm(FlaskForm):
+    data_ini = DateField('Data início', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de início!")])
+    data_fim = DateField('Data fim', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de fim!")])
+    ativs    = FieldList(FormField(AtivForm))
+
+    submit      = SubmitField('Registrar')
+
+class AnalisaPlano(FlaskForm):
+    obs     = TextAreaField('Observações', validators=[DataRequired(message="Faça uma observação!")])
+    parecer = SelectField('Parecer sobre plano proposto?',choices=[('403', 'Aceitar'),('404', 'Rejeitar')])
+
+    submit  = SubmitField('Registrar')
+
+
 
 
 # class PesquisaForm(FlaskForm):

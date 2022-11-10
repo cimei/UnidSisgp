@@ -1,94 +1,145 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="container">
 <div class="jumbotron">
-  <h5><b>Programas de Gestão da Unidade {{unid_dados.undSiglaCompleta}} e suas subordinadas</b></h5>
-
-<caption>
   <div class="row">
-      <div class="col">
-        <p>Lista dos <span class="badge badge-pill badge-primary">{{quantidade}}</span> PGs. 
-          {% if lista == '%' %}
-            (Todas)
-          {% else %}
-            ({{lista}})
-          {% endif %}</p>
-      </div>
+    <div class="col-9">
+      <h5><b>Programas de Gestão da Unidade {{unid_dados.undSiglaCompleta}} e suas subordinadas</b></h5>
+    </div>
+    <div class="col-3">
+      {% if usuario.tipoFuncaoId != None %}
+        <button type="button" class="btn btn-outline-danger" data-toggle='modal' data-target='#finaliza_pg_modal'>Finalizar PGs vencidos</button>
+      {% endif %}
+    </div>
   </div>
-</caption>
 
-<div class="container" style="overflow-y:auto; width:2000px; height:400px">
+  {# modal confirmar finalização de pgs vencidos #}
 
-  <table id="table"
-        data-toggle="table"
-        data-show-search-clear-button="true"
-        data-sortable="true"
-        classes="table-sm"
-        data-pagination="true"
-        data-show-columns="true"
-        data-show-columns-toggle-all="true"
-        class="table table-striped table-hover table-sm">
-    <caption>Programas de Gestão (Atividades)</caption>
-    <thead>
-      <tr>
-        <th scope="col"><p align = "center">#</p></th>
-        <th scope="col" data-sortable="true"><p align = "center">Unidade</p></th>
-        <th scope="col" data-sortable="true"><p align = "center">Situação</p></th>
-        <th scope="col" data-sortable="true"><p align = "center">Início</p></th>
-        <th scope="col" data-sortable="true"><p align = "center">Fim</p></th>
-        <th scope="col"><p align = "center">Atividades</p></th>
-        <th scope="col"><p align = "center">Metas</p></th>
-        <th scope="col"><p align = "center">Pactos</p></th>
-        <th scope="col"><p align = "center">Objetos</p></th>
-      </tr>
-    </thead>
-    <tbody>
+  <div class="modal" tabindex="-1" role="dialog" id="finaliza_pg_modal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="p-3 mb-2 bg-danger text-white">
+          <h5 class="modal-title">Finalizar PGs vencidos?</h5>
+          </div>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Deseja finalizar todos os PGs vencidos desta unidade?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
 
-      {% for pt in planos_trab_unid %}
+          <form action="{{url_for('pgs.finaliza_pgs')}}" method="post">
+            <input class="btn btn-danger" type="submit" name="" value="Executar">
+          </form>
 
-      <tr>
-        <th scope="row"><p align = "center"> {{planos_trab_unid.index(pt) + 1}} </p></th>
-        <td><p align = "center"> {{pt.undSigla}} </p></td>
-        <td><p align = "center"> {{pt.descricao}} </p></td>
-        <td><p align = "center"> {{pt.dataInicio.strftime('%d/%m/%Y')}} </p></td>
-        <td><p align = "center"> {{pt.dataFim.strftime('%d/%m/%Y')}} </p></td>
-        <td><p align = "center"> <a class="" href="{{url_for('pgs.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
-          <abbr title="Clique aqui para ver atividades deste PG.">{{pt.qtd_ativs}} </abbr></a></p></td>
-        <td><p align = "center"> 
-            {% if pt.qtd_metas == None %}
-              0
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <caption>
+    <div class="row">
+        <div class="col">
+          <p>Lista dos <span class="badge badge-pill badge-primary">{{quantidade}}</span> PGs. 
+            {% if lista == '%' %}
+              (Todas)
             {% else %}
-            <a class="" href="{{url_for('pgs.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
-              <abbr title="Clique aqui para ver as metas deste PG.">{{pt.qtd_metas}} </abbr></a>
-            {% endif %}
-        </p></td>
-        <td><p align = "center"> 
-          {% if pt.qtd_pactos == None %}
-            0
-          {% else %}
-          <a class="" href="{{url_for('pgs.lista_pactos_pg',pg=pt.planoTrabalhoId)}}">
-            <abbr title="Clique aqui para ver os pactos deste PG.">{{pt.qtd_pactos}} </abbr></a>
-          {% endif %}
-        </p></td>
-  
-        <td><p align = "center"> 
-          <a class="" href="{{url_for('objetos.lista_objetos_pg',pg=pt.planoTrabalhoId)}}">
-            <abbr title="Clique aqui para ver os objetos deste PG.">
-              {% if pt.qtd_objetos == None %}
+              ({{lista}})
+            {% endif %}</p>
+        </div>
+    </div>
+  </caption>
+
+  <div class="container" style="overflow-y:auto;">
+
+    <table id="table"
+          data-toggle="table"
+          data-filter-control="true"
+          data-show-search-clear-button="true"
+          data-sortable="true"
+          classes="table-sm"
+          data-show-columns="true"
+          data-show-columns-toggle-all="true"
+          class="table table-striped table-hover table-sm">
+      <caption>Programas de Gestão</caption>
+      <thead>
+        <tr>
+          <th scope="col"><p align = "center">#</p></th>
+          <th scope="col" data-field="Unidade" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Unidade</p></th>
+          <th scope="col" data-field="Situação" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Situação</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Início</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Fim</p></th>
+          <th scope="col"><p align = "center">Atividades</p></th>
+          <th scope="col"><p align = "center">Metas</p></th>
+          <th scope="col"><p align = "center">Planos</p></th>
+          <th scope="col"><p align = "center">Objetos</p></th>
+          <th scope="col"><p align = "center">Ação</p></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for pt in planos_trab_unid %}
+
+        <tr>
+          <th scope="row"><p align = "center"> {{planos_trab_unid.index(pt) + 1}} </p></th>
+          <td><p align = "center"> {{pt.undSigla}} </p></td>
+          <td><p align = "center"> {{pt.descricao}} </p></td>
+          <td><p align = "center"> {{pt.dataInicio.strftime('%d/%m/%Y')}} </p></td>
+          <td><p align = "center"> {{pt.dataFim.strftime('%d/%m/%Y')}} </p></td>
+          <td><p align = "center"> <a class="" href="{{url_for('pgs.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver atividades deste PG.">{{pt.qtd_ativs}} </abbr></a></p></td>
+          <td><p align = "center"> 
+              {% if pt.qtd_metas == None %}
                 0
               {% else %}
-                {{pt.qtd_objetos}} 
-                {% endif %}  
-            </abbr></a>
-        </p></td>   
+              <a class="" href="{{url_for('pgs.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
+                <abbr title="Clique aqui para ver as metas deste PG.">{{pt.qtd_metas}} </abbr></a>
+              {% endif %}
+          </p></td>
+          <td><p align = "center"> 
+            {% if pt.qtd_pactos == None %}
+              0
+            {% else %}
+            <a class="" href="{{url_for('pgs.lista_pactos_pg',pg=pt.planoTrabalhoId)}}">
+              <abbr title="Clique aqui para ver os pactos deste PG.">{{pt.qtd_pactos}} </abbr></a>
+            {% endif %}
+          </p></td>
+    
+          <td><p align = "center"> 
+            <a class="" href="{{url_for('objetos.lista_objetos_pg',pg=pt.planoTrabalhoId)}}">
+              <abbr title="Clique aqui para ver os objetos deste PG.">
+                {% if pt.qtd_objetos == None %}
+                  0
+                {% else %}
+                  {{pt.qtd_objetos}} 
+                  {% endif %}  
+              </abbr></a>
+          </p></td>  
+          
+          <td><p align = "center"> 
             
-      </tr>
+                {% if pt.descricao == 'Em execução' %}
+                <a class="" href="{{url_for('demandas.cria_plano',pg_id=pt.planoTrabalhoId)}}">
+                  <abbr title="Clique aqui para criar um plano de trabalho neste PG.">
+                  Criar Plano
+                </abbr></a> 
+                {% endif %}  
+              
+          </p></td>
+              
+        </tr>
 
-      {% endfor %}
+        {% endfor %}
 
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+
+  </div>
 
 </div>
-
 </div>
 {% endblock %}

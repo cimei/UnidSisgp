@@ -5,10 +5,15 @@
 
   <div class="jumbotron">
 
-    <h4>Avalia Atividade Concluída
-      {% if tipo == 'lote' %}
-        (todas as ocorrências)
-      {% endif %}  
+    <h4>{% if acao == 'avaliar' %}
+          Avalia
+        {% else %}
+          Reavalia  
+        {% endif %}
+      Atividade Concluída
+        {% if tipo == 'lote' %}
+          (TODAS AS OCORRÊNCIAS)
+        {% endif %}  
     </h4>
 
     {% macro render_field(field,obr) %}
@@ -35,7 +40,7 @@
         <div class="form-group col-3" >
           {{ render_field(form.tempo_homologado,class="form-control",obr=False) }} <small>(se não informado, pega o tempo realizado)</small>
         </div>  
-        <div class="form-group col-3" >  
+        <div class="form-group col-1" >  
           {{ render_field(form.nota,class="form-control",obr=True) }}
         </div>
 

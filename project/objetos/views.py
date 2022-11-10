@@ -305,18 +305,18 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
 
         for ocorrencia in ocorrencias:
 
-            obj_atual = db.session.query(Objeto_Atividade_Pacto)\
-                                .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
-                                .first()
+            # obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+            #                     .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
+            #                     .first()
 
-            if obj_atual:
-                obj_atual.planoTrabalhoObjetoId = form.obj.data
-            else:
-                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
-                                                        planoTrabalhoObjetoId = form.obj.data,
-                                                        pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
+            # if obj_atual:
+            #     obj_atual.planoTrabalhoObjetoId = form.obj.data
+            # else:
+            obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
+                                                    planoTrabalhoObjetoId = form.obj.data,
+                                                    pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
 
-                db.session.add(obj_ativ_pacto)
+            db.session.add(obj_ativ_pacto)
 
             db.session.commit()
 
@@ -328,13 +328,16 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
-    obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+    obj_atual = db.session.query(Objetos.chave,
+                                 Objetos.descricao)\
+                                .join(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
+                                .join(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
                                 .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == pacto_ativ_id)\
-                                .first()
-    if obj_atual:
-        form.obj.data = obj_atual.planoTrabalhoObjetoId
+                                .all()
+    # if obj_atual:
+    #     form.obj.data = obj_atual.planoTrabalhoObjetoId
 
-    return render_template('obj_ativ_pacto.html',form=form)
+    return render_template('obj_ativ_pacto.html',form=form, obj_atual=obj_atual)
 
 ## relacionar objeto com reunião de um pg
 

@@ -342,9 +342,10 @@ class Planos_de_Trabalho(db.Model):
     tempoFaseHabilitacao = db.Column(db.Integer)
     termoAceite          = db.Column(db.String)
 
-    def __init__(self, unidadeId, dataInicio, dataFim, situacaoId, avaliacaoId, tempoComparecimento,
+    def __init__(self, planoTrabalhoId, unidadeId, dataInicio, dataFim, situacaoId, avaliacaoId, tempoComparecimento,
                  totalServidoresSetor, tempoFaseHabilitacao, termoAceite):
 
+        self.planoTrabalhoId      = planoTrabalhoId
         self.unidadeId            = unidadeId
         self.dataInicio           = dataInicio
         self.dataFim              = dataFim
@@ -397,8 +398,9 @@ class Planos_de_Trabalho_Ativs_Items(db.Model):
     planoTrabalhoAtividadeId     = db.Column(db.String)
     itemCatalogoId               = db.Column(db.String)
 
-    def __init__(self, planoTrabalhoAtividadeId, itemCatalogoId):
+    def __init__(self, planoTrabalhoAtividadeItemId, planoTrabalhoAtividadeId, itemCatalogoId):
 
+        self.planoTrabalhoAtividadeItemId = planoTrabalhoAtividadeItemId
         self.planoTrabalhoAtividadeId = planoTrabalhoAtividadeId
         self.itemCatalogoId           = itemCatalogoId
 
@@ -420,9 +422,10 @@ class Planos_de_Trabalho_Hist(db.Model):
     responsavelOperacao      = db.Column(db.String)   
     DataOperacao             = db.Column(db.Date)
 
-    def __init__(self, planoTrabalhoId, situacaoId, observacoes,
+    def __init__(self, planoTrabalhoHistoricoId, planoTrabalhoId, situacaoId, observacoes,
                  responsavelOperacao, DataOperacao):
 
+        self.planoTrabalhoHistoricoId = planoTrabalhoHistoricoId
         self.planoTrabalhoId     = planoTrabalhoId
         self.situacaoId          = situacaoId
         self.observacoes         = observacoes
@@ -533,10 +536,11 @@ class Pactos_de_Trabalho(db.Model):
     tempoTotalDisponivel     = db.Column(db.Integer)
     termoAceite              = db.Column(db.String)
 
-    def __init__(self, planoTrabalhoId,unidadeId,pessoaId,dataInicio,dataFim,formaExecucaoId,
+    def __init__(self, pactoTrabalhoId, planoTrabalhoId,unidadeId,pessoaId,dataInicio,dataFim,formaExecucaoId,
                  situacaoId,tempoComparecimento,cargaHorariaDiaria,percentualExecucao,relacaoPrevistoRealizado,
                  avaliacaoId,tempoTotalDisponivel,termoAceite):
 
+        self.pactoTrabalhoId      = pactoTrabalhoId
         self.planoTrabalhoId      = planoTrabalhoId
         self.unidadeId            = unidadeId
         self.pessoaId             = pessoaId

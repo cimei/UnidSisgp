@@ -42,6 +42,7 @@
         <div class="row justify-content-md-center">
 
           {% for c in range(1,qtd_colunas+1)%}
+
             {% set ns_cont.i =  ns_cont.i + 1 %}
 
             <div class="card text-center" style="width: 8rem;">
@@ -63,7 +64,7 @@
                      - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
                     {% endif %} </small>
  
-                    {% if usuario.pesNome == demanda.pesNome %}
+                    {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405%}
                     <p></p>
                     <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></small>
                     <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
@@ -122,9 +123,9 @@
                   {% if (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
                         <p></p>
                         {% if ativs[ns_cont.i-1].nota != None and ativs[ns_cont.i-1].nota != '' %}
-                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">R</a></small>
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='reavaliar')}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">R</a></small>
                         {% else %}
-                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">A</a></small>
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='avaliar')}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">A</a></small>
                         {% endif %}
                   {% endif %}
 
@@ -147,92 +148,87 @@
 
 
             {% if ns_cont.i <= qtd_ativs %}
-            {# modal para verificar tipo de solicitação #}
 
-            <div class="modal" tabindex="-1" role="dialog" id="ativ_modal{{ns_cont.i}}">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <div class="modal-body">
+              {# modal com dados da atividade #}
 
-                    <ul class="small list-group">
-                      {% if ativs[ns_cont.i-1].chave != None and ativs[ns_cont.i-1].chave != '' %}
+              <div class="modal" tabindex="-1" role="dialog" id="ativ_modal{{ns_cont.i}}">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-body">
+
+                      <ul class="small list-group">
+
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            Objeto:<b> {{ativs[ns_cont.i-1].chave}}</b>
-                            <br>{{ativs[ns_cont.i-1].obj_desc}}
+                            <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
                           </div>
                         </li> 
-                      {% endif %}
-
-                      <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
-                        </div>
-                      </li> 
-                      
-                      {% if ativs[ns_cont.i-1].situa == 'Em execução' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Considerações: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
-                          </div>
-                        </li>
-                      {% elif ativs[ns_cont.i-1].situa == 'Concluída' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Conclusão: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
-                          </div>
-                        </li>
-                      {% endif %}
-
-                      <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Modalidade: {% if ativs[ns_cont.i-1].descricao == None%}N.I.{% else %}{{ativs[ns_cont.i-1].descricao}}{% endif %} - </span>
-                              <span class="text-muted"> Quantidade: {% if ativs[ns_cont.i-1].quantidade == None%}0{% else %}{{ativs[ns_cont.i-1].quantidade}}{% endif %}</span> <br>
-                              <span class="text-muted"> Tempo previsto por item: {% if ativs[ns_cont.i-1].tempoPrevistoPorItem == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
-                              <span class="text-muted"> Tempo previsto total: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
-                        </div>
-                      </li>
-
-                      {% if ativs[ns_cont.i-1].situa == 'Concluída' %}
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
-                                <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
-                                <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}0{% else %}{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}{% endif %} </span>
-                          </div>
-                        </li>
-                        {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
+                        
+                        {% if ativs[ns_cont.i-1].situa == 'Em execução' %}
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Justificativa: </span><br> {{ativs[ns_cont.i-1].justificativa}} </div>
+                              <div><span class="text-muted"> Considerações: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
+                            </div>
+                          </li>
+                        {% elif ativs[ns_cont.i-1].situa == 'Concluída' %}
+                          <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                              <div><span class="text-muted"> Conclusão: </span><br> {% if ativs[ns_cont.i-1].desc == None%}Não informada{% else %}{{ativs[ns_cont.i-1].desc}}{% endif %} </div>
                             </div>
                           </li>
                         {% endif %}
-                      {% endif %}
 
-                      {% if qtd_assuntos > 0 %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                          <div class="ms-2 me-auto">
+                            <div><span class="text-muted"> Modalidade: {% if ativs[ns_cont.i-1].descricao == None%}N.I.{% else %}{{ativs[ns_cont.i-1].descricao}}{% endif %} - </span>
+                                <span class="text-muted"> Quantidade: {% if ativs[ns_cont.i-1].quantidade == None%}0{% else %}{{ativs[ns_cont.i-1].quantidade}}{% endif %}</span> <br>
+                                <span class="text-muted"> Tempo previsto por item: {% if ativs[ns_cont.i-1].tempoPrevistoPorItem == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
+                                <span class="text-muted"> Tempo previsto total: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
+                          </div>
+                        </li>
+
+                        {% if ativs[ns_cont.i-1].situa == 'Concluída' %}
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Assuntos: </span>
-                                {% for a in assuntos %}
-                                  <br> {{a.valor}} 
-                                {% endfor %}  
-                              </div>
+                              <div><span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
+                                  <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
+                                  <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}0{% else %}{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}{% endif %} </span>
                             </div>
                           </li>
-                      {% endif %}
+                          {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                              <div class="ms-2 me-auto">
+                                <div><span class="text-muted"> Justificativa: </span><br> {{ativs[ns_cont.i-1].justificativa}} </div>
+                              </div>
+                            </li>
+                          {% endif %}
+                        {% endif %}
 
-                    </ul>
-            
+                        {% if qtd_assuntos > 0 %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                              <div class="ms-2 me-auto">
+                                <div><span class="text-muted"> Assuntos: </span>
+                                  {% for a in assuntos %}
+                                    <br> {{a.valor}} 
+                                  {% endfor %}  
+                                </div>
+                              </div>
+                            </li>
+                        {% endif %}
+
+                      </ul>
+              
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {% endif %}
+          {% endif %}
           
-            {% endfor %}
-        </div>
+      {% endfor %}
+
+    </div>
+
       {% endfor %}
 
       <br>
@@ -249,13 +245,13 @@
       </div>
       {% endif %}
 
-      {% if ns_programada.i > 0 and usuario.pesNome == demanda.pesNome %}
+      {% if ns_programada.i > 0 and usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 %}
       <br>
       <div class="row justify-content-center">
         <a data-toggle='modal' data-target='#finaliza_lote' class="btn btn-outline-secondary btn-sm" role="button" aria-pressed="true">Finalizar todas as programadas?</a>
       </div>
 
-      {# modal para deleção de pg #}
+      {# modal finalizar lote de atividades #}
 
       <div class="modal" tabindex="-1" role="dialog" id="finaliza_lote">
         <div class="modal-dialog" role="document">

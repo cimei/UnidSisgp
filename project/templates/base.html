@@ -47,12 +47,8 @@
               Programas de Gestão
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*')}}">Todos</a>
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Concluído', coord = '*')}}">Concluídos</a>
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Em execução', coord = '*')}}">Em execução</a>
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Executado', coord = '*')}}">Executados</a>
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Habilitação', coord = '*')}}">Em habilitação</a>
-              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Rascunho', coord = '*')}}">Em rascunho</a>
+              <a class="dropdown-item" href="{{url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*')}}">Listar</a>
+              <a class="dropdown-item" href="{{url_for('pgs.cria_pg')}}">Criar</a>
             </div>
           </li>
 
@@ -66,14 +62,9 @@
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Todas', coord = '*')}}">Todos</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Aceito', coord = '*')}}">Aceitos</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Concluído', coord = '*')}}">Concluídos</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Em execução', coord = '*')}}">Em execução</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*')}}"><span class="text-warning">Enviados para aceite</span></a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Executado', coord = '*')}}">Executados</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rascunho', coord = '*')}}">Em Rascunho</a>
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Rejeitado', coord = '*')}}">Rejeitados</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'solic_pend', coord = '*')}}"><span class="text-warning">Com solicitações pendentes</span></a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'para_avaliar', coord = '*')}}"><span class="text-primary">Aguardando avaliação</span></a>
             </div>
           </li>
 
@@ -127,7 +118,13 @@
         </ul>
 
         <span class="navbar-text"> 
-          <span class="text-primary">(DBSISGP em {{'DB_SERVER'|verifica_serv_bd}})</span>
+          <span class="text-primary">( DBSISGP
+            {% if 'AMBIENTE'|verifica_serv_bd == None %}
+              )
+            {% else %}
+              de {{'AMBIENTE'|verifica_serv_bd}} )
+            {% endif %}  
+          </span>
           v. {{ ver.num }} <small>cbt</small> 
         </span>
 

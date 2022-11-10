@@ -16,15 +16,51 @@
 
             {% if current_user.is_authenticated and usuario.unidadeId in tree_sup_ids %}
               <div class="row">
-                <div class="col-6">
-                  {% if usuario.pesNome == post.pesNome %}
+                <div class="col-4">
+                  {% if usuario.pesNome == post.pesNome and post.descricao == 'Em execução' %}
                     <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#tipo_modal'>Fazer solicitação</button>
+                  {% endif %}
+                  {% if usuario.pesNome == post.pesNome and post.descricao == 'Aceito' %}
+                  <a href="{{url_for('demandas.inicia_plano',pacto_id=id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">Iniciar Plano</a>
                   {% endif %}  
                 </div>
-                <div class="col-6" align="right">
+                <div class="col-4" align="center">
+                  {% if (usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None) and post.descricao == 'Em execução' %}
+                    <button type="button" class="btn btn-success btn-sm" data-toggle='modal' data-target='#encerra_modal'>Encerrar Plano</button>
+                  {% endif %}
+                </div>  
+                <div class="col-4" align="right">
                   {% if usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None %}
                     <a href="{{url_for('objetos.add_objeto',plano_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">Criar objeto no PG</a>
                   {% endif %}
+                </div>
+              </div> 
+
+              {# modal encerrar plano de trabalho #}
+
+              <div class="modal" tabindex="-1" role="dialog" id="encerra_modal">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <div class="p-3 mb-2 bg-danger text-white">
+                      <h5 class="modal-title">Encerrar o Plano de Trabalho?</h5>
+                      </div>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Deseja colocar este Plano de Trabalho como Executado?</p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                      <form action="{{url_for('demandas.finaliza_plano',pacto_id=id)}}" method="post">
+                        <input class="btn btn-danger" type="submit" name="" value="Executar">
+                      </form>
+
+                    </div>
+                  </div>
                 </div>
               </div> 
 
@@ -85,7 +121,8 @@
                     </div>
                   </div>
                 </div>
-              </div>  
+              </div> 
+
             {% endif %}
             <p></p>
 
@@ -109,7 +146,15 @@
                   <div>
                     Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b> - Sit.: 
                     {% if post.descricao == 'Em execução' %}
-                      <span class="text-success"><b>{{post.descricao}}</b></span>
+                      <span class="text-primary"><b>{{post.descricao}}</b></span>
+                    {% elif post.descricao == 'Rejeitado' %}  
+                      <span class="text-danger"><b>{{post.descricao}}</b></span>
+                    {% elif post.descricao == 'Executado' %}  
+                      <span class="text-success"><b>{{post.descricao}}</b></span>  
+                    {% elif post.descricao == 'Enviado para aceite' %}  
+                      <span class="text-warning"><b>{{post.descricao}}</b></span> 
+                    {% elif post.descricao == 'Aceito' %}  
+                      <span class="text-info"><b>{{post.descricao}}</b></span>   
                     {% else %}
                       <b>{{post.descricao}}</b>
                     {% endif %}
@@ -129,14 +174,14 @@
                 <div class="ms-2 me-auto">
                   Tempo total disponível: <b>{{post.tempoTotalDisponivel}}</b> h
                   <div>{% if sum_ativs_tempo_total == post.tempoTotalDisponivel%}
-                         <b>{{sum_ativs_tempo_total|string()|replace(".",",")}}</b>
+                         <b>{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}}</b>
                        {% else %}
-                         <b><span class = "text-danger">{{sum_ativs_tempo_total|string()|replace(".",",")}}</span></b>  
+                         <b><span class = "text-danger">{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}}</span></b>  
                        {% endif %}  
                    h comprometidas com atividades sendo: <br>
-                  (<b>{{sum_ativs_p_tempo_total|string()|replace(".",",")}}</b> h programadas, 
-                   <b>{{sum_ativs_e_tempo_total|string()|replace(".",",")}}</b> h em execução e 
-                   <b>{{sum_ativs_c_tempo_total|string()|replace(".",",")}}</b> h concluídas)</div>
+                  (<b>{{sum_ativs_p_tempo_total|round|string()|replace(".",",")}}</b> h programadas, 
+                   <b>{{sum_ativs_e_tempo_total|round(1)|string()|replace(".",",")}}</b> h em execução e 
+                   <b>{{sum_ativs_c_tempo_total|round(1)|string()|replace(".",",")}}</b> h concluídas)</div>
                 </div>
               </li>
             </ul>
@@ -247,14 +292,18 @@
 
                   <!-- Histórico -->
 
-                  {% if item.tipo == 'Histórico' %}
+                  {% if item.tipo == 'Histórico' or item.tipo == 'Histórico PG' %}
                     {% if item.data != None%}
                       <div class="text-muted" style="text-align:right"> Data: {{item.data.strftime('%d/%m/%Y')}} </div>
                     {% else %}  
                       <div class="text-muted" style="text-align:right"> Data Operação não informada </div>
                     {% endif %}
 
-                    <p class="card-text text-info"> <b>{{item.tipo}}</b> </p>
+                    {% if item.tipo == 'Histórico'%}
+                      <p class="card-text text-info"> <b>{{item.tipo}} Plano</b> </p>
+                    {% else %}
+                      <p class="card-text text-info"> <b>{{item.tipo}}</b> </p>
+                    {% endif %}  
                     <div class = 'row'>
                       <div class = 'col-4'>
                         <small class="text-muted"> Situação: </small>
@@ -265,8 +314,8 @@
                         <p class="card-text"> {{item.pesNome}} </p>
                       </div>
                     </div>
-                    {% if item.obs != None%}
-                      <small class="text-muted"> Observações: </small> <p class="card-text"> {{item.obs}}</p>
+                    {% if item.tit != None%}
+                      <small class="text-muted"> Observações: </small> <p class="card-text"> {{item.tit}}</p>
                     {% endif %}      
 
 
@@ -319,7 +368,7 @@
 
                       <li class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="ms-2 me-auto">
-                          <div><span class="text-muted"> Obs. Solicitante: </span><br> {% if item.obs == None%}Não informada{% else %}{{item.obs}}{% endif %} </div>
+                          <div><span class="text-muted"> Observações do Solicitante: </span><br> {% if item.obs == None%}Não informada{% else %}{{item.obs}}{% endif %} </div>
                         </div>
                       </li>
 
@@ -330,7 +379,7 @@
                         {% if item.tipo[18:22] == 'Nova' %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                               <div class="ms-2 me-auto">
-                                <div><span class="text-muted"> Atividade: </span><br> <b>{{d[1]['itemCatalogo']}}</b> </div>
+                                <div><span class="text-muted">Atividade: </span><br> <b>{{d[1]['itemCatalogo']}}</b> </div>
                               </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -366,7 +415,7 @@
                                 {% if d[1]['pactoTrabalhoAtividadeId'] == a.id|lower %}
                                   <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-2 me-auto">
-                                      <div><span class="text-muted"> Atividade: </span><br> <b>{{a.titulo}}</b>  </div>
+                                      <div><span class="text-muted"> Ocorrência da Atividade: </span><br> <b>{{a.titulo}} - {{a.tempoPrevistoTotal|string()|replace('.',',')}} h</b>  </div>
                                     </div>
                                   </li>
                                 {% endif %}   
