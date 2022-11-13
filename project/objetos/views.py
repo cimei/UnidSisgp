@@ -20,7 +20,7 @@ from sqlalchemy import func, literal, distinct
 from sqlalchemy.sql import label
 from project import db 
 from project.models import Atividades, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Pactos_de_Trabalho, Pactos_de_Trabalho_Atividades, Pessoas, Planos_de_Trabalho, Planos_de_Trabalho_Reuniao, Unidades, VW_Unidades,\
-                           Planos_de_Trabalho
+                           Planos_de_Trabalho, Atividade_Pacto_Assunto, Assuntos
 
 from project.objetos.forms import ObjetoEscolhaForm, ObjetoForm                               
 
@@ -191,9 +191,9 @@ def add_objeto(plano_id,pacto_id):
 
         objeto = Objetos(objetoId  = uuid.uuid4(),
                          descricao = form.desc.data,
-                         tipo      = form.tipo.data,
+                         tipo      = 1,
                          chave     = form.chave.data,
-                         ativo     = form.ativo.data)
+                         ativo     = True)
 
         db.session.add(objeto)
         db.session.commit()
@@ -239,9 +239,9 @@ def altera_objeto(objeto_id):
     if form.validate_on_submit():
 
         objeto.descricao = form.desc.data
-        objeto.tipo      = form.tipo.data
+        objeto.tipo      = 1
         objeto.chave     = form.chave.data
-        objeto.ativo     = form.ativo.data
+        objeto.ativo     = True
 
         db.session.commit()
 
@@ -252,9 +252,9 @@ def altera_objeto(objeto_id):
         return redirect(url_for('objetos.lista_objetos',coord='*'))
 
     form.desc.data  = objeto.descricao
-    form.tipo.data  = objeto.tipo
+    # form.tipo.data  = objeto.tipo
     form.chave.data = objeto.chave
-    form.ativo.data = objeto.ativo    
+    # form.ativo.data = objeto.ativo    
 
     return render_template('add_objeto.html', form=form)    
 
@@ -388,5 +388,33 @@ def objeto_reuniao(plano_id,reuniao_id,pacto_id):
 
     return render_template('obj_ativ_pacto.html',form=form)    
 
+## histórico de um objeto
 
+@objetos.route('/<objeto_id>/objeto_hist')
+@login_required
+def objeto_hist(objeto_id):
+    """
+    +---------------------------------------------------------------------------------------+
+    |Mostra o que foi feito (atividades) com um objeto registrado.                          |
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """
+    
+    ativs_objeto = db.session.query(Objetos.chave,
+                                    Objetos.descricao,
+                                    Pactos_de_Trabalho_Atividades.dataInicio,
+                                    Pactos_de_Trabalho_Atividades.dataFim,
+                                    Pactos_de_Trabalho_Atividades.consideracoesConclusao,
+                                    Assuntos.valor)\
+                             .outerjoin(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
+                             .outerjoin(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
+                             .outerjoin(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId==Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
+                             .outerjoin(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId==Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                             .outerjoin(Assuntos, Assuntos.assuntoId==Atividade_Pacto_Assunto.assuntoId)\
+                             .filter(Objetos.objetoId==objeto_id)\
+                             .all() 
+                             
+    quantidade = len(ativs_objeto)
+
+    return render_template('objeto_hist.html',ativs_objeto=ativs_objeto,quantidade=quantidade)
 

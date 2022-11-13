@@ -48,11 +48,10 @@
           <th scope="col"><p align = "center">#</p></th>
           {% if unid_dados != None%} 
             <th scope="col"><p align = "center">Unidade</p></th>
-          {% endif %}  
-          <th data-field="Descrição" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Descrição</p></th>
-          <th scope="col"><p align = "center">Tipo</p></th>
+          {% endif %} 
           <th scope="col" data-field="Chave" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Chave</p></th>
-          <th scope="col"><p align = "center">Ativo</p></th>
+          <th data-field="Descrição" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Descrição</p></th>
+          <th scope="col"><p align = "center">Hist.</p></th>
         </tr>
       </thead>
       <tbody>
@@ -71,11 +70,10 @@
 
           {% if unid_dados != None%} 
             <td><p align = "center"> {{o.undSigla}} </p></td>
-          {% endif %}  
-          <td><p align = "center"> {{o.descricao}} </p></td>
-          <td><p align = "center"> {{o.tipo}} </p></td>
+          {% endif %} 
           <td><p align = "center"> {{o.chave}} </p></td>
-          <td><p align = "center"> {% if o.ativo == True %}Sim{% else %}Não{% endif %} </p></td>
+          <td><p align = "center"> {{o.descricao}} </p></td>
+          <td><p align = "center"> <a href="{{url_for('objetos.objeto_hist', objeto_id = o.objetoId)}}"><abbr title="Clique aqui para ver histórico do objeto.">Ver</abbr></a> </p></td>
         </tr>
 
         {% endfor %}

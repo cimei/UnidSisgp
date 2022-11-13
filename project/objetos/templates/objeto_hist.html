@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+<div class="jumbotron">
+
+
+  <h5><b>Histórico do Objeto {{ativs_objeto[0].chave}} - {{ativs_objeto[0].descricao}}</b></h5>
+
+  <caption>
+    <div class="row">
+        <div class="col">
+          <p><span class="badge badge-pill badge-primary">{{quantidade}}</span> itens. </p>
+        </div>
+    </div>
+  </caption>
+
+  <div class="container" style="overflow-y:auto;">
+
+    <table id="table"
+          data-toggle="table"
+          data-filter-control="true"
+          data-show-search-clear-button="true"
+          data-sortable="true"
+          classes="table-sm"
+          data-show-columns="true"
+          data-show-columns-toggle-all="true"
+          class="table table-striped table-hover table-sm">
+    <!-- class="table-responsive">   -->
+      
+      <caption>Atividade do objeto</caption>
+      <thead>
+        <tr>
+          
+          <!-- <th data-field="columnA" data-filter-control="input" data-sortable="true">column A</th>
+          <th data-field="columnB" data-filter-control="select" data-sortable="true">column B</th>
+          <th data-field="columnC" data-filter-control="input" data-sortable="true">column C</th> -->
+      
+          <th scope="col"><p align = "center">#</p></th>
+          <th scope="col"><p align = "center">Ini.</p></th>
+          <th scope="col"><p align = "center">Fim</p></th>
+          <th scope="col" data-field="Descrição" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Conclusão</p></th>
+          <th scope="col"><p align = "center">Assuntos</p></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for a in ativs_objeto %}
+
+        <tr>
+          
+          <th scope="row"><p align = "center"> {{ativs_objeto.index(a) + 1}} </p></th>
+          <td><p align = "center"> {% if a.dataInicio == None %}N.I.{% else %}{{a.dataInicio.strftime('%d/%m/%Y')}}{% endif %} </p></td>
+          <td><p align = "center"> {% if a.dataFim == None %}N.I.{% else %}{{a.dataFim.strftime('%d/%m/%Y')}}{% endif %} </p></td>
+          <td><p align = "center"> {{a.consideracoesConclusao}} </p></td>
+          <td><p align = "center"> {{a.valor}} </p></td>
+        </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+  </div>
+
+</div>
+</div>
+{% endblock %}

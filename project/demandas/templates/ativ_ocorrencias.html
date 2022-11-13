@@ -158,6 +158,14 @@
 
                       <ul class="small list-group">
 
+                        {% if ativs[ns_cont.i-1].chave != None %}
+                          <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                              <div><span class="text-muted"> Objeto: </span><br>{{ativs[ns_cont.i-1].chave}} - {% if ativs[ns_cont.i-1].obj_desc == None%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].obj_desc}}{% endif %} </div>
+                            </div>
+                          </li>
+                        {% endif %}  
+
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
                             <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
@@ -178,29 +186,18 @@
                           </li>
                         {% endif %}
 
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                          <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Modalidade: {% if ativs[ns_cont.i-1].descricao == None%}N.I.{% else %}{{ativs[ns_cont.i-1].descricao}}{% endif %} - </span>
-                                <span class="text-muted"> Quantidade: {% if ativs[ns_cont.i-1].quantidade == None%}0{% else %}{{ativs[ns_cont.i-1].quantidade}}{% endif %}</span> <br>
-                                <span class="text-muted"> Tempo previsto por item: {% if ativs[ns_cont.i-1].tempoPrevistoPorItem == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}{% endif %} - </span>
-                                <span class="text-muted"> Tempo previsto total: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}{% endif %}</span><br></div>
-                          </div>
-                        </li>
-
                         {% if ativs[ns_cont.i-1].situa == 'Concluída' %}
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}{% endif %} - </span>
-                                  <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}0{% else %}{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}{% endif %} -</span>
-                                  <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}0{% else %}{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}{% endif %} </span>
+                                <span class="text-muted"> Tempo previsto: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}</b>{% endif %} - </span>
+                                <span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}</b>{% endif %}</span><br>
+                                <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}?{% else %}<b>{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}</b>{% endif %} -</span>
+                                <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}?{% else %}<b>{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}</b>{% endif %} </span>
+                                {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
+                                 <br><span class="text-muted"> Justificativa: </span>{{ativs[ns_cont.i-1].justificativa}} 
                             </div>
                           </li>
-                          {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                              <div class="ms-2 me-auto">
-                                <div><span class="text-muted"> Justificativa: </span><br> {{ativs[ns_cont.i-1].justificativa}} </div>
-                              </div>
-                            </li>
+                          
                           {% endif %}
                         {% endif %}
 

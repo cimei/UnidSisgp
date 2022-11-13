@@ -85,13 +85,22 @@ class SolicitacaoForm603(FlaskForm):
     atividade  = SelectField('Atividade:')
     desc       = TextAreaField('Justificativa:',validators=[DataRequired(message="Insira justificativa!")])
 
-    submit     = SubmitField('Registrar')   
+    submit     = SubmitField('Registrar') 
+
+class SolicitacaoForm604(FlaskForm):
+
+    atividade  = SelectField('Atividade:')
+    qtd        = IntegerField('Quantidade de ocorrências:',default=1)
+    desc       = TextAreaField('Justificativa:',validators=[DataRequired(message="Insira justificativa!")])
+
+    submit     = SubmitField('Registrar')      
 
 
 class SolicitacaoAnaliseForm(FlaskForm):
 
     aprovado    = RadioField("Aprovado?", choices=[(1,'Sim'),(0,'Não')],validators=[DataRequired(message="Escolha uma opção!")])
     observacoes = TextAreaField('Observações:',validators=[DataRequired(message="Insira observações!")])
+    replicas    = BooleanField(default=False)
 
     submit       = SubmitField('Registrar')
 
@@ -106,7 +115,7 @@ class InciaConcluiAtivForm(FlaskForm):
 
 class AvaliaAtivForm(FlaskForm):
 
-    nota             = IntegerField('Nota: ', validators=[DataRequired(message="Informe a nota!")])
+    nota =IntegerField('Nota:',validators=[DataRequired(message="Informe uma nota de 0 a 10. Valor inteiro!")])
     justificativa    = TextAreaField('Justificativa', validators=[DataRequired(message="Informe a justificativa!")])
     tempo_homologado = StringField('Tempo homologado:')
 
