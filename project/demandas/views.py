@@ -265,10 +265,12 @@ def demanda(pacto_id):
     # gera lista das atividades do pacto acrescentando número de sequência para facilitar sua identificação
     ativs_simp    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
                                      Atividades.titulo,
-                                     label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId))),
-                                     Pactos_de_Trabalho_Atividades.tempoPrevistoTotal)\
+                                     label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.situacaoId))),
+                                     Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+                                     label('situa',catdom.descricao),)\
                          .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                         .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
                          .all()
 
     # calcula a soma dos tempos previstos das atividades no pacto por situação e totaliza tudo no final
@@ -422,6 +424,7 @@ def demanda(pacto_id):
                             .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
                             .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == a.itemCatalogoId,
                                     Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                            .order_by(Assuntos.chave.desc())\
                             .all()
         if assuntos:
             tem_assunto[a.titulo] = True
@@ -541,12 +544,14 @@ def ativ_ocor(pacto_id,item_cat_id):
     qtd_ativs = len(ativs)
 
     # resgata assuntos
-    assuntos = db.session.query(Assuntos.valor)\
+    assuntos = db.session.query(Assuntos.chave,
+                                Assuntos.valor,
+                                Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                          .join(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.assuntoId == Assuntos.assuntoId)\
                          .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
                          .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
                                  Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                         .order_by(Assuntos.valor)\
+                         .order_by(Assuntos.chave.desc())\
                          .all()
     qtd_assuntos = len(assuntos)  
 
@@ -621,7 +626,7 @@ def list_demandas(lista,coord):
                                .first()
         unid = unid_dados.unidadeId
 
-    #monta árvore da unidade
+    #monta subestrutura da unidade
     tree = {}
     pai = [unid]
     tree[unid_dados.undSigla] = [unid]
@@ -642,8 +647,7 @@ def list_demandas(lista,coord):
 
         pai =  prox_pai
          
-    #    
-
+    #  
     if lista == 'Todas':
         lista = '%'
 
@@ -925,7 +929,10 @@ def solicitacao(pacto_id,tipo):
 
     items_cat_pg = db.session.query(Planos_de_Trabalho_Ativs.planoTrabalhoId,
                                     Atividades.itemCatalogoId,
-                                    Atividades.titulo)\
+                                    Atividades.titulo,
+                                    Atividades.complexidade,
+                                    Atividades.tempoPresencial,
+                                    Atividades.tempoRemoto)\
                              .filter(Planos_de_Trabalho_Ativs.planoTrabalhoId == pacto.planoTrabalhoId)\
                              .join(Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Ativs_Items.planoTrabalhoAtividadeId == Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId)\
                              .join(Atividades, Atividades.itemCatalogoId == Planos_de_Trabalho_Ativs_Items.itemCatalogoId)\
@@ -937,7 +944,8 @@ def solicitacao(pacto_id,tipo):
     # para pedir nova atividade
     if tipo_solic.descricao == 'Nova atividade':
         # o choices do campo atividade são definidos aqui e não no form
-        lista_ativs = [(i.itemCatalogoId,i.titulo) for i in items_cat_pg]
+        lista_ativs = [(i.itemCatalogoId,(i.titulo+' - '+i.complexidade+\
+                       ' - Pre: '+str(i.tempoPresencial).replace('.',',')+'h Rem: '+str(i.tempoRemoto).replace('.',',')+'h')) for i in items_cat_pg]
         lista_ativs.insert(0,('',''))
         form = SolicitacaoForm601()
         form.atividade.choices = lista_ativs
@@ -1110,8 +1118,7 @@ def solicitacao(pacto_id,tipo):
 
             quantidade = form.qtd.data
 
-            ativs_grupo = db.session.query(label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId))),\
-                                           label('tam_grupo',literal(a.tam_grupo)),
+            ativs_grupo = db.session.query(label('seq',func.row_number().over(order_by=(Pactos_de_Trabalho_Atividades.situacaoId))),\
                                            Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId, 
                                            Pactos_de_Trabalho_Atividades.itemCatalogoId,
                                            Atividades.titulo,
@@ -1124,13 +1131,18 @@ def solicitacao(pacto_id,tipo):
                                    .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == form.atividade.data,
                                         Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
                                    .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                                   .order_by(Pactos_de_Trabalho_Atividades.situacaoId)\
                                    .all()
+            qtd_ativs_grupo = len(ativs_grupo)
 
             dados_dic_l = []
+            programadas = 0
+            execucao = 0
+            concluidas = 0
 
             for a in range (quantidade): 
 
-                ativ_a_excluir = ativs_grupo[quantidade - a]                   
+                ativ_a_excluir = ativs_grupo[a]                   
 
                 # verifica que já existe solicitação não analisada de excluão de atividade no o pactoTrabalhoAtividadeId escolhido
                 solics_existentes = db.session.query(Pactos_de_Trabalho_Solic)\
@@ -1138,12 +1150,6 @@ def solicitacao(pacto_id,tipo):
                                                     Pactos_de_Trabalho_Solic.tipoSolicitacaoId == 604,
                                                     Pactos_de_Trabalho_Solic.analisado == False)\
                                             .all()
-                # for s in solics_existentes:
-                #     ativ_pacto =  (ast.literal_eval(s.dadosSolicitacao))['pactoTrabalhoAtividadeId'].upper()  
-                #     if ativ_pacto == form.atividade.data:
-                #         flash('Já consta solicitação de exclusão para esta atividade!','erro')
-                #         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
-
                 solics_existentes_l = []
                 for s in solics_existentes:
                     ativ_pacto =  (ast.literal_eval(s.dadosSolicitacao))['pactoTrabalhoAtividadeId'].upper()  
@@ -1151,18 +1157,9 @@ def solicitacao(pacto_id,tipo):
                    
                 if ativ_a_excluir.pactoTrabalhoAtividadeId in solics_existentes_l:
                     flash('Já consta solicitação de exclusão para ativ. '+ ativ_a_excluir.pactoTrabalhoAtividadeId+' ('+str(ativ_a_excluir.seq)+'). Será retirada do grupo de exclusão.','erro')
-                    quantidade -= 1
+                    quantidade -= 1 # diminui a quantidad para o loop de registro de solicitação
                 else:    
-
-                # monta dados da solicitação de exclusão
-                # ativ = db.session.query(Atividades.titulo,
-                #                         Atividades.complexidade,
-                #                         Atividades.tempoPresencial,
-                #                         Atividades.tempoRemoto)\
-                #                 .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == form.atividade.data)\
-                #                 .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.itemCatalogoId==Atividades.itemCatalogoId)\
-                #                 .first()
-
+                    # monta dados da solicitação de exclusão
                     dados_dic = {"pactoTrabalhoId":pacto_id.lower(),\
                                 "pactoTrabalhoAtividadeId":ativ_a_excluir.pactoTrabalhoAtividadeId.lower(),\
                                 "itemCatalogo":ativ_a_excluir.titulo + " - " + ativ_a_excluir.complexidade + \
@@ -1170,7 +1167,14 @@ def solicitacao(pacto_id,tipo):
                                             "h / rem.:" + str(ativ_a_excluir.tempoRemoto).replace('.',',') +"h)",\
                                 "justificativa":form.desc.data.replace('"','')}
 
-                    dados_dic_l.append(dados_dic)            
+                    dados_dic_l.append(dados_dic) 
+
+                    if ativ_a_excluir.situacaoId == 501:
+                        programadas += 1
+                    elif ativ_a_excluir.situacaoId == 502:
+                        execucao += 1
+                    elif ativ_a_excluir.situacaoId == 503:
+                        concluidas += 1                    
  
         for i in range(quantidade):
 
@@ -1206,11 +1210,12 @@ def solicitacao(pacto_id,tipo):
 
         if quantidade == 0 and tipo_solic.descricao == 'Excluir atividade':
             flash('Solicitação de exclusão ignorada!','erro')
+        elif tipo_solic.descricao == 'Excluir atividade':
+            flash('Solicitação registrada. Exclusão de '+str(programadas)+' programadas, '+str(execucao)+' em execução e '+str(concluidas)+' concluidas.','sucesso')
         else:
-            flash('Solicitação registrada!','sucesso')
+            flash('Solicitação registrada.','sucesso')
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
-
 
     return render_template('add_solicitacao.html', form=form, 
                                                    tipo=tipo_solic.descricao, 
@@ -1270,25 +1275,56 @@ def solicitacao_analise(solic_id,pacto_id):
             ocor_ativ_dados = ast.literal_eval(str(solic.dadosSolicitacao).replace('null','None').replace('true','True').replace('false','False'))
             if ocor_ativ_dados['itemCatalogo'] == dados_solic['itemCatalogo']:
                 ocor_ativ_id_l.append([solic.pactoTrabalhoSolicitacaoId, ocor_ativ_dados['pactoTrabalhoAtividadeId']])
-    ocor_ativ_qtd = len(ocor_ativ_id_l)       
+    ocor_ativ_qtd = len(ocor_ativ_id_l) 
+
+    # verifica se há multiplas solicitações de nova atividade com mesmo título não analisadas para o mesmo plano
+    ocor_nova_id_l = []
+    if solicitacao.tipo[18:22] == 'Nova':
+        multi_nova = db.session.query(Pactos_de_Trabalho_Solic)\
+                               .filter(Pactos_de_Trabalho_Solic.pactoTrabalhoId == pacto_id,
+                                        Pactos_de_Trabalho_Solic.tipoSolicitacaoId == 601,
+                                        Pactos_de_Trabalho_Solic.analisado == False)\
+                               .all()
+        for solic in multi_nova:
+            ocor_nova_dados = ast.literal_eval(str(solic.dadosSolicitacao).replace('null','None').replace('true','True').replace('false','False'))
+            if ocor_nova_dados['itemCatalogo'] == dados_solic['itemCatalogo']:
+                ocor_nova_id_l.append(solic.pactoTrabalhoSolicitacaoId)
+    ocor_nova_qtd = len(ocor_nova_id_l)     
 
     form = SolicitacaoAnaliseForm()
 
     if form.validate_on_submit():
 
+        # se for análise de exclusão de atividade ou de inserção de nova, decide se faz em lote ou indivitual a partir do informado em replicas 
         if form.replicas.data: 
 
-            for id in ocor_ativ_id_l:
+            if solicitacao.tipo[18:25] == 'Excluir': 
 
-                analisado = db.session.query(Pactos_de_Trabalho_Solic).filter(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId == id[0]).first()
+                for id in ocor_ativ_id_l:
 
-                analisado.analisado           = True
-                analisado.dataAnalise         = hoje
-                analisado.analista            = analista.pessoaId
-                analisado.aprovado            = int(form.aprovado.data)
-                analisado.observacoesAnalista = form.observacoes.data
+                    analisado = db.session.query(Pactos_de_Trabalho_Solic).filter(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId == id[0]).first()
 
-                db.session.commit()
+                    analisado.analisado           = True
+                    analisado.dataAnalise         = hoje
+                    analisado.analista            = analista.pessoaId
+                    analisado.aprovado            = int(form.aprovado.data)
+                    analisado.observacoesAnalista = form.observacoes.data
+
+                    db.session.commit()
+
+            elif solicitacao.tipo[18:22] == 'Nova': 
+
+                for id in ocor_nova_id_l:
+
+                    analisado = db.session.query(Pactos_de_Trabalho_Solic).filter(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId == id).first()
+
+                    analisado.analisado           = True
+                    analisado.dataAnalise         = hoje
+                    analisado.analista            = analista.pessoaId
+                    analisado.aprovado            = int(form.aprovado.data)
+                    analisado.observacoesAnalista = form.observacoes.data
+
+                    db.session.commit()        
         else:
 
             analisado = db.session.query(Pactos_de_Trabalho_Solic).filter(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId == solic_id).first()
@@ -1307,34 +1343,36 @@ def solicitacao_analise(solic_id,pacto_id):
 
             if solicitacao.tipo[18:22] == 'Nova':
 
-                if dados_solic['execucaoRemota']:
-                    modalidade = 103
-                else:
-                    modalidade = 101
+                for id in ocor_nova_id_l: 
 
-                nova_ativ = Pactos_de_Trabalho_Atividades(pactoTrabalhoAtividadeId = uuid.uuid4(),
-                                                          pactoTrabalhoId          = pacto_id,
-                                                          itemCatalogoId           = dados_solic['itemCatalogoId'],
-                                                          situacaoId               = dados_solic['situacaoId'],
-                                                          quantidade               = 1,
-                                                          tempoPrevistoPorItem     = dados_solic['tempoPrevistoPorItem'],
-                                                          tempoPrevistoTotal       = dados_solic['tempoPrevistoPorItem'],
-                                                          dataInicio               = dados_solic['dataInicio'],
-                                                          dataFim                  = dados_solic['dataFim'],
-                                                          tempoRealizado           = dados_solic['tempoRealizado'],
-                                                          descricao                = dados_solic['descricao'],
-                                                          tempoHomologado          = None,
-                                                          nota                     = None,
-                                                          justificativa            = None,
-                                                          consideracoesConclusao   = None,
-                                                          modalidadeExecucaoId     = modalidade)                 
+                    if dados_solic['execucaoRemota']:
+                        modalidade = 103
+                    else:
+                        modalidade = 101
 
-                db.session.add(nova_ativ)
-                db.session.commit()                      
+                    nova_ativ = Pactos_de_Trabalho_Atividades(pactoTrabalhoAtividadeId = uuid.uuid4(),
+                                                            pactoTrabalhoId          = pacto_id,
+                                                            itemCatalogoId           = dados_solic['itemCatalogoId'],
+                                                            situacaoId               = dados_solic['situacaoId'],
+                                                            quantidade               = 1,
+                                                            tempoPrevistoPorItem     = dados_solic['tempoPrevistoPorItem'],
+                                                            tempoPrevistoTotal       = dados_solic['tempoPrevistoPorItem'],
+                                                            dataInicio               = dados_solic['dataInicio'],
+                                                            dataFim                  = dados_solic['dataFim'],
+                                                            tempoRealizado           = dados_solic['tempoRealizado'],
+                                                            descricao                = dados_solic['descricao'],
+                                                            tempoHomologado          = None,
+                                                            nota                     = None,
+                                                            justificativa            = None,
+                                                            consideracoesConclusao   = None,
+                                                            modalidadeExecucaoId     = modalidade)                 
 
-                registra_log_unid(current_user.id,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
+                    db.session.add(nova_ativ)
+                    db.session.commit()                      
 
-                flash('Nova atividade registrada!','sucesso')
+                    registra_log_unid(current_user.id,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
+
+                flash(str(ocor_nova_qtd)+' nova(s) atividade(s) registrada(s)!','sucesso')
 
             elif solicitacao.tipo[18:24] == 'Altera':    
 
@@ -1367,11 +1405,14 @@ def solicitacao_analise(solic_id,pacto_id):
 
                     for id in ocor_ativ_id_l:
 
-                        ativ_pacto_id = id[1]
+                        ativ_pacto_id = id[1].upper()
 
                         # deleta eventual relação da atividade do pacto com objetos    
                         obj = db.session.query(Objeto_Atividade_Pacto).filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ativ_pacto_id).delete()
+                        db.session.commit()
 
+                        # deleta relacionamentos das atividades com assuntos
+                        assunto_ativ_exclu = db.session.query(Atividade_Pacto_Assunto).filter(Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId == ativ_pacto_id).delete()
                         db.session.commit()
 
                         # deleta atividade no pacto
@@ -1389,11 +1430,15 @@ def solicitacao_analise(solic_id,pacto_id):
                 
                 else:    
 
-                    ativ_pacto_id = dados_solic['pactoTrabalhoAtividadeId']
+                    ativ_pacto_id = dados_solic['pactoTrabalhoAtividadeId'].upper()
+                    print ('** id da ativ: ',ativ_pacto_id)
 
                     # deleta eventual relação da atividade do pacto com objetos    
                     obj = db.session.query(Objeto_Atividade_Pacto).filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ativ_pacto_id).delete()
+                    db.session.commit()
 
+                    # deleta relacionamenotos da atividade com assuntos
+                    assunto_ativ_exclu = db.session.query(Atividade_Pacto_Assunto).filter(Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId == ativ_pacto_id).delete()
                     db.session.commit()
 
                     # deleta atividade no pacto
@@ -1409,7 +1454,10 @@ def solicitacao_analise(solic_id,pacto_id):
                     
                     flash('Atividade retirada do plano de trabalho!','sucesso')   
     
-        registra_log_unid(current_user.id,'Solicitação '+ solic_id +' foi analisada.')
+        if form.replicas.data:
+            registra_log_unid(current_user.id,'Lode de solicitações a partir da '+ solic_id +' foi analisado.')
+        else:
+            registra_log_unid(current_user.id,'Solicitação '+ solic_id +' foi analisada.')
 
         flash('Solicitação analisada!','sucesso')
 
@@ -1420,7 +1468,8 @@ def solicitacao_analise(solic_id,pacto_id):
                                                        solicitacao = solicitacao,
                                                        dados_solic = dados_solic,
                                                        analista = analista,
-                                                       ocor_ativ_qtd = ocor_ativ_qtd)
+                                                       ocor_ativ_qtd = ocor_ativ_qtd,
+                                                       ocor_nova_qtd = ocor_nova_qtd)
 
 
 # vendo todas as demandas de um usuário
@@ -1915,13 +1964,14 @@ def add_assunto(pacto_id,ativ_pacto_id):
                          .first()
 
     # resgata assuntos
-    assuntos = db.session.query(Assuntos.valor,
+    assuntos = db.session.query(Assuntos.chave,
+                                Assuntos.valor,
                                 Pactos_de_Trabalho_Atividades.dataInicio)\
                          .join(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.assuntoId == Assuntos.assuntoId)\
                          .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
                          .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
-                                 Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                         .order_by(Assuntos.valor.desc())\
+                                 Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
+                         .order_by(Assuntos.chave.desc())\
                          .all()
 
     quantidade = len(assuntos)
@@ -1933,7 +1983,7 @@ def add_assunto(pacto_id,ativ_pacto_id):
                                 .join(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
                                 .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
                                 .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
-                                        Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                                        Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
                                 .all() 
 
     form = AddAssuntoForm()
@@ -1942,8 +1992,9 @@ def add_assunto(pacto_id,ativ_pacto_id):
 
         assunto = Assuntos(assuntoId    = uuid.uuid4(),
                            assuntoPaiId = None,
-                           valor        = str(date.today().strftime('%d/%m/%Y')) + ' - ' + str(form.valor.data),
-                           chave        = get_random_string(10),
+                           valor        = form.valor.data,
+                           #chave        = get_random_string(10),
+                           chave        = str(date.today().strftime('%y%m%d')) + get_random_string(4),
                            ativo        = True)
 
         db.session.add(assunto)
@@ -2001,13 +2052,13 @@ def lista_assuntos(item_cat_id,pacto_id):
 
     # resgata assuntos
     
-    assuntos = db.session.query(Assuntos.valor,
+    assuntos = db.session.query(Assuntos.chave,Assuntos.valor,
                                 Pactos_de_Trabalho_Atividades.dataInicio)\
                          .join(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.assuntoId == Assuntos.assuntoId)\
                          .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
                          .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
                                  Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                         .order_by(Assuntos.valor.desc())\
+                         .order_by(Assuntos.chave.desc())\
                          .all()
 
     quantidade = len(assuntos)
@@ -2272,7 +2323,7 @@ def inicia_plano(pacto_id):
 
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
-#iniciando um plano de trabalho (pacto) que foi aceito
+#finalizando um plano de trabalho (pacto)
 
 @demandas.route('/finaliza_plano/<pacto_id>',methods=['GET','POST'])
 @login_required
@@ -2353,6 +2404,46 @@ def finaliza_plano(pacto_id):
 
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
+#finalizando um plano de trabalho (pacto)
+
+@demandas.route('/reabre_plano/<pacto_id>',methods=['GET','POST'])
+@login_required
+def reabre_plano(pacto_id):
+    """+---------------------------------------------------------------------------------+
+       |Reabre um plano que está executado.                                              |
+       |                                                                                 |
+       |Recebe o ID do plano como parâmetro.                                             |
+       +---------------------------------------------------------------------------------+
+    """
+
+    hoje = datetime.now()
+
+    #pega e-mail do usuário logado
+    email = current_user.userEmail
+
+    #pega id do usuário logado
+    usu = db.session.query(Pessoas.pessoaId).filter(Pessoas.pesEmail==email).first()
+
+    #pega o plano e muda sua situação para Em execução
+    plano = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
+
+    plano.situacaoId = 405
+
+    db.session.commit()
+
+    # cria registro em Plactos_de_Trabalho_Hist
+    hist = Pactos_de_Trabalho_Hist(pactoTrabalhoHistoricoId = uuid.uuid4(),
+                                    pactoTrabalhoId     = pacto_id,
+                                    situacaoId          = 405,
+                                    observacoes         = 'Plano de Trabalho reaberto.',
+                                    responsavelOperacao = usu.pessoaId,
+                                    dataOperacao        = hoje)   
+    db.session.add(hist)
+
+    flash('Plano de trabalho reaberto!','sucesso')
+    registra_log_unid(current_user.id,'Plano de Trabalho reaberto.')
+    
+    return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 
 # # procurando uma demanda

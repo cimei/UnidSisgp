@@ -53,9 +53,9 @@
 
         <div class="form-group col-8" >
           {% if acao == 'i' %}
-            {{ render_field(form.consi_conclu,class="form-control",obr=True,txt="Considerações:") }}
+            {{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,obr=True,txt="Considerações:") }}
           {% elif acao == 'f' or acao == 'c' %}
-            {{ render_field(form.consi_conclu,class="form-control",obr=True,txt="Conclusão:") }}
+            {{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,obr=True,txt="Conclusão:") }}
           {% endif %}
         </div>
 

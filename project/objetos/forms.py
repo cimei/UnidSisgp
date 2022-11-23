@@ -29,7 +29,7 @@ class ObjetoForm(FlaskForm):
 class ObjetoEscolhaForm(FlaskForm):
 
     obj      = SelectField('Objeto:')
-    replicar = BooleanField('Replicar para demais ocorrências?')
+    replicar = BooleanField('Replicar para ocorrências sem objeto?')
 
     submit = SubmitField('Registrar')     
 

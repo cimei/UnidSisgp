@@ -28,6 +28,9 @@
                   {% if (usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None) and post.descricao == 'Em execução' %}
                     <button type="button" class="btn btn-success btn-sm" data-toggle='modal' data-target='#encerra_modal'>Encerrar Plano</button>
                   {% endif %}
+                  {% if usuario.pesNome != post.pesNome and usuario.tipoFuncaoId != None and post.descricao == 'Executado' %}
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle='modal' data-target='#reabre_modal'>Reabrir Plano</button>
+                  {% endif %}
                 </div>  
                 <div class="col-4" align="right">
                   {% if usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None %}
@@ -63,6 +66,35 @@
                   </div>
                 </div>
               </div> 
+
+              {# modal reabrir plano de trabalho #}
+
+              <div class="modal" tabindex="-1" role="dialog" id="reabre_modal">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <div class="p-3 mb-2 bg-danger text-white">
+                      <h5 class="modal-title">Reabrir o Plano de Trabalho?</h5>
+                      </div>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Deseja colocar este Plano de Trabalho como Em execução?</p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                      <form action="{{url_for('demandas.reabre_plano',pacto_id=id)}}" method="post">
+                        <input class="btn btn-danger" type="submit" name="" value="Executar">
+                      </form>
+
+                    </div>
+                  </div>
+                </div>
+              </div> 
+  
 
               {# modal para verificar tipo de solicitação #}
 
@@ -376,61 +408,66 @@
 
                         {% if d[0] == item.id %}
                       
-                        {% if item.tipo[18:22] == 'Nova' %}
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                              <div class="ms-2 me-auto">
-                                <div><span class="text-muted">Atividade: </span><br> <b>{{d[1]['itemCatalogo']}}</b> </div>
-                              </div>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                              <div class="ms-2 me-auto">
-                                {% if d[1]['tempoPrevistoPorItem'] != None %}
-                                  <div><span class="text-muted"> Tempo previsto: </span> <b>{{d[1]['tempoPrevistoPorItem']|string()|replace(".",",")}} h</b> </div>
-                                {% endif %}  
-                                <div><span class="text-muted"> Situação: </span> <b>{{d[1]['situacao']}}</b> </div>
-                              </div>
-                            </li>
-                            {% if d[1]['dataInicio'] != 'null' and d[1]['dataInicio'] != None and d[1]['dataInicio'] != '' %}
+                          {% if item.tipo[18:22] == 'Nova' %}
                               <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
-                                  <div><span class="text-muted"> Início: </span> <b>{{(d[1]['dataInicio']|str_to_date).strftime('%d/%m/%Y')}}</b> </div>
+                                  <div><span class="text-muted">Atividade: </span><br> <b>{{d[1]['itemCatalogo']}}</b> </div>
                                 </div>
                               </li>
-                            {% endif %}
-                            {% if d[1]['dataFim'] != 'null' and d[1]['dataFim'] != None and d[1]['dataFim'] != '' %}
+                              <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                  {% if d[1]['tempoPrevistoPorItem'] != None %}
+                                    <div><span class="text-muted"> Tempo previsto: </span> <b>{{d[1]['tempoPrevistoPorItem']|string()|replace(".",",")}} h</b> </div>
+                                  {% endif %}  
+                                  <div><span class="text-muted"> Situação: </span> <b>{{d[1]['situacao']}}</b> </div>
+                                </div>
+                              </li>
+                              {% if d[1]['dataInicio'] != 'null' and d[1]['dataInicio'] != None and d[1]['dataInicio'] != '' %}
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                  <div class="ms-2 me-auto">
+                                    <div><span class="text-muted"> Início: </span> <b>{{(d[1]['dataInicio']|str_to_date).strftime('%d/%m/%Y')}}</b> </div>
+                                  </div>
+                                </li>
+                              {% endif %}
+                              {% if d[1]['dataFim'] != 'null' and d[1]['dataFim'] != None and d[1]['dataFim'] != '' %}
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                  <div class="ms-2 me-auto">
+                                    <div><span class="text-muted"> Fim: </span> <b>{{(d[1]['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b>  </div>
+                                  </div>
+                                </li>
+                              {% endif %}
+                          {% elif item.tipo[18:22] == 'Alte' %}
                               <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                   <div><span class="text-muted"> Fim: </span> <b>{{(d[1]['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b>  </div>
                                 </div>
                               </li>
-                            {% endif %}
-                          {% elif item.tipo[18:22] == 'Alte' %}
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                              <div class="ms-2 me-auto">
-                                <div><span class="text-muted"> Fim: </span> <b>{{(d[1]['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b>  </div>
-                              </div>
-                            </li>
                           {% elif item.tipo[18:22] == 'Excl' %}
-                              {% for a in ativs_simp %}
-                                {% if d[1]['pactoTrabalhoAtividadeId'] == a.id|lower %}
-                                  <li class="list-group-item d-flex justify-content-between align-items-start">
-                                    <div class="ms-2 me-auto">
-                                      <div><span class="text-muted"> Ocorrência da Atividade: </span><br> <b>{{a.titulo}} - {{a.tempoPrevistoTotal|string()|replace('.',',')}} h</b>  </div>
-                                    </div>
-                                  </li>
-                                {% endif %}   
-                              {% endfor %}
-                          {% elif item.tipo[18:22] == 'Praz' %}
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                              <div class="ms-2 me-auto">
-                                <div><span class="text-muted"> Atividade: </span><br></div>
                                 {% for a in ativs_simp %}
-                                  {% if d[1]['pactoTrabalhoAtividadeId'] == a.id|lower %}
-                                    <span> <b>({{a.seq}}) {{a.titulo}}</b></span>
-                                  {% endif %}  
+                                  {% if d[1]['pactoTrabalhoAtividadeId']|lower == a.id|lower %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                      <div class="ms-2 me-auto">
+                                        <div><span class="text-muted"> Situação </span><b>{{a.situa}}</b></div>
+                                      </div>
+                                    </li>
+                                  {% endif %}   
                                 {% endfor %}
-                              </div>
-                            </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                  <div class="ms-2 me-auto">
+                                    <div><span class="text-muted"> Atividade: </span><b>{{d[1]['itemCatalogo']}}</b></div>
+                                  </div>
+                                </li>
+                          {% elif item.tipo[18:22] == 'Praz' %}
+                              <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                  <div><span class="text-muted"> Atividade: </span><br></div>
+                                  {% for a in ativs_simp %}
+                                    {% if d[1]['pactoTrabalhoAtividadeId'] == a.id|lower %}
+                                      <span> <b>({{a.seq}}) {{a.titulo}}</b></span>
+                                    {% endif %}  
+                                  {% endfor %}
+                                </div>
+                              </li>
                           {% endif %}
 
                         {% endif %}

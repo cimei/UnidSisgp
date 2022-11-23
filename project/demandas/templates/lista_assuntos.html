@@ -4,7 +4,7 @@
 
 <div class="jumbotron">
 
-  <h5><b>Assuntos e Objetos</b> na atividade <b>{{ativ.titulo}}</b> do plano informado</h5>
+  <h5><b>Assuntos e Objetos</b> em todas as ocorrências da atividade <b>{{ativ.titulo}}</b> do plano informado</h5>
 
   {% if qtd_objetos > 0 %}
     <hr>
@@ -19,7 +19,7 @@
   <caption>
     <div class="row">
         <div class="col">
-          <p>Lista do(s) <span class="badge badge-pill badge-primary">{{quantidade}}</span> assuntos registrados. </p>
+          <p>Lista do(s) <span class="badge badge-pill badge-primary">{{quantidade}}</span> assuntos registrados em todas as ocorrências. </p>
         </div>
     </div>
   </caption>
@@ -31,6 +31,7 @@
       <thead>
         <tr>
           <th scope="col"><p align = "center">#</p></th>
+          <th scope="col"><p align = "center">Data</p></th>
           <th scope="col"><p align = "left">Registros</p></th>
         </tr>
       </thead>
@@ -41,6 +42,7 @@
         <tr>
           
           <th scope="row"><p align = "center">{{assuntos.index(a) + 1}}</p></th>
+          <td><p align = "center"> {{a.chave[4:6]}}/{{a.chave[2:4]}}/{{a.chave[0:2]}} </p></td>
           <td><p align = "left"> {{a.valor}} </p></td>
 
         </tr>

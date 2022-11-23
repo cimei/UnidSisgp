@@ -73,6 +73,8 @@ from project.usuarios.views import usuarios
 from project.demandas.views import demandas
 from project.objetos.views import objetos
 from project.pgs.views import pgs
+from project.pessoas.views import pessoas
+
 
 app.register_blueprint(core)
 app.register_blueprint(usuarios)
@@ -81,3 +83,5 @@ app.register_blueprint(error_pages)
 app.register_blueprint(demandas,url_prefix='/demandas')
 app.register_blueprint(objetos,url_prefix='/objetos')
 app.register_blueprint(pgs,url_prefix='/pgs')
+app.register_blueprint(pessoas,url_prefix='/pessoas')
+

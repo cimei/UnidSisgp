@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+<div class="jumbotron">
+  
+  <h5>Lista das Pessoas na Unidade {{unid}} e suas subordinadas</h5>
+
+  <caption>
+    <div class="row">
+        <div class="col">
+          <p>Lista das <span class="badge badge-pill badge-primary">{{quantidade}}</span> pessoas.</p>
+        </div>
+    </div>
+  </caption>
+
+  <div style="overflow-y:auto ; height:450px">
+    <table id="table"
+          data-toggle="table"
+          data-filter-control="true"
+          data-show-search-clear-button="true"
+          data-sortable="true"
+          classes="table-sm"
+          data-show-columns="true"
+          data-show-columns-toggle-all="true"
+          class="table table-striped table-hover table-sm">
+      <caption>Pessoas</caption>
+      <thead>
+        <tr>
+          <th scope="col"><p align = "center">#</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Nome</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Siape</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">E-mail</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Unidade</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Função</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Carga Hor.</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Situação</p></th>
+          <th scope="col" data-sortable="true"><p align = "center">Vínculo</p></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pessoas %}
+
+        <tr>
+          <th scope="row"><abbr title="Planos de Trabalo desta pessoa.">
+            <p align = "center"><a href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=p.pessoaId)}}"> {{pessoas.index(p) + 1}} </a>
+          </p></th>
+          <td><p align = "center"> {{p.pesNome}} </p></td>
+          <td><p align = "center"> {{p.pesMatriculaSiape}} </p></td>
+          <td><p align = "center"> {% if p.pesEmail == None %}N.I.{% else %}{{p.pesEmail}}{% endif %} </p></td>
+          <td><p align = "center"> {{p.undSigla}} </p></td>
+          <td><p align = "center"> {% if p.tfnDescricao == None %}N.I.{% else %}{{p.tfnDescricao}}{% endif %} </p></td>
+          <td><p align = "center"> {{p.cargaHoraria}} </p></td>
+          <td><p align = "center"> {{p.spsDescricao}} </p></td>
+          <td><p align = "center"> {% if p.tvnDescricao == None %}N.I.{% else %}{{p.tvnDescricao}}{% endif %} </p></td>
+        </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+  </div>
+
+</div>
+</div>
+{% endblock %}

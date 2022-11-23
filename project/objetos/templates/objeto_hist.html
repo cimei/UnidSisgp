@@ -4,7 +4,7 @@
 <div class="jumbotron">
 
 
-  <h5><b>Histórico do Objeto {{ativs_objeto[0].chave}} - {{ativs_objeto[0].descricao}}</b></h5>
+  <h5>Atividades Associadas ao Objeto: <b>{{ativs_objeto[0].chave}} - {{ativs_objeto[0].descricao}}</b></h5>
 
   <caption>
     <div class="row">
@@ -36,24 +36,43 @@
           <th data-field="columnC" data-filter-control="input" data-sortable="true">column C</th> -->
       
           <th scope="col"><p align = "center">#</p></th>
-          <th scope="col"><p align = "center">Ini.</p></th>
-          <th scope="col"><p align = "center">Fim</p></th>
-          <th scope="col" data-field="Descrição" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Conclusão</p></th>
+          <th scope="col"><p align = "center">Ini. Ativ.</p></th>
+          <th scope="col"><p align = "center">Fim Ativ.</p></th>
+          <th scope="col"><p align = "center">Conclusão</p></th>
           <th scope="col"><p align = "center">Assuntos</p></th>
         </tr>
       </thead>
       <tbody>
 
+        {% set ativ_rep = namespace(ativ = '') %}
+
         {% for a in ativs_objeto %}
 
-        <tr>
-          
-          <th scope="row"><p align = "center"> {{ativs_objeto.index(a) + 1}} </p></th>
-          <td><p align = "center"> {% if a.dataInicio == None %}N.I.{% else %}{{a.dataInicio.strftime('%d/%m/%Y')}}{% endif %} </p></td>
-          <td><p align = "center"> {% if a.dataFim == None %}N.I.{% else %}{{a.dataFim.strftime('%d/%m/%Y')}}{% endif %} </p></td>
-          <td><p align = "center"> {{a.consideracoesConclusao}} </p></td>
-          <td><p align = "center"> {{a.valor}} </p></td>
-        </tr>
+          <tr>
+            <th scope="row"><p align = "center">
+              {% if a.assunto_data == None %}
+                {{ativs_objeto.index(a) + 1}}
+              {% else %}
+                <a class="card-title" href="{{url_for('demandas.demanda',pacto_id=a.pactoTrabalhoId)}}">
+                <abbr title="Clique aqui para ver plano que contém esta atividade.">{{ativs_objeto.index(a) + 1}} </abbr></a></p></th>
+              {% endif %}
+            {% if ativ_rep.ativ != a.pactoTrabalhoAtividadeId %}
+              <td><p align = "center"> {% if a.dataInicio == None %}N.I.{% else %}{{a.dataInicio.strftime('%d/%m/%Y')}}{% endif %} </p></td>
+              <td><p align = "center"> {% if a.dataFim == None %}N.I.{% else %}{{a.dataFim.strftime('%d/%m/%Y')}}{% endif %} </p></td>
+              <td><p align = "center"> {% if a.consideracoesConclusao == None %}N.I.{% else %} {{a.consideracoesConclusao}} {% endif %}</p></td>
+            {% else %}
+              <td><p align = "center"> " </p></td>
+              <td><p align = "center"> " </p></td>
+              <td><p align = "center"> " </p></td>
+            {% endif %}  
+            <td><p align = "left"> {% if a.assunto_data == None %}
+                                     N.I.
+                                   {% else %}
+                                     {{a.assunto_data[4:6]}}/{{a.assunto_data[2:4]}}/{{a.assunto_data[0:2]}} - {{a.valor}}
+                                   {% endif %} </p></td>
+          </tr>
+
+          {% set ativ_rep.ativ = a.pactoTrabalhoAtividadeId %}
 
         {% endfor %}
 

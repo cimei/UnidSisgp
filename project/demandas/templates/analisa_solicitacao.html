@@ -105,6 +105,11 @@
                    Há <b>{{ ocor_ativ_qtd }}</b> ocorrências desta mesma solicitação. <br>
                    Marque aqui {{ form.replicas }} para replicar a análise para todas elas.
                   {% endif %}
+
+                  {% if ocor_nova_qtd > 1 %}
+                   Há <b>{{ ocor_nova_qtd }}</b> ocorrências desta mesma solicitação. <br>
+                   Marque aqui {{ form.replicas }} para replicar a análise para todas elas.
+                  {% endif %}
                 </div>
 
                   <div class="form-group">

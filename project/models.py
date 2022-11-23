@@ -886,4 +886,4 @@ class Atividade_Pacto_Assunto(db.Model):
         self.assuntoId                       = assuntoId
 
     def __repr__ (self):
-        return f"{self.planoTrabalhoObjetoId};{self.pactoTrabalhoAtividadeId};{self.assuntoId}"                                      
+        return f"{self.pactoTrabalhoAtividadeId};{self.assuntoId}"                                      

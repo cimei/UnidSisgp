@@ -260,9 +260,9 @@ def altera_objeto(objeto_id):
 
 ## relacionar objeto com atividade de um Pacto
 
-@objetos.route('/<plano_id>/<pacto_ativ_id>/<pacto_id>/objeto_ativ_pacto',methods=['GET','POST'])
+@objetos.route('/<pacto_ativ_id>/<pacto_id>/objeto_ativ_pacto',methods=['GET','POST'])
 @login_required
-def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
+def objeto_ativ_pacto(pacto_id,pacto_ativ_id):
     """
     +---------------------------------------------------------------------------------------+
     |Relaciona um objeto a uma atividade de um pacto de trabalho.                           |
@@ -274,11 +274,6 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
     ativ = db.session.query(Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                      .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
                      .first()
-
-    ocorrencias = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
-                           .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
-                                   Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
-                           .all()
 
     # pega a unidade do pacto
     pacto = db.session.query(Pactos_de_Trabalho.unidadeId).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
@@ -303,27 +298,51 @@ def objeto_ativ_pacto(plano_id,pacto_id,pacto_ativ_id):
 
     if form.validate_on_submit(): 
 
+        if form.replicar.data:
+            # atividades do pacto com um mesmo titulo (ocorrências), com situação "Programada" e sem objeto associado
+            # junta este grupo com a ocorrência selecionada
+            ocorrencias = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                            .outerjoin(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                            .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
+                                    Pactos_de_Trabalho_Atividades.situacaoId == 501,
+                                    Objeto_Atividade_Pacto.pactoAtividadePlanoObjetoId == None)\
+                            .all()\
+                            +\
+                            db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                            .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
+                            .all()
+        else:
+            # ocorrência única selecionda de uma atividade no pacto
+            ocorrencias = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                            .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == ativ.itemCatalogoId,
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == pacto_ativ_id)\
+                            .all()
+
         for ocorrencia in ocorrencias:
 
-            # obj_atual = db.session.query(Objeto_Atividade_Pacto)\
-            #                     .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
-            #                     .first()
+            obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+                                  .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
+                                  .first()
 
-            # if obj_atual:
-            #     obj_atual.planoTrabalhoObjetoId = form.obj.data
-            # else:
-            obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
-                                                    planoTrabalhoObjetoId = form.obj.data,
-                                                    pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
+            if obj_atual:
+                # permite trocar objeto atual, caso ele exista
+                obj_atual.planoTrabalhoObjetoId = form.obj.data
+            else:
+                # cria nova associação da ocorrência ao objeto escolhido 
+                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
+                                                        planoTrabalhoObjetoId = form.obj.data,
+                                                        pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
 
-            db.session.add(obj_ativ_pacto)
+                db.session.add(obj_ativ_pacto)
 
             db.session.commit()
 
-            if form.replicar.data:
-                registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e todas as demais ocorrências.')  
-            else:
-                registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
+        if form.replicar.data:
+            registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e demais ocorrências sem objeto prévio.')  
+        else:
+            registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
 
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
@@ -405,13 +424,17 @@ def objeto_hist(objeto_id):
                                     Pactos_de_Trabalho_Atividades.dataInicio,
                                     Pactos_de_Trabalho_Atividades.dataFim,
                                     Pactos_de_Trabalho_Atividades.consideracoesConclusao,
-                                    Assuntos.valor)\
+                                    label('assunto_data',Assuntos.chave),
+                                    Assuntos.valor,
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
                              .outerjoin(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
                              .outerjoin(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
                              .outerjoin(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId==Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
                              .outerjoin(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId==Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                              .outerjoin(Assuntos, Assuntos.assuntoId==Atividade_Pacto_Assunto.assuntoId)\
                              .filter(Objetos.objetoId==objeto_id)\
+                             .order_by(Pactos_de_Trabalho_Atividades.dataFim)\
                              .all() 
                              
     quantidade = len(ativs_objeto)
