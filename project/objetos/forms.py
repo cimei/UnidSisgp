@@ -19,10 +19,8 @@ from wtforms.validators import DataRequired, Regexp, Optional
 
 class ObjetoForm(FlaskForm):
 
-    desc = StringField('Descrição:', validators=[DataRequired(message="Insira uma descrição!")])
-    tipo = IntegerField('Tipo:', validators=[DataRequired(message="Insira um tipo!")])
     chave = StringField('Chave:', validators=[DataRequired(message="Insira uma chave!")])
-    ativo = BooleanField('Ativo?')
+    desc = StringField('Descrição:', validators=[DataRequired(message="Insira uma descrição!")])
 
     submit      = SubmitField('Registrar')
 

@@ -158,48 +158,33 @@
             {% endif %}
             <p></p>
 
-            <p align="center">Plano de Trabalho</p>
+            <p align="center">Plano de Trabalho - {% if post.descricao == 'Em execução' %}
+              <span class="text-primary"><b>{{post.descricao}}</b></span>
+            {% elif post.descricao == 'Rejeitado' %}  
+              <span class="text-danger"><b>{{post.descricao}}</b></span>
+            {% elif post.descricao == 'Executado' %}  
+              <span class="text-success"><b>{{post.descricao}}</b></span>  
+            {% elif post.descricao == 'Enviado para aceite' %}  
+              <span class="text-warning"><b>{{post.descricao}}</b></span> 
+            {% elif post.descricao == 'Aceito' %}  
+              <span class="text-info"><b>{{post.descricao}}</b></span>   
+            {% else %}
+              <b>{{post.descricao}}</b>
+            {% endif %}</p>
 
             <ul class="small list-group">
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                    <p>Resp.: <b>{{post.pesNome}}</b></p>
-                    <span>Unidade: <b>{{post.undSigla}}</b></span>
+                    <p>Resp.: <b>{{post.pesNome}}</b>&nbsp; Unidade: <b>{{post.undSigla}}</b></p>
+                    Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b>
                 </div>
               </li>
+
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                  <p>Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b></p>
-                    (período com <b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)
+                  Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b>
+                    &nbsp;(<b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)
                  </div>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-start">
-                <div class="ms-2 me-auto">
-                  <div>
-                    Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b> - Sit.: 
-                    {% if post.descricao == 'Em execução' %}
-                      <span class="text-primary"><b>{{post.descricao}}</b></span>
-                    {% elif post.descricao == 'Rejeitado' %}  
-                      <span class="text-danger"><b>{{post.descricao}}</b></span>
-                    {% elif post.descricao == 'Executado' %}  
-                      <span class="text-success"><b>{{post.descricao}}</b></span>  
-                    {% elif post.descricao == 'Enviado para aceite' %}  
-                      <span class="text-warning"><b>{{post.descricao}}</b></span> 
-                    {% elif post.descricao == 'Aceito' %}  
-                      <span class="text-info"><b>{{post.descricao}}</b></span>   
-                    {% else %}
-                      <b>{{post.descricao}}</b>
-                    {% endif %}
-                  </div>
-                </div>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-start">
-                <div class="ms-2 me-auto">
-                  <div>Execução (tempo): {% if post.percentualExecucao == None %}N.C.{% else %}<b>{{post.percentualExecucao|string()|replace(".",",")}} %</b>{% endif %} - 
-                       Rel. previsto/realizado: {% if post.relacaoPrevistoRealizado == None %}N.C.{% else %}<b>{{post.relacaoPrevistoRealizado|string()|replace(".",",")}} %</b>{% endif %}<br>
-                       Execução (qtd. ativ.): {% if percentual_qtd_ativs_executado == None %}N.C.{% else %}<b>{{percentual_qtd_ativs_executado|string()|replace(".",",")}} %</b>{% endif %}
-                  </div>
-                </div>
               </li>
               
               <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -210,12 +195,56 @@
                        {% else %}
                          <b><span class = "text-danger">{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}}</span></b>  
                        {% endif %}  
-                   h comprometidas com atividades sendo: <br>
-                  (<b>{{sum_ativs_p_tempo_total|round|string()|replace(".",",")}}</b> h programadas, 
-                   <b>{{sum_ativs_e_tempo_total|round(1)|string()|replace(".",",")}}</b> h em execução e 
-                   <b>{{sum_ativs_c_tempo_total|round(1)|string()|replace(".",",")}}</b> h concluídas)</div>
+                   h comprometidas com atividades, sendo: <br>
+                    <div class = "row">
+                      <div class = "col-4 text-right">
+                        <b>{{sum_ativs_p_tempo_total|round|string()|replace(".",",")}} h</b>
+                      </div>
+                      <div class = "col">  
+                        programadas
+                      </div>    
+                    </div><div class = "row">
+                      <div class = "col-4 text-right">
+                        <b>{{sum_ativs_e_tempo_total|round(1)|string()|replace(".",",")}} h</b>
+                      </div>
+                      <div class = "col">  
+                        em execução
+                      </div>    
+                    </div>
+                    <div class = "row">
+                      <div class = "col-4 text-right">
+                        <b>{{sum_ativs_c_tempo_total|round(1)|string()|replace(".",",")}} h</b>
+                      </div>
+                      <div class = "col">  
+                        concluídas
+                      </div>    
+                    </div>
+                  </div>
                 </div>
               </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                  <div><abbr title="Quantidade de atividades executadas dividido pela quantidade de atividades do plano.">Execução (qtd)</abbr>:
+                         {% if percentual_qtd_ativs_executado == None %}N.C.{% else %}<b>{{percentual_qtd_ativs_executado|string()|replace(".",",")}} %</b>{% endif %}<br>
+                       <abbr title="Tempo total declarado como realizado dividido pelo tempo total previsto nas atividades do plano.">Execução (tempo)</abbr>:
+                         {% if percentual_tempo_realizado == None %}N.C.{% else %}<b>{{percentual_tempo_realizado|string()|replace(".",",")}} %</b>{% endif %}<br>
+                       <abbr title="Valor resgatado do BD. Este sistema registra o tempo previsto total das atividades concluídas dividido pelo tempo total declarado como realizado.">Relação previsto/realizado</abbr>:
+                         {% if post.relacaoPrevistoRealizado == None %}N.C.{% else %}<b>{{post.relacaoPrevistoRealizado|string()|replace(".",",")}} %</b>{% endif %}<br>
+                       <abbr title="Valor resgatado do BD. Este sistema registra a Execução (qtd) neste campo.">Produtividade</abbr>:
+                         {% if post.percentualExecucao == None %}N.C.{% else %}<b>{{post.percentualExecucao|string()|replace(".",",")}} %</b>{% endif %}<br>
+                  </div>
+                </div>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-center">
+                <div align="center">
+                  <a href="{{url_for('demandas.relatorio', pacto_id=id)}}">Gerar relatório em pdf</a>
+                </div>
+              </li>
+
+
+
             </ul>
 
           </div>
@@ -264,16 +293,15 @@
                     </div>
 
                     <div class="row">
-
-                      <div class="col-3">
-                        {{item.tempoPrevistoPorItem|string()|replace(".",",")}} h item
-                      </div>
                       <div class="col-3">
                         {% if item.tam_grupo > 1 %}
                           {{(item.tam_grupo * item.tempoPrevistoPorItem)|string()|replace(".",",")}} h total
                         {% else %}
                           {{item.tempoPrevistoTotal|string()|replace(".",",")}} h total
                         {% endif %}
+                      </div>
+                      <div class="col-3">
+                        {{item.tempoPrevistoPorItem|string()|replace(".",",")}} h item
                       </div>
                       {% if tem_assunto[item.titulo] or tem_objeto[item.titulo] %}
                       <div class="col">    
@@ -313,7 +341,11 @@
       <div class="col-sm">
         <div class="card border-info">
         <div class="card bg-light mb-3">
-          <div class="card-header"><div class="text-info">Histórico (<b>{{qtd_hist}}</b>), Reuniões (<b>{{qtd_reun}}</b>) e Solicitações (<b>{{qtd_solic}}</b>)</div></div>
+          <div class="card-header">
+            <div class="text-info" align="center">
+              Histórico (<b>{{qtd_hist}}</b>), Reuniões (<b>{{qtd_reun}}</b>) e Solicitações (<b>{{qtd_solic}}</b>)
+            </div>
+          </div>
           <div class="card-body"  style="overflow-y:auto; height:550px">
             <div class="list-group">
 

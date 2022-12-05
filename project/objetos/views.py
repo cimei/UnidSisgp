@@ -189,23 +189,34 @@ def add_objeto(plano_id,pacto_id):
 
     if form.validate_on_submit():
 
-        objeto = Objetos(objetoId  = uuid.uuid4(),
-                         descricao = form.desc.data,
-                         tipo      = 1,
-                         chave     = form.chave.data,
-                         ativo     = True)
+        # verifica se objeto já existe
+        obj = db.session.query(Objetos).filter(Objetos.chave==form.chave.data).first()
 
-        db.session.add(objeto)
-        db.session.commit()
+        # não existindo, cria
+        if not obj:
+
+            objeto = Objetos(objetoId  = uuid.uuid4(),
+                            descricao = form.desc.data,
+                            tipo      = 1,
+                            chave     = form.chave.data,
+                            ativo     = True)
+
+            db.session.add(objeto)
+            db.session.commit()
+
+        if obj:
+            obj_id = obj.objetoId
+        else:
+            obj_id = objeto.objetoId
 
         objeto_pg = Objeto_PG(planoTrabalhoObjetoId = uuid.uuid4(),
-                              planoTrabalhoId       = plano_id,
-                              objetoId              = objeto.objetoId)                 
+                                planoTrabalhoId     = plano_id,
+                                objetoId            = obj_id)                 
 
         db.session.add(objeto_pg)
-        db.session.commit()                      
+        db.session.commit()
 
-        registra_log_unid(current_user.id,'Objeto '+ objeto.objetoId +' inserido no banco de dados.')
+        registra_log_unid(current_user.id,'Objeto '+ obj_id +' inserido no banco de dados.')
 
         flash('Objeto registrado!','sucesso')
 
@@ -427,12 +438,15 @@ def objeto_hist(objeto_id):
                                     label('assunto_data',Assuntos.chave),
                                     Assuntos.valor,
                                     Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
-                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
+                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoId,
+                                    Unidades.undSigla)\
                              .outerjoin(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
                              .outerjoin(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
                              .outerjoin(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId==Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
                              .outerjoin(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId==Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                              .outerjoin(Assuntos, Assuntos.assuntoId==Atividade_Pacto_Assunto.assuntoId)\
+                             .outerjoin(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId==Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
+                             .outerjoin(Unidades,Unidades.unidadeId==Pactos_de_Trabalho.unidadeId)\
                              .filter(Objetos.objetoId==objeto_id)\
                              .order_by(Pactos_de_Trabalho_Atividades.dataFim)\
                              .all() 

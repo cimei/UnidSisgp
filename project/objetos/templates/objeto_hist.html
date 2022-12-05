@@ -36,6 +36,7 @@
           <th data-field="columnC" data-filter-control="input" data-sortable="true">column C</th> -->
       
           <th scope="col"><p align = "center">#</p></th>
+          <th scope="col"><p align = "center">Unidade</p></th>
           <th scope="col"><p align = "center">Ini. Ativ.</p></th>
           <th scope="col"><p align = "center">Fim Ativ.</p></th>
           <th scope="col"><p align = "center">Conclusão</p></th>
@@ -56,6 +57,7 @@
                 <a class="card-title" href="{{url_for('demandas.demanda',pacto_id=a.pactoTrabalhoId)}}">
                 <abbr title="Clique aqui para ver plano que contém esta atividade.">{{ativs_objeto.index(a) + 1}} </abbr></a></p></th>
               {% endif %}
+            <td><p align = "center">{{a.undSigla}}</p></td>  
             {% if ativ_rep.ativ != a.pactoTrabalhoAtividadeId %}
               <td><p align = "center"> {% if a.dataInicio == None %}N.I.{% else %}{{a.dataInicio.strftime('%d/%m/%Y')}}{% endif %} </p></td>
               <td><p align = "center"> {% if a.dataFim == None %}N.I.{% else %}{{a.dataFim.strftime('%d/%m/%Y')}}{% endif %} </p></td>
