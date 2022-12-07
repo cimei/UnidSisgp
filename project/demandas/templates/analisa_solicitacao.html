@@ -9,7 +9,7 @@
       <div class="col-sm-6">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Solicitação no Pacto {{pacto_id}}</h5>
+            <h5 class="card-title">Solicitação</h5>
             
             <p class="card-text text-success"> {{solicitacao.tipo[0:17]}}<b>{{solicitacao.tipo[16:]}}</b> por {{solicitacao.pesNome}}</p>
                     <small class="text-muted"> Observações do Solicitante: </small>
@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="form-group">
-                  {{ render_field(form.observacoes,class="form-control form-control-lg", rows="3",obr=True) }}
+                  {{ render_field(form.observacoes,class="form-control form-control-lg",size=2000, maxlength=2000, rows="3",obr=True) }}
                 </div>
 
                 <div class="form-group">

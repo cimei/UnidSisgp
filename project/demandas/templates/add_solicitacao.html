@@ -9,10 +9,9 @@
       <div class="col-sm-6">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Pacto {{pacto.pactoTrabalhoId}}</h5>
-            <p class="small"> <b>({{pacto.undSigla}})</b></p>
+            <h5 class="card-title">Registrar Solicitação</h5>
 
-            <p><h6 class="">Resp.: <b>{{pacto.pesNome}}</b></h6></p>
+            <p><h6 class="">Resp.: <b>{{pacto.pesNome}} ({{pacto.undSigla}})</b></h6></p>
 
             <p><h6 class="text-muted">Forma: <b>{{pacto.forma}}</b> - Situação: <b>{{pacto.descricao}}</b></h6></p>  
 
@@ -21,9 +20,19 @@
 
             <h6>Carga horária diária: <b>{{pacto.cargaHorariaDiaria}}</b></h6>
             
-            <h6>Percentual execução: <b>{{pacto.percentualExecucao|round(1)|string()|replace(".",",")}}</b></h6>
+            <h6>Percentual execução: {% if pacto.percentualExecucao %}
+                                      <b>{{pacto.percentualExecucao|round(1)|string()|replace(".",",")}}</b>
+                                     {% else %}  
+                                      <b>0</b>
+                                     {% endif %}
+            </h6>
             
-            <h6>Rel. previsto/realizado: <b>{{pacto.relacaoPrevistoRealizado|round(1)|string()|replace(".",",")}}</b></h6>
+            <h6>Rel. previsto/realizado: {% if pacto.relacaoPrevistoRealizado %}
+                                            <b>{{pacto.relacaoPrevistoRealizado|round(1)|string()|replace(".",",")}}</b>
+                                          {% else %}  
+                                            <b>0</b>
+                                          {% endif %}
+            </h6>
 
             <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|string()|replace(".",",")}} h</b> 
               - Já comprometido: <b>{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}} h</b></h6>
@@ -92,7 +101,7 @@
                   </div>
 
                   <div class="form-group">
-                    {{ render_field(form.desc,class="form-control form-control-lg", rows="3",obr=True) }}
+                    {{ render_field(form.desc,class="form-control form-control-lg", rows="3",size=2000, maxlength=2000,obr=True) }}
                   </div>
 
                   <div class="form-group col-3">

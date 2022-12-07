@@ -90,7 +90,7 @@ class SolicitacaoForm603(FlaskForm):
 class SolicitacaoForm604(FlaskForm):
 
     atividade  = SelectField('Atividade:')
-    qtd        = IntegerField('Quantidade de ocorrências:',default=1)
+    qtd        = IntegerField('Qtd ocor.:',default=1)
     desc       = TextAreaField('Justificativa:',validators=[DataRequired(message="Insira justificativa!")])
 
     submit     = SubmitField('Registrar')      

@@ -527,7 +527,7 @@ def ativ_ocor(pacto_id,item_cat_id):
                      .filter(Unidades.unidadeId == demanda.unidadeId)\
                      .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
                      .first()
-    if unid:                 
+    if unid.undSiglaCompleta:                 
         tree_sup = unid.undSiglaCompleta.split('/')
         tree_sup_ids = [u.unidadeId for u in Unidades.query.filter(Unidades.undSigla.in_(tree_sup))]
     else:
