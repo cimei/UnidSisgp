@@ -74,7 +74,7 @@
           <th scope="col" data-sortable="true"><p align = "center">Início</p></th>
           <th scope="col" data-sortable="true"><p align = "center">Fim</p></th>
           <th scope="col"><p align = "center">Atividades</p></th>
-          <th scope="col"><p align = "center">Metas</p></th>
+          <!-- <th scope="col"><p align = "center">Metas</p></th> -->
           <th scope="col"><p align = "center">Planos</p></th>
           <th scope="col"><p align = "center">Objetos</p></th>
           <th scope="col"><p align = "center">Ação</p></th>
@@ -92,14 +92,14 @@
           <td><p align = "center"> {{pt.dataFim.strftime('%d/%m/%Y')}} </p></td>
           <td><p align = "center"> <a class="" href="{{url_for('pgs.lista_atividades_pg',pg=pt.planoTrabalhoId)}}">
             <abbr title="Clique aqui para ver atividades deste PG.">{{pt.qtd_ativs}} </abbr></a></p></td>
-          <td><p align = "center"> 
+          <!-- <td><p align = "center"> 
               {% if pt.qtd_metas == None %}
                 0
               {% else %}
               <a class="" href="{{url_for('pgs.lista_metas_pg',pg=pt.planoTrabalhoId)}}">
                 <abbr title="Clique aqui para ver as metas deste PG.">{{pt.qtd_metas}} </abbr></a>
               {% endif %}
-          </p></td>
+          </p></td> -->
           <td><p align = "center"> 
             {% if pt.qtd_pactos == None %}
               0

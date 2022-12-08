@@ -1,2 +1,12 @@
 ## Atualizações ##
 
+
+08/12/2022
+
+Correção na geração do relatório do plano em pdf. Correção na data de início de uma ocorrência de atividade no plano.
+v1.0.1
+
+07/12/2022
+
+Lançamento da primeira versão.
+v1.0.0

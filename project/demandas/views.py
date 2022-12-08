@@ -15,25 +15,25 @@
 
 # views.py dentro da pasta demandas
 
-from flask import render_template, url_for, flash, request, redirect, Blueprint, abort,send_from_directory
+from flask import render_template, url_for, flash, redirect, Blueprint, abort,send_from_directory
 from flask_login import current_user, login_required
-from sqlalchemy import or_, and_, func, literal, case, distinct
+from sqlalchemy import or_, func, literal, case, distinct
 from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho, \
-                           Atividades, VW_Unidades, cat_item_cat, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Reuniao,\
-                           Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades, Planos_de_Trabalho_Metas,\
+                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Reuniao,\
+                           Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades,\
                            Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
                            Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist
 
 from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, SolicitacaoForm603 , SolicitacaoForm604, SolicitacaoAnaliseForm,\
                                    PreSolicitacaoForm, InciaConcluiAtivForm, AvaliaAtivForm, AddAssuntoForm, CriaPlanoForm,\
-                                   AtivForm, AnalisaPlano
+                                   AnalisaPlano
 
 from project.usuarios.views import registra_log_unid                                   
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 # from fpdf import FPDF
 
 import uuid
@@ -1127,8 +1127,6 @@ def solicitacao(pacto_id,tipo):
                 flash('O novo prazo não compreende o tempo em atividades que o plano possui no momento, será necessário \
                        excluir '+str(dif_tempos).replace('.',',')+'h do rol de atividades do plano!','erro')
 
-                # return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
-            
             dados_dic = {"pactoTrabalhoId":pacto_id.lower(),\
                          "dataFim":(form.data_fim.data).strftime('%Y-%m-%dT%H:%M:%S'),\
                          "descricao":form.desc.data.replace('"','')}
@@ -1668,8 +1666,7 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             
         elif acao == 'f' or acao == 'c':
             ativ.situacaoId     = 503
-            if ativ.dataInicio == None or ativ.dataInicio == '':
-                ativ.dataInicio = form.data_fim.data
+            ativ.dataInicio     = form.data_ini.data
             ativ.dataFim        = form.data_fim.data
             ativ.tempoRealizado = form.tempo_realizado.data.replace(',','.')
             ativ.consideracoesConclusao = form.consi_conclu.data
@@ -1732,9 +1729,10 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             flash('Atividade concluída!','sucesso')
         elif acao == 'c':
             registra_log_unid(current_user.id,'Atividade concluída '+ ativ_pacto_id +' foi corrigida.')
-            flash('Atividade concluída corrigida!','sucesso')    
+            flash('Efetuada correção em atividade concluída!','sucesso')    
 
-        return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+        # return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+        return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
 
     form.tempo_realizado.data = str(ativ.tempoPrevistoTotal).replace('.',',')
 
@@ -2729,7 +2727,7 @@ def relatorio(pacto_id):
             if assuntos:
                 pdf.cell(0, 5, '                    Assuntos:', 0, 1)
                 for a in assuntos:
-                    pdf.cell(0, 5, '                    '+a.chave+' - '+a.valor, 0, 1)
+                    pdf.cell(0, 5, '                        '+a.chave[4:6]+'/'+a.chave[2:4]+'/'+a.chave[0:2]+' - '+a.valor, 0, 1)
 
         pdf.ln(5)
 
@@ -2779,13 +2777,13 @@ def relatorio(pacto_id):
 
 
 
-    pasta_pdf = os.path.normpath('/temp/relatorio.pdf')
-    if not os.path.exists(os.path.normpath('/temp/')):
-        os.makedirs(os.path.normpath('/temp/'))
+    pasta_pdf = os.path.normpath('/app/project/static/relatorio.pdf')
+    # if not os.path.exists(os.path.normpath('/temp/')):
+    #     os.makedirs(os.path.normpath('/temp/'))
     pdf.output(pasta_pdf, 'F')
 
     # o comandinho mágico que permite fazer o download de um arquivo
-    send_from_directory('/temp', 'relatorio.pdf')
+    send_from_directory('/app/project/static', 'relatorio.pdf')
 
 
-    return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+    return render_template('relatorio.html')

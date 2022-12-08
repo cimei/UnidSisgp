@@ -36,16 +36,14 @@
 # views.py na pasta users
 
 from itsdangerous import URLSafeTimedSerializer
-from flask import render_template, url_for, flash, redirect, request, Blueprint, abort
+from flask import render_template, url_for, flash, redirect, request, Blueprint
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 from threading import Thread
-from datetime import datetime, date, timedelta, time
+from datetime import datetime, timedelta, time
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, distinct
 from sqlalchemy.sql import label
-from sqlalchemy.orm import aliased
-from collections import Counter
 
 from project import db, mail, app
 from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
@@ -355,16 +353,19 @@ def logout():
     return redirect(url_for("core.index"))
 
 
-# Lista dos usuários vista pelo admin
+# Lista dos usuários
 
 @usuarios.route('/view_users')
 @login_required
 
 def view_users():
     """+--------------------------------------------------------------------------------------+
-       |Mostra lista dos usuários cadastrados.                                                |
+       |Mostra lista dos usuários da unidade do usuároi logado.                               |
        +--------------------------------------------------------------------------------------+
     """
+
+    # pega unidadeId e pessoaId do usuário
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
 
     pessoas_sub = db.session.query(Pessoas).subquery()
 
@@ -382,15 +383,10 @@ def view_users():
                              label('avalUnid',Pessoas.unidadeId))\
                       .outerjoin(Pessoas, Pessoas.pessoaId == users.avaliadorId)\
                       .outerjoin(pessoas_sub, pessoas_sub.c.pesEmail == users.userEmail)\
+                      .filter(pessoas_sub.c.unidadeId == user_pes.unidadeId)\
                       .order_by(users.userNome).all()
 
     logado = db.session.query(Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == current_user.userEmail).first()
-
-    # pega pessoas da unidade do usuário
-    # pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
-    #                     .filter(Pessoas.unidadeId == user_pes.unidadeId,
-    #                             Pessoas.pessoaId != user_pes.pessoaId)\
-    #                     .all()
 
     return render_template('view_users.html', lista=lista, logado=logado)
 

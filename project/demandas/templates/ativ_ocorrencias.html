@@ -2,7 +2,9 @@
 {% block content %}
 <div class="jumbotron">
 
-    <div class="row justify-content-center"><h5>Atividade: <b>{{ativs[0].titulo}}</b> ({{qtd_ativs}} ocorrências) de <b>{{demanda.pesNome}}</b></h5></div>
+    <div class="row justify-content-center"><h5>Atividade: <b>{{ativs[0].titulo}}</b> ({{qtd_ativs}} ocorrências) no 
+      <a href="{{url_for('demandas.demanda',pacto_id=pacto_id)}}"><abbr title="Clique aqui para retornar ao painel do Plano de Trabalho">Plano</abbr></a> 
+      de <b>{{demanda.pesNome}}</b></h5></div>
     <br>
 
     <div class="container d-flex justify-content-center">
@@ -135,7 +137,7 @@
                         {% endif %}
                   {% endif %}
 
-                  {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 %}
+                  {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 and (ativs[ns_cont.i-1].nota == None or ativs[ns_cont.i-1].nota == '') %}
                     <p></p>
                     <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='c')}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">c</a></small>
                   {% endif %}
