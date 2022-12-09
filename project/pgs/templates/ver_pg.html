@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+  <div class="jumbotron">
+
+    <h4>Dados do Programa de Gestão selecionado</h4>
+
+    <div class="row">
+      <div class="col">Unidade: <b>{{ pg.undSigla }}</b></div>
+    </div>
+    <div class="row">
+      <div class="col">Situação: <b>{{ pg.descricao }}</b></div>
+    </div>  
+    <div class="row">
+      <div class="col-3">Início: <b>{{ pg.dataInicio.strftime('%d/%m/%Y') }}</b></div>
+      <div class="col-3">Fim: <b>{{ pg.dataFim.strftime('%d/%m/%Y') }}</b></div>
+    </div>
+    <div class="row">  
+      <div class="col">Tempo comparecimento: <b>{{ pg.tempoComparecimento }} dias</b></div>
+    </div>
+    <div class="col">
+      <div class="row">Termo de Aceite:</div>
+      <div class="row">{{ pg.termoAceite }}</div> 
+    </div>
+
+
+
+  </div>
+
+</div>
+{% endblock %}

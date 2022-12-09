@@ -55,14 +55,14 @@
         </div>
 
         <div class="form-group">
-          {{ render_field(form.ativs,class="form-control",obr=True) }}
+          {{ render_field(form.ativs,class="form-control", size=10,obr=True) }}
           Para escolher mais de uma atividade na lista acima, use a tecla Ctrl ou Shift junto ao botão esquerdo do mouse.
         </div>
 
-        <div class="form-group">
+        <!-- <div class="form-group">
           {{ render_field(form.termo_aceite,class="form-control",obr=True) }}
           Use o termo padrão caso tenha sido definido um por sua instituição.
-        </div>
+        </div> -->
 
         <div class="form-group" align="center">
           {{ form.submit(class="btn btn-primary") }}<span class="text-muted"> Atenção: campos marcados com * são obrigatórios.</span>

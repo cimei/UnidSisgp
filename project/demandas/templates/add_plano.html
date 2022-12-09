@@ -52,6 +52,13 @@
               {{ render_field(form.data_fim,class="form-control",obr=True) }}
             </div>
           </div>
+          {% if chefe %}
+            <div class="col-6">
+              <div class="form-group">
+                {{ render_field(form.pessoa,class="form-control",obr=False) }}
+              </div>
+            </div>
+          {% endif %}
         </div>
 
         <div class="container" style="overflow-y:auto; height:400px">
@@ -60,10 +67,9 @@
             <thead>
               <tr>
                 <th scope="col"><p align = "left">Atividade</p></th>
-                <th scope="col"><p align = "center"><abbr title="Tempo previsto se executada de forma presencial">T.P.</abbr></p></th>
-                <th scope="col"><p align = "center"><abbr title="Tempo previsto se executada de forma remota">T.R.</abbr></p></th>
-                <th scope="col"><p align = "center">Selecionar?</p></th>
-                <th scope="col"><p align = "center"><abbr title="Quantidade de ocorrências da atividade">Ocor.</abbr></p></th>
+                <th scope="col"><p align = "center"><abbr title="Tempo, em horas, previsto se executada de forma presencial">T.P.</abbr></p></th>
+                <th scope="col"><p align = "center"><abbr title="Tempo, em horas, previsto se executada de forma remota">T.R.</abbr></p></th>
+                <th scope="col"><p align = "center"><abbr title="Quantidade de ocorrências da atividade">Ocorrências</abbr></p></th>
                 <th scope="col"><p align = "center">Modalidade</p></th>
               </tr>
             </thead>
@@ -72,11 +78,10 @@
               {% for a in form.ativs %}
                 <tr>
                   <td width="45%"><p align = "left"> {{ a.titulo(size=60,readonly=true) }} </p></td>
-                  <td><p align = "center"> {{ a.tempo_pre(size=3)|string()|replace(".",",") }} </p></td>
-                  <td><p align = "center"> {{ a.tempo_rem(size=3)|string()|replace(".",",") }} </p></td>
-                  <td><p align = "center"> {{ a.selecionar }} </p></td>
-                  <td><p align = "center"> {{ a.quantidade(size=3) }} </p></td>
-                  <td><p align = "center"> {{ a.modalidade }} </p></td>
+                  <td><p style="text-align:center"> {{ a.tempo_pre(size=3,readonly=true)|string()|replace(".",",") }} </p></td>
+                  <td><p style="text-align:center"> {{ a.tempo_rem(size=3,readonly=true)|string()|replace(".",",") }} </p></td>
+                  <td><p style="text-align:center"> {{ a.quantidade(size=3) }} </p></td>
+                  <td><p style="text-align:center"> {{ a.modalidade }} </p></td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -88,7 +93,7 @@
         <div class="form-group" align="center">
           {{ form.submit(class="btn btn-primary") }}<span class="text-muted"> Atenção: campos marcados com * são obrigatórios.</span>
         </div>
-      
+    
     </form>  
 
   </div>

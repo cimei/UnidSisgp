@@ -85,7 +85,8 @@
         {% for pt in planos_trab_unid %}
 
         <tr>
-          <th scope="row"><p align = "center"> {{planos_trab_unid.index(pt) + 1}} </p></th>
+          <th scope="row"><p align = "center"> <a class="" href="{{url_for('pgs.ver_pg',pg_id=pt.planoTrabalhoId)}}">
+            <abbr title="Clique aqui para ver detalhes do PG.">{{planos_trab_unid.index(pt) + 1}} </abbr></a></p></th>
           <td><p align = "center"> {{pt.undSigla}} </p></td>
           <td><p align = "center"> {{pt.descricao}} </p></td>
           <td><p align = "center"> {{pt.dataInicio.strftime('%d/%m/%Y')}} </p></td>

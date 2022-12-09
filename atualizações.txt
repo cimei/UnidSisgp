@@ -1,5 +1,12 @@
 ## Atualizações ##
 
+09/12/2022
+
+Termo de aceite fixado em um arquivo na pasta static. Possibilidade de ser ver dados de um PG.
+v1.0.3
+
+Chefia pode criar planos para subordinados.
+v1.0.2
 
 08/12/2022
 

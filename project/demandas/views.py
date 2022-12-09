@@ -2092,14 +2092,30 @@ def cria_plano(pg_id):
 
     hoje = datetime.now()
 
-    #pega dados da pessoa do usuário logado
-    pes = db.session.query(Pessoas.unidadeId, 
-                           Pessoas.pessoaId,
-                           Pessoas.cargaHoraria,
-                           Unidades.ufId)\
-                     .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
-                     .filter(Pessoas.pesEmail == current_user.userEmail)\
-                     .first()
+    #pega dados em Pessoas do usuário logado
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    #verifica se o usuário logado é chefe
+    if usuario.tipoFuncaoId == 0 or usuario.tipoFuncaoId == None:
+        chefe = False
+    else:
+        chefe = True
+
+    #pega dados da pessoa do usuário logado ou da pessoa informada
+    if not chefe:
+        pes = db.session.query(Pessoas.unidadeId, 
+                               Pessoas.pessoaId,
+                               Pessoas.pesNome,
+                               Pessoas.cargaHoraria,
+                               Unidades.ufId)\
+                        .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
+                        .filter(Pessoas.pessoaId == usuario.pessoaId)\
+                        .first()
+    else:
+        pes = db.session.query(Pessoas.pessoaId,
+                               Pessoas.pesNome)\
+                        .filter(Pessoas.unidadeId == usuario.unidadeId, Pessoas.pessoaId != usuario.pessoaId)\
+                        .all()                    
 
     #pega PG escolhido pelo usuário
     pg = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
@@ -2130,35 +2146,52 @@ def cria_plano(pg_id):
                            .all() 
     
     # monta opções para atividades no formulário
-    ativs = [{'ativ_id':a.itemCatalogoId,'tempo_rem':a.tempoRemoto,'tempo_pre':a.tempoPresencial,'titulo':a.titulo,'modalidade':'','quantidade':0,'selecionar':'n'} for a in ativs_pg]                      
+    ativs = [{'ativ_id':a.itemCatalogoId,'tempo_rem':a.tempoRemoto,'tempo_pre':a.tempoPresencial,'titulo':a.titulo,'modalidade':'','quantidade':0} for a in ativs_pg]                      
     dados = {'data_ini':None, 'data_fim':None, 'ativs':ativs}
 
     # este formulário tem outro formulário dentro dele, AtivForm, que monta as opções de atividades para escolha do usuário
     form = CriaPlanoForm(data=dados)
 
-    if form.validate_on_submit():     
+    # choices do selectfield pessoa a ser usado se o usuário for algum tipo de chefe
+    if chefe:
+        lista_pessoas = [(p.pessoaId, p.pesNome) for p in pes]
+        lista_pessoas.insert(0,(str(usuario.pessoaId),usuario.pesNome))
+        form.pessoa.choices = lista_pessoas
+
+    if form.validate_on_submit(): 
+
+        if chefe:
+            pes_sel = db.session.query(Pessoas.pessoaId,
+                                       Pessoas.pesNome,
+                                       Pessoas.cargaHoraria,
+                                       Unidades.ufId)\
+                                .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
+                                .filter(Pessoas.pessoaId == form.pessoa.data)\
+                                .first()
+        else:
+            pes_sel = pes
         
         #calcula tempo total disponível, pegando feriados e contando dias úteis no período do plano
-        feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==pes.ufId,Feriados.ufId==None)).all()
+        feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==pes_sel.ufId,Feriados.ufId==None)).all()
         feriados = [f.ferData for f in feriados]
         if np.is_busday(form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
             n = 1
         else:
             n = 0
         qtd_dias_uteis = n + np.busday_count(form.data_ini.data,form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados)
-        ttd = int(pes.cargaHoraria * qtd_dias_uteis)
+        ttd = int(pes_sel.cargaHoraria * qtd_dias_uteis)
 
         #cria registro em Pactos_de_Trabalho já na situação "Enviado para aceite"
         plano = Pactos_de_Trabalho(pactoTrabalhoId          = uuid.uuid4(),
                                    planoTrabalhoId          = pg_id,
-                                   unidadeId                = pes.unidadeId,
-                                   pessoaId                 = pes.pessoaId,
+                                   unidadeId                = usuario.unidadeId,
+                                   pessoaId                 = pes_sel.pessoaId,
                                    formaExecucaoId          = forma_exec.modalidadeExecucaoId,
                                    situacaoId               = 402,
                                    dataInicio               = form.data_ini.data,
                                    dataFim                  = form.data_fim.data,
                                    tempoComparecimento      = pg.tempoComparecimento,
-                                   cargaHorariaDiaria       = pes.cargaHoraria,
+                                   cargaHorariaDiaria       = pes_sel.cargaHoraria,
                                    percentualExecucao       = None,
                                    relacaoPrevistoRealizado = None,
                                    avaliacaoId              = None,
@@ -2172,7 +2205,7 @@ def cria_plano(pg_id):
                                        pactoTrabalhoId     = plano.pactoTrabalhoId,
                                        situacaoId          = plano.situacaoId,
                                        observacoes         = 'Criado de forma direta',
-                                       responsavelOperacao = pes.pessoaId,
+                                       responsavelOperacao = usuario.pessoaId,
                                        dataOperacao        = hoje)   
 
         db.session.add(hist)
@@ -2182,7 +2215,7 @@ def cria_plano(pg_id):
         qtd_ativs = 0
 
         for field in form.ativs:
-            if field.selecionar.data == 's':
+            if field.quantidade.data > 0:
                 for a in range(1,field.quantidade.data + 1):
                     qtd_ativs += 1
                     if field.modalidade.data == 101:
@@ -2227,10 +2260,10 @@ def cria_plano(pg_id):
             db.session.commit()
             registra_log_unid(current_user.id,'Plano de Trabalho criado.')
 
-            return redirect(url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0))
-       
+            return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
 
-    return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg)                                                                       
+
+    return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, chefe=chefe)                                                                       
 
 #analisando um pacto encaminhado para aceite
 

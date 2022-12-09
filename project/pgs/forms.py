@@ -24,7 +24,7 @@ class PGForm(FlaskForm):
     data_fim     = DateField('Data fim', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de fim!")])
     tempo_comp   = IntegerField('T.C.',validators=[DataRequired(message="Insira o tempo para comparecimento!")])
     modalidade   = SelectField('Modalidade', validators=[DataRequired(message="Informa a modalidade!")])
-    termo_aceite = TextAreaField('Termo de aceite', validators=[DataRequired(message="Insira o termo de aceite!")])
+    termo_aceite = TextAreaField('Termo de aceite', validators=(Optional(),))
     ativs        = SelectMultipleField('Atividades', validators=[DataRequired(message="Escolha atividades!")])
 
     submit       = SubmitField('Registrar') 

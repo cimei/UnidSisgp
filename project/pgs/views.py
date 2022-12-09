@@ -15,14 +15,11 @@
 
 # views.py dentro da pasta pgs
 
-from flask import render_template, url_for, flash, request, redirect, Blueprint, abort
+from flask import render_template, url_for, flash, redirect, Blueprint, abort
 from flask_login import current_user, login_required
-from flask_mail import Message
-from threading import Thread
-from sqlalchemy import or_, and_, func, literal, cast, type_coerce, String
+from sqlalchemy import func, cast, String
 from sqlalchemy.sql import label
-from sqlalchemy.orm import aliased
-from project import db, mail, app
+from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Hist, Unidades, Pessoas, Planos_de_Trabalho,\
                            Atividades, VW_Unidades, cat_item_cat, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Metas, Objeto_PG, unidade_ativ
 
@@ -30,20 +27,47 @@ from project.pgs.forms import PGForm
 
 from project.usuarios.views import registra_log_unid                           
 
-from datetime import datetime, date, timedelta
+from datetime import datetime
 
 import uuid
+import os
 
 pgs = Blueprint("pgs",__name__,template_folder='templates')
 
-## lista plano de trabalho
+
+# ver dados de um pg
+@pgs.route('/<pg_id>/ver_pg')
+@login_required
+def ver_pg(pg_id):
+    """
+    +---------------------------------------------------------------------------------------+
+    |Visualiza dados de um Programa de Gestão.                                              |
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """
+
+    pg = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
+                          Planos_de_Trabalho.dataInicio,
+                          Planos_de_Trabalho.dataFim,
+                          Planos_de_Trabalho.tempoComparecimento,
+                          Planos_de_Trabalho.termoAceite,
+                          Unidades.undSigla,
+                          catdom.descricao)\
+                   .join(Unidades, Unidades.unidadeId==Planos_de_Trabalho.unidadeId)\
+                   .join(catdom, catdom.catalogoDominioId==Planos_de_Trabalho.situacaoId)\
+                   .filter(Planos_de_Trabalho.planoTrabalhoId == pg_id)\
+                   .first() 
+
+    return render_template('ver_pg.html', pg=pg)
+
+## lista plano de trabalho (programa de gestão)
 
 @pgs.route('/<lista>/<coord>/plano_trabalho')
 @login_required
 def plano_trabalho(lista,coord):
     """
     +---------------------------------------------------------------------------------------+
-    |Apresenta o plano de trabalho (programas de gestão) da unidade.                        |
+    |Apresenta os planos de trabalho (programas de gestão) da unidade.                      |
     |                                                                                       |
     +---------------------------------------------------------------------------------------+
     """
@@ -301,6 +325,11 @@ def cria_pg():
     lista_modalidades.insert(0,('',''))
     form.modalidade.choices = lista_modalidades
 
+    #pega o termo de aceite que fica na pasta static
+    pasta_termo = os.path.normpath('/app/project/static/termo.txt')
+    with open(pasta_termo, 'r') as file:
+        termo_aceite = file.read().replace('\n', '')
+
     if form.validate_on_submit():
 
         #cria registro em Planos_de_Trabalho já como "Em Execução"
@@ -313,7 +342,7 @@ def cria_pg():
                                 tempoComparecimento  = form.tempo_comp.data,
                                 totalServidoresSetor = total_serv_setor,
                                 tempoFaseHabilitacao = 1,
-                                termoAceite          = form.termo_aceite.data)
+                                termoAceite          = termo_aceite)
 
         db.session.add(pg)
 
