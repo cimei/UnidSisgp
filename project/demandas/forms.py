@@ -50,7 +50,7 @@ class PreSolicitacaoForm(FlaskForm):
     lista_tipos = [(t[0],t[1]) for t in tipos]
     lista_tipos.insert(0,('',''))
 
-    tipo        = SelectField('Tipo de solicitação:',choices= lista_tipos)
+    tipo        = SelectField('Tipo:',choices= lista_tipos)
 
     submit      = SubmitField('Verificar')
 
@@ -154,74 +154,6 @@ class AnalisaPlano(FlaskForm):
     submit  = SubmitField('Registrar')
 
 
-
-
-# class PesquisaForm(FlaskForm):
-
-    # coords = db.session.query(Coords.sigla)\
-    #                   .order_by(Coords.sigla).all()
-    # lista_coords = [(c[0],c[0]) for c in coords]
-    # lista_coords.insert(0,('',''))
-
-    # tipos = db.session.query(Tipos_Demanda.tipo)\
-    #                   .order_by(Tipos_Demanda.tipo).all()
-    # lista_tipos = [(t[0],t[0]) for t in tipos]
-    # lista_tipos.insert(0,('',''))
-
-    # pessoas = db.session.query(User.username, User.id)\
-    #                   .order_by(User.username).all()
-    # lista_pessoas = [(str(p[1]),p[0]) for p in pessoas]
-    # lista_pessoas.insert(0,('',''))
-
-    # atividades = db.session.query(Plano_Trabalho.atividade_sigla, Plano_Trabalho.id)\
-    #                   .order_by(Plano_Trabalho.atividade_sigla).all()
-    # lista_atividades = [(str(a[1]),a[0]) for a in atividades]
-    # lista_atividades.insert(0,('',''))
-
-    # coord               = SelectField('Coordenação:',choices= lista_coords)
-    # sei                 = StringField('SEI:')
-    # convênio            = StringField('Convênio:')
-    # tipo                = SelectField(choices= lista_tipos)
-    # titulo              = StringField('Título:')
-    # ## os valore nos dois campos a seguir vão ao contrário, pois na view a condição de pesquisa usa o !=
-    # necessita_despacho  = SelectField('Aguarda Despacho',choices=[('Todos','Todos'),
-    #                                            ('Sim','Não'),
-    #                                            ('Não','Sim')])
-    # necessita_despacho_cg  = SelectField('Aguarda Despacho superior',choices=[('Todos','Todos'),
-    #                                           ('Sim','Não'),
-    #                                           ('Não','Sim')])
-    # # conclu              = SelectField('Concluído',choices=[('Todos','Todos'),
-    # #                                             ('Sim','Não'),
-    # #                                             ('Não','Sim')])
-    # conclu              = SelectField('Concluída?',choices=[('Todos','Todos'),('0','Não'),('1','Sim, com sucesso'),('2','Sim, com insucesso')])
-
-    # autor               = SelectField('Responsável:',choices= lista_pessoas)
-
-    # demanda_id          = StringField('Número da demanda:')
-
-    # atividade           = SelectField('Atividade:',choices= lista_atividades)
-
-    # submit              = SubmitField('Pesquisar')
-
-# form para definir o peso de cada componente RDU
-# class PesosForm(FlaskForm):
-
-    # coords = db.session.query(Coords.sigla)\
-    #                   .order_by(Coords.sigla).all()
-    # lista_coords = [(c[0],c[0]) for c in coords]
-    # lista_coords.insert(0,('',''))
-
-    # pessoas = db.session.query(User.username, User.id)\
-    #                   .order_by(User.username).all()
-    # lista_pessoas = [(str(p[1]),p[0]) for p in pessoas]
-    # lista_pessoas.insert(0,('',''))
-
-    # peso_R = SelectField('Relevância:',choices= [('0.5','Importante'),('1','Normal'),('1.5','Sem importância')],default='1')
-    # peso_D = SelectField('Momento:',choices= [('0.5','Importante'),('1','Normal'),('1.5','Sem importância')],default='1')
-    # peso_U = SelectField('Urgência:',choices= [('0.5','Importante'),('1','Normal'),('1.5','Sem importância')],default='1')
-    # coord  = SelectField('Coordenação:',choices= lista_coords)
-    # pessoa = SelectField('Responsável:',choices= lista_pessoas)
-    # submit = SubmitField('Aplicar')
 
 # form para aferir demanda
 class Afere_Demanda_Form(FlaskForm):

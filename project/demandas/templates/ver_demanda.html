@@ -18,11 +18,17 @@
             {% if current_user.is_authenticated and usuario.unidadeId in tree_sup_ids %}
               <div class="row">
                 <div class="col-4">
-                  {% if usuario.pesNome == post.pesNome and post.descricao == 'Em execução' %}
-                    <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#tipo_modal'>Fazer solicitação</button>
+                  {% if post.descricao == 'Em execução' %}
+                    {% if usuario.pesNome == post.pesNome %}
+                      <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#tipo_modal'>Fazer solicitação</button>
+                    {% else %}  
+                      {% if usuario.tipoFuncaoId != None and usuario.tipoFuncaoId != '' %}  
+                        <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#tipo_modal'>Fazer alteração</button>
+                      {% endif %}
+                    {% endif %}  
                   {% endif %}
                   {% if usuario.pesNome == post.pesNome and post.descricao == 'Aceito' %}
-                  <a href="{{url_for('demandas.inicia_plano',pacto_id=id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">Iniciar Plano</a>
+                    <button type="button" class="btn btn-info btn-sm" data-toggle='modal' data-target='#inicia_modal'>Iniciar Plano</button>
                   {% endif %}  
                 </div>
                 <div class="col-4" align="center">
@@ -68,6 +74,38 @@
                 </div>
               </div> 
 
+              {# modal iniciar plano de trabalho #}
+
+              <div class="modal" tabindex="-1" role="dialog" id="inicia_modal">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <div class="p-3 mb-2 bg-success text-white">
+                      <h5 class="modal-title">Iniciar o Plano de Trabalho?</h5>
+                      </div>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Ao colocar este Plano de Trabalho em execução, você atesta concordar com o Termo de Aceite constante
+                        no Programa de Gestão associado. Este termo pode ser consultado no painel de controle deste Plano, via 
+                        opção "Ver Programa de Gestão", ou via lista de Programas de Gestão deste aplicativo, clicando-se no 
+                        correspondente número de sequência.
+                      </p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                      <form action="{{url_for('demandas.inicia_plano',pacto_id=id)}}" method="post">
+                        <input class="btn btn-success" type="submit" name="" value="Iniciar">
+                      </form>
+
+                    </div>
+                  </div>
+                </div>
+              </div> 
+
               {# modal reabrir plano de trabalho #}
 
               <div class="modal" tabindex="-1" role="dialog" id="reabre_modal">
@@ -104,7 +142,7 @@
                   <div class="modal-content">
                     <div class="modal-header">
 
-                      <h5 class="modal-title">Escolhendo tipo de Solicitação </h5>
+                      <h5 class="modal-title">Escolhendo tipo de Alteração </h5>
 
                       <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -244,7 +282,11 @@
                 </div>
               </li>
 
-
+              <li class="list-group-item d-flex justify-content-center">
+                <div align="center">
+                  <a href="{{url_for('pgs.ver_pg',pg_id=post.planoTrabalhoId)}}">Ver Programa de Gestão</a>
+                </div>
+              </li>
 
             </ul>
 

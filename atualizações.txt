@@ -1,5 +1,13 @@
 ## Atualizações ##
 
+12/12/2022
+
+Ao iniciar um plano, usuário é informado sobre concordancia como o termo de aceite.
+Pode-se ver o programa de gestão na tela do plano de trabalho.
+Chefe pode fazer solicitações (alterações) em planos de subordinados.
+Manual disponibilizado no menu "Sobre".
+v1.0.4  
+
 09/12/2022
 
 Termo de aceite fixado em um arquivo na pasta static. Possibilidade de ser ver dados de um PG.

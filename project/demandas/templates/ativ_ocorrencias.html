@@ -25,7 +25,7 @@
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-primary"><small>i</small></span><small> iniciar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-success"><small>f</small></span><small> finalizar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-info"><small>a</small></span><small> assunto</small></div>
-            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>o</small></span><small> objeto</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-light"><small>o</small></span><small> objeto</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>A</small></span><small> Avaliar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>R</small></span><small> Reavaliar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="text-danger"><small>c</small></span><small>  Corrigir</small></div>
@@ -68,10 +68,10 @@
                     {% endif %} </small>
  
                     {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405%}
-                    <p></p>
-                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></small>
-                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
-
+                      <p></p>
+                      <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></small>
+                      <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>                    
+                      <small><a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-light btn-sm" role="button" aria-pressed="true">o</a></small>
                     {% endif %}  
                 </div>
 
@@ -92,7 +92,7 @@
                     <p></p>
                     <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
                     <small><a href="{{url_for('demandas.add_assunto',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">a</a></small>
-                    <small><a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-secondary btn-sm" role="button" aria-pressed="true">o</a></small>
+                    <small><a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-light btn-sm" role="button" aria-pressed="true">o</a></small>
                     
                   {% endif %}
 

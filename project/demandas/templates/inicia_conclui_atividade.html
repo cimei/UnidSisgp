@@ -38,16 +38,10 @@
         <div class="form-group col-3" >
           {% if acao == 'i'%}
             {{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}
-          {% elif acao == 'f' %}
-            {% if sit == 501 %}
-              {{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}
-            {% endif %}
-            {{ render_field(form.tempo_realizado,class="form-control",obr=True,txt="") }}
-            {{ render_field(form.data_fim,class="form-control",obr=True,txt=" de conclusão:") }}
-          {% elif acao == 'c' %}
+          {% elif acao == 'f' or acao == 'c' %}
             {{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}
             {{ render_field(form.tempo_realizado,class="form-control",obr=True,txt="") }}
-            {{ render_field(form.data_fim,class="form-control",obr=True,txt=" de conclusão:") }}  
+            {{ render_field(form.data_fim,class="form-control",obr=True,txt=" de conclusão:") }}
           {% endif %}
         </div>
 

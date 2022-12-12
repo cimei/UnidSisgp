@@ -355,8 +355,7 @@ def objeto_ativ_pacto(pacto_id,pacto_ativ_id):
         else:
             registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
 
-
-        return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+        return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
 
     obj_atual = db.session.query(Objetos.chave,
                                  Objetos.descricao)\
@@ -368,6 +367,7 @@ def objeto_ativ_pacto(pacto_id,pacto_ativ_id):
     #     form.obj.data = obj_atual.planoTrabalhoObjetoId
 
     return render_template('obj_ativ_pacto.html',form=form, obj_atual=obj_atual)
+    
 
 ## relacionar objeto com reunião de um pg
 
