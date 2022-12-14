@@ -1,5 +1,11 @@
 ## Atualizações ##
 
+13/12/2022
+
+Configuração que bloqueia chefia de fazer teletrabalho integral.
+Possibilidade de se fazer upload de arquivo com o Termo de Aceite padrão.
+v1.0.5
+
 12/12/2022
 
 Ao iniciar um plano, usuário é informado sobre concordancia como o termo de aceite.

@@ -13,12 +13,12 @@
 
 # views.py na pasta pessoas
 
-from flask import render_template,url_for,flash, redirect,request,Blueprint
+from flask import render_template,url_for,flash, redirect,Blueprint
 from flask_login import current_user, login_required
 
 from project import db
 from project.models import Unidades, Pessoas, Situ_Pessoa, Tipo_Func_Pessoa, Tipo_Vinculo_Pessoa,\
-                            VW_Unidades, catdom
+                            VW_Unidades
 
 
 pessoas = Blueprint('pessoas',__name__, template_folder='templates')

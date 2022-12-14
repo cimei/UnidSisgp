@@ -153,14 +153,17 @@ def register():
             # primeiro usuário é cadastrado como ativo
             if users.query.count() == 0:
                 ativo = True
+                avaliador = 99999
             else:
                 ativo = False
+                avaliador = None
 
-            user = users(userNome                  = form.username.data,
-                        userEmail                  = form.email.data,
-                        plaintext_password         = form.password.data,
-                        email_confirmation_sent_on = datetime.now(),
-                        userAtivo                  = ativo)
+            user = users(userNome                   = form.username.data,
+                         userEmail                  = form.email.data,
+                         plaintext_password         = form.password.data,
+                         email_confirmation_sent_on = datetime.now(),
+                         userAtivo                  = ativo,
+                         avaliador                  = avaliador)
 
             db.session.add(user)
             db.session.commit()
@@ -360,12 +363,9 @@ def logout():
 
 def view_users():
     """+--------------------------------------------------------------------------------------+
-       |Mostra lista dos usuários da unidade do usuároi logado.                               |
+       |Mostra lista dos usuários da unidade do usuário logado.                               |
        +--------------------------------------------------------------------------------------+
     """
-
-    # pega unidadeId e pessoaId do usuário
-    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
 
     pessoas_sub = db.session.query(Pessoas).subquery()
 
@@ -383,12 +383,9 @@ def view_users():
                              label('avalUnid',Pessoas.unidadeId))\
                       .outerjoin(Pessoas, Pessoas.pessoaId == users.avaliadorId)\
                       .outerjoin(pessoas_sub, pessoas_sub.c.pesEmail == users.userEmail)\
-                      .filter(pessoas_sub.c.unidadeId == user_pes.unidadeId)\
                       .order_by(users.userNome).all()
 
-    logado = db.session.query(Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == current_user.userEmail).first()
-
-    return render_template('view_users.html', lista=lista, logado=logado)
+    return render_template('view_users.html', lista=lista)
 
 #
 ## alterações em users 
@@ -417,6 +414,7 @@ def update_user(user_id):
 
     # o choices do campo atividade são definidos aqui e não no form
     lista_avalia = [(p.pessoaId,p.pesNome) for p in pessoas]
+    lista_avalia.insert(0,('99999','RH'))
     lista_avalia.insert(0,('',''))                    
 
     form = AdminForm()

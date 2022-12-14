@@ -15,7 +15,7 @@
 
 # views.py dentro da pasta pgs
 
-from flask import render_template, url_for, flash, redirect, Blueprint, abort
+from flask import render_template, url_for, flash, redirect, Blueprint
 from flask_login import current_user, login_required
 from sqlalchemy import func, cast, String
 from sqlalchemy.sql import label
@@ -314,16 +314,9 @@ def cria_pg():
                            .order_by(Atividades.titulo)\
                            .all()          
 
-    #pega modalidades de execução
-    mod = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all() 
-
     form = PGForm()
 
     form.ativs.choices = [(a.itemCatalogoId,a.desc) for a in ativs_unid]
-
-    lista_modalidades = [(m.catalogoDominioId,m.descricao) for m in mod]
-    lista_modalidades.insert(0,('',''))
-    form.modalidade.choices = lista_modalidades
 
     #pega o termo de aceite que fica na pasta static
     pasta_termo = os.path.normpath('/app/project/static/termo.txt')
@@ -359,8 +352,8 @@ def cria_pg():
         #cria registros em Planos_de_Trabalho_Ativs
         pg_ativs = Planos_de_Trabalho_Ativs(planoTrabalhoAtividadeId = uuid.uuid4(),
                                             planoTrabalhoId         = pg.planoTrabalhoId,
-                                            modalidadeExecucaoId    = form.modalidade.data,
-                                            quantidadeColaboradores = total_serv_setor,
+                                            modalidadeExecucaoId    = 103,
+                                            quantidadeColaboradores = 1,
                                             descricao               = None)
 
         db.session.add(pg_ativs)

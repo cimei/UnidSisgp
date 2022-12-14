@@ -19,7 +19,8 @@ from flask_login import current_user, login_required
 from sqlalchemy import func, literal, distinct
 from sqlalchemy.sql import label
 from project import db 
-from project.models import Atividades, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Pactos_de_Trabalho, Pactos_de_Trabalho_Atividades, Pessoas, Planos_de_Trabalho, Planos_de_Trabalho_Reuniao, Unidades, VW_Unidades,\
+from project.models import Objetos, Objeto_Atividade_Pacto, Objeto_PG, Pactos_de_Trabalho, Pactos_de_Trabalho_Atividades,\
+                           Pessoas, Planos_de_Trabalho, Planos_de_Trabalho_Reuniao, Unidades, VW_Unidades,\
                            Planos_de_Trabalho, Atividade_Pacto_Assunto, Assuntos
 
 from project.objetos.forms import ObjetoEscolhaForm, ObjetoForm                               

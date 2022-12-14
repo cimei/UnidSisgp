@@ -17,7 +17,7 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 
 class ArquivoForm(FlaskForm):
 
-    arquivo = FileField('Arquivo:', validators=[FileRequired(message="Selecione um arquivo!"),FileAllowed(['csv'], 'Somente .csv!')])
+    arquivo = FileField('Arquivo:', validators=[FileRequired(message="Selecione um arquivo!"),FileAllowed(['txt'], 'Somente .txt!')])
 
     submit  = SubmitField('Importar')
 

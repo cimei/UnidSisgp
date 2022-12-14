@@ -25,7 +25,7 @@ from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_It
                            Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Reuniao,\
                            Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades,\
                            Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
-                           Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist
+                           Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist, Tipo_Func_Pessoa
 
 from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, SolicitacaoForm603 , SolicitacaoForm604, SolicitacaoAnaliseForm,\
                                    PreSolicitacaoForm, InciaConcluiAtivForm, AvaliaAtivForm, AddAssuntoForm, CriaPlanoForm,\
@@ -2292,16 +2292,20 @@ def cria_plano(pg_id):
     +---------------------------------------------------------------------------------------+
     """
 
+    # verifica se há condição em variável de ambiente
+    condic = os.environ.get('CONDIC')
+
     hoje = datetime.now()
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).first()
 
     #verifica se o usuário logado é chefe
-    if usuario.tipoFuncaoId == 0 or usuario.tipoFuncaoId == None:
-        chefe = False
-    else:
+    chefia = db.session.query(Tipo_Func_Pessoa.tfnIndicadorChefia).filter(Tipo_Func_Pessoa.tipoFuncaoId==usuario.tipoFuncaoId).first()
+    if chefia and chefia.tfnIndicadorChefia:
         chefe = True
+    else:
+        chefe = False
 
     #pega dados da pessoa do usuário logado ou da pessoa informada
     if not chefe:
@@ -2330,12 +2334,6 @@ def cria_plano(pg_id):
                    .filter(Planos_de_Trabalho.planoTrabalhoId == pg_id)\
                    .first()
 
-    #pega modalidade de execução no PG escolhido pelo usuário
-    forma_exec = db.session.query(Planos_de_Trabalho_Ativs.modalidadeExecucaoId)\
-                           .filter(Planos_de_Trabalho_Ativs.planoTrabalhoId == pg_id)\
-                           .first()
-                   
-
     #pega atividades do PG escolhido pelo usuário
     ativs_pg = db.session.query(Atividades.itemCatalogoId,
                                 Atividades.titulo,
@@ -2351,8 +2349,15 @@ def cria_plano(pg_id):
     ativs = [{'ativ_id':a.itemCatalogoId,'tempo_rem':a.tempoRemoto,'tempo_pre':a.tempoPresencial,'titulo':a.titulo,'modalidade':'','quantidade':0} for a in ativs_pg]                      
     dados = {'data_ini':None, 'data_fim':None, 'ativs':ativs}
 
+    #pega formas de execução
+    formas = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all()
+
     # este formulário tem outro formulário dentro dele, AtivForm, que monta as opções de atividades para escolha do usuário
     form = CriaPlanoForm(data=dados)
+
+    lista_formas = [(f.catalogoDominioId,f.descricao) for f in formas]
+    lista_formas.insert(0,('',''))
+    form.forma.choices = lista_formas
 
     # choices do selectfield pessoa a ser usado se o usuário for algum tipo de chefe
     if chefe:
@@ -2370,6 +2375,11 @@ def cria_plano(pg_id):
                                 .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
                                 .filter(Pessoas.pessoaId == form.pessoa.data)\
                                 .first()
+            # verifica se o sistema tem restrição para chefe
+            if condic == 'chefe_nao_pode_remoto' and pes_sel.pessoaId == usuario.pessoaId and int(form.forma.data) == 103:
+                flash ('Você possui função de chefia, desta forma não pode realizar um plano com teletrabalho integral!', 'erro')
+                return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, chefe=chefe)
+
         else:
             pes_sel = pes
         
@@ -2388,7 +2398,7 @@ def cria_plano(pg_id):
                                    planoTrabalhoId          = pg_id,
                                    unidadeId                = usuario.unidadeId,
                                    pessoaId                 = pes_sel.pessoaId,
-                                   formaExecucaoId          = forma_exec.modalidadeExecucaoId,
+                                   formaExecucaoId          = form.forma.data,
                                    situacaoId               = 402,
                                    dataInicio               = form.data_ini.data,
                                    dataFim                  = form.data_fim.data,
@@ -2706,7 +2716,7 @@ def reabre_plano(pacto_id):
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 
-# # procurando uma demanda
+# gera relatório de um plano de trabalho (pacto)
 
 @demandas.route('/<pacto_id>/relatorio')
 def relatorio(pacto_id):

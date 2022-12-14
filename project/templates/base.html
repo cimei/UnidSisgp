@@ -86,8 +86,9 @@
               <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',id='*')}}">Seus números</a>
               <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
               <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a>
-              {% if current_user.userAtivo %}
+              {% if current_user.userAtivo and current_user.avaliadorId == 99999 %}
                 <a class="dropdown-item"  href="{{ url_for('usuarios.view_users') }}">Ver Usuários</a>
+                <a class="dropdown-item" href="{{url_for('core.CarregaTA')}}">Upload de TA</a>
               {% endif %}
               
             </div>
@@ -117,7 +118,7 @@
 
         {% endif %}
 
-          {% set ver = namespace(num = '1.0.4') %}
+          {% set ver = namespace(num = '1.0.5') %}
 
         </ul>
 

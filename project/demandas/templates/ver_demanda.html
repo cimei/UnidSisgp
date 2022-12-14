@@ -6,15 +6,15 @@
 
     <div class="row">
 
-      <div class="col-sm">
+      <div class="col">
 
         <!-- cartão do plano de trabalho -->
-        <div class="card" style="width: 37rem;">
+        <div class="card" style="width: 30rem; height: 36rem;">
         
         <div class="card border-primary">
 
-          <div class="card-body" style="overflow-y:auto; height:616px">
-
+          <div class="card-body" style="overflow-y:auto; height: 36rem;">
+            <!-- botões no topo do cartão -->
             {% if current_user.is_authenticated and usuario.unidadeId in tree_sup_ids %}
               <div class="row">
                 <div class="col-4">
@@ -196,7 +196,7 @@
 
             {% endif %}
             <p></p>
-
+              <!-- texto do cartão  -->
             <p align="center">Plano de Trabalho - {% if post.descricao == 'Em execução' %}
               <span class="text-primary"><b>{{post.descricao}}</b></span>
             {% elif post.descricao == 'Rejeitado' %}  
@@ -214,7 +214,7 @@
             <ul class="small list-group">
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                    <p>Resp.: <b>{{post.pesNome}}</b>&nbsp; Unidade: <b>{{post.undSigla}}</b></p>
+                    Resp.: <b>{{post.pesNome}}</b>&nbsp; Unidade: <b>{{post.undSigla}}</b><br>
                     Forma: <b>{{post.forma}}</b> - <b>{{post.cargaHorariaDiaria}} h/dia</b>
                 </div>
               </li>
@@ -222,7 +222,7 @@
               <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
                   Início: <b>{{post.dataInicio.strftime('%d/%m/%Y')}}</b> - Fim: <b>{{post.dataFim.strftime('%d/%m/%Y')}}</b>
-                    &nbsp;(<b>{{qtd_dias_uteis_sf}}</b> dias de semana, sendo <b>{{qtd_dias_uteis}}</b> úteis)
+                    &nbsp;(<b>{{qtd_dias_uteis_sf}}</b> dias: <b>{{qtd_dias_uteis}}</b> úteis)
                  </div>
               </li>
               
@@ -278,12 +278,7 @@
 
               <li class="list-group-item d-flex justify-content-center">
                 <div align="center">
-                  <a href="{{url_for('demandas.relatorio', pacto_id=id)}}">Gerar relatório em pdf</a>
-                </div>
-              </li>
-
-              <li class="list-group-item d-flex justify-content-center">
-                <div align="center">
+                  <a href="{{url_for('demandas.relatorio', pacto_id=id)}}">Gerar relatório em pdf</a><br>
                   <a href="{{url_for('pgs.ver_pg',pg_id=post.planoTrabalhoId)}}">Ver Programa de Gestão</a>
                 </div>
               </li>
@@ -297,14 +292,14 @@
 
       </div>
 
-          <!-- card das atividades -->
+          <!-- Cartão das atividades -->
 
-      <div class="col-sm">
+      <div class="col">
         
-        <div class="card" style="width: 41rem;">
+        <div class="card" style="width: 31rem; height: 36rem;">
         <div class="card border-secondary">
 
-          <div class="card-body" style="overflow-y:auto; height:616px">
+          <div class="card-body" style="overflow-y:auto; height: 36rem;">
 
             
             <p align="center"><b>{{qtd_items_cat}}</b>
@@ -357,7 +352,7 @@
 
                     </div>
 
-                      <div class="progress" style="height: 12px; width: 500px;">
+                      <div class="progress" style="height: 1rem; width: 23rem;">
                         <div class="progress-bar bg-success" role="progressbar" aria-label="Progresso da atividade" style="width: {{(100 * item.conclu / item.tam_grupo)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                           {% if item.exec > 0 and item.conclu == 0 %}
                             <span class="text-primary">{{(100 * item.conclu / item.tam_grupo)|round|int}}%</span>
@@ -386,18 +381,20 @@
 
             <!-- Cartão de histórico, reuniões e solicitações -->
 
-      <div class="col-sm">
+      <div class="col">
 
-        <div class="card" style="width: 37rem;">
+        <div class="card" style="width: 30rem; height: 36rem;">
         
-        <div class="card border-info">
-        <div class="card bg-light mb-3">
+        <div class="card border-info bg-light mb-3">
+        <!-- <div class="card bg-light mb-3"> -->
+
           <div class="card-header">
             <div class="text-info" align="center">
               Histórico (<b>{{qtd_hist}}</b>), Reuniões (<b>{{qtd_reun}}</b>) e Solicitações (<b>{{qtd_solic}}</b>)
             </div>
           </div>
-          <div class="card-body"  style="overflow-y:auto; height:550px">
+
+          <div class="card-body"  style="overflow-y:auto; height: 32rem;">
             <div class="list-group">
 
             {% for item in pro_des %}
@@ -612,7 +609,7 @@
             {% endfor %}
             </div>
           </div>
-        </div>
+        <!-- </div> -->
         </div>
         </div>
       </div>

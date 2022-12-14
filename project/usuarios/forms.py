@@ -19,15 +19,13 @@
 
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField,\
-                    TextAreaField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.fields.html5 import DateField                    
 from wtforms.validators import DataRequired, Email, EqualTo
 from wtforms import ValidationError
 from flask import flash
 
 from flask_login import current_user
-from project import db
 from project.models import users, Pessoas
 
 class LoginForm(FlaskForm):
@@ -98,7 +96,7 @@ class PasswordForm(FlaskForm):
 class AdminForm(FlaskForm):
 
     ativo     = BooleanField('Usuário está ativo?')
-    avaliador = SelectField('Avaliador:')
+    avaliador = SelectField('Role ou Avaliador:')
 
     submit    = SubmitField('Atualizar')
 

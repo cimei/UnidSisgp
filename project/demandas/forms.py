@@ -143,6 +143,7 @@ class CriaPlanoForm(FlaskForm):
     pessoa   = SelectField('Pessoa', validators=(Optional(),))
     data_ini = DateField('Data início', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de início!")])
     data_fim = DateField('Data fim', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de fim!")])
+    forma    = SelectField('Forma', validators=[DataRequired(message="Indique a forma de execução!")])
     ativs    = FieldList(FormField(AtivForm))
 
     submit      = SubmitField('Registrar')
