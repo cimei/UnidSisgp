@@ -163,7 +163,7 @@ def register():
                          plaintext_password         = form.password.data,
                          email_confirmation_sent_on = datetime.now(),
                          userAtivo                  = ativo,
-                         avaliador                  = avaliador)
+                         avaliadorId                = avaliador)
 
             db.session.add(user)
             db.session.commit()
