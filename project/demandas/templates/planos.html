@@ -39,6 +39,7 @@
               <th scope="col"><p align = "center"><abbr title="Percentual de execução">% exec.</abbr></p></th>
               <th scope="col"><p align = "center"><abbr title="Relação Previsto/Realizado">p/r</abbr></p></th>
               <th scope="col"><p align = "center"><abbr title="Tempo Total Disponível">T.T.D.</abbr></p></th>
+              <th scope="col"><p align = "center"><abbr title="Índice de Compromentimento com o Plano">ICP</abbr></p></th>
               {% if lista == 'Enviado para aceite' %}
                 <th scope="col"><p align = "center">Aceite</p></th>
               {% endif %}
@@ -53,7 +54,7 @@
               <tr>
                 <th scope="row"><p align = "center"> 
                   <a class="card-title" href="{{url_for('demandas.demanda',pacto_id=demanda.pactoTrabalhoId)}}">
-                  <abbr title="Clique aqui para ver detalhes da demanda">
+                  <abbr title="Clique aqui para ver detalhes do Plano">
                   {{demandas.index(demanda) + 1}} </abbr></a></p>
                 </th>
                 <td><p align = "center"> {{demanda.pesNome}} ({{demanda.undSigla}}) </p></td>
@@ -61,24 +62,32 @@
                 <td><p align = "center"> {{demanda.dataFim.strftime('%d/%m/%Y')}} </p></td> 
                 <td><p align = "center"> {{demanda.forma}} </p></td>
                 <td><p align = "center"> 
-                  {% if demanda.descricao == 'Em execução' %}
-                    <span class="text-primary">{{demanda.descricao}}</span>
-                  {% elif demanda.descricao == 'Enviado para aceite' %}
-                    <span class="text-warning">{{demanda.descricao}}</span>
-                  {% elif demanda.descricao == 'Executado' and demanda.qtd_com_nota != None and (demanda.qtd_com_nota / demanda.qtd_ativs) < 1 %}
-                    <span class="text-info">{{demanda.descricao}}</span>
-                  {% elif demanda.descricao == 'Executado' and demanda.qtd_com_nota != None %}
-                    <span class="text-success">{{demanda.descricao}}</span> 
-                  {% elif demanda.descricao == 'Executado' %}
-                    <span class="text-danger">{{demanda.descricao}}</span>        
-                  {% else %} 
-                    {{demanda.descricao}}  
-                  {% endif %}  
+                  <a class="card-title" href="{{url_for('demandas.demanda',pacto_id=demanda.pactoTrabalhoId)}}">
+                    <abbr title="Clique aqui para ver detalhes do Plano">
+                    {% if demanda.descricao == 'Em execução' %}
+                      <span class="text-primary">{{demanda.descricao}}</span>
+                    {% elif demanda.descricao == 'Enviado para aceite' %}
+                      <span class="text-warning">{{demanda.descricao}}</span>
+                    {% elif demanda.descricao == 'Executado' and demanda.qtd_com_nota != None and (demanda.qtd_com_nota / demanda.qtd_ativs) < 1 %}
+                      <span class="text-info">{{demanda.descricao}}</span>
+                    {% elif demanda.descricao == 'Executado' and demanda.qtd_com_nota != None %}
+                      <span class="text-success">{{demanda.descricao}}</span> 
+                    {% elif demanda.descricao == 'Executado' %}
+                      <span class="text-danger">{{demanda.descricao}}</span>        
+                    {% else %} 
+                      {{demanda.descricao}}  
+                    {% endif %} 
+                  </abbr></a></p> 
                 </p></td>
                 <td><p align = "center"> {{demanda.cargaHorariaDiaria}} </p></td>  
                 <td><p align = "center"> {% if demanda.percentualExecucao == None %}N.C.{% else %} {{demanda.percentualExecucao|string()|replace(".",",")}} {% endif %} </p></td> 
                 <td><p align = "center"> {% if demanda.relacaoPrevistoRealizado == None %}N.C.{% else %} {{demanda.relacaoPrevistoRealizado|string()|replace(".",",")}} {% endif %} </p></td> 
                 <td><p align = "center"> {{demanda.tempoTotalDisponivel}} </p></td>
+                {% if icps[demanda.pactoTrabalhoId] %}
+                  <td><p align = "center"> {{icps[demanda.pactoTrabalhoId]}} </p></td>
+                {% else %}
+                  <td><p align = "center"> N.C. </p></td>
+                {% endif %}  
                 {% if lista == 'Enviado para aceite' and (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and demanda.pesEmail != current_user.userEmail %}
                   <td><p align = "center"><a href="{{url_for('demandas.analisa_plano',pacto_id=demanda.pactoTrabalhoId)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true"><abbr title="Avaliar">A</abbr></a></p></td>
                 {% endif %}

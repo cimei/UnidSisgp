@@ -1,5 +1,11 @@
 ## Atualizações ##
 
+22/12/2022
+
+Ajustes na performance da consulta à plano de trabalho.
+Cálculo do ICP para planos de trabalho.
+v1.0.6
+
 13/12/2022
 
 Configuração que bloqueia chefia de fazer teletrabalho integral.

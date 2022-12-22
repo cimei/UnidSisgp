@@ -35,21 +35,29 @@
 
       {{ form.hidden_tag() }}
 
-        <div class="form-group col-3" >
+        <div class="form-group">
+          <div class = "col-8">{{ render_field(form.descricao,class="form-control",size=2000, maxlength=2000,rows="1",obr=False,txt="Descrição:") }}</div>
+        </div>
+
+        <div class="form-group">
           {% if acao == 'i'%}
-            {{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}
+          <div class = "col-3">{{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}</div>
           {% elif acao == 'f' or acao == 'c' %}
-            {{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}
-            {{ render_field(form.tempo_realizado,class="form-control",obr=True,txt="") }}
-            {{ render_field(form.data_fim,class="form-control",obr=True,txt=" de conclusão:") }}
+            <div class = "col">
+            <div class = "row">
+              <div class = "col-3">{{ render_field(form.data_ini,class="form-control",obr=True,txt=" de início:") }}</div>
+              <div class = "col-3">{{ render_field(form.data_fim,class="form-control",obr=True,txt=" de conclusão:") }}</div>
+            </div>
+            </div>
+            <div class = "col-2">{{ render_field(form.tempo_realizado,class="form-control",obr=True,txt="") }}</div>
           {% endif %}
         </div>
 
-        <div class="form-group col-8" >
+        <div class="form-group">
           {% if acao == 'i' %}
-            {{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,obr=True,txt="Considerações:") }}
+            <div class = "col-8">{{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,rows="3",obr=True,txt="Considerações:")}}</div>
           {% elif acao == 'f' or acao == 'c' %}
-            {{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,obr=True,txt="Conclusão:") }}
+            <div class = "col-8">{{ render_field(form.consi_conclu,class="form-control",size=2000, maxlength=2000,rows="3",obr=True,txt="Conclusão:")}}</div>
           {% endif %}
         </div>
 

@@ -83,7 +83,7 @@
             <div class="dropdown-menu" aria-labelledby="navbarDropdown5">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Veja seus Planos</a>
               <a class="dropdown-item" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=0)}}">Seus objetos</a>
-              <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',id='*')}}">Seus números</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus números</a>
               <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
               <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a>
               {% if current_user.userAtivo and current_user.avaliadorId == 99999 %}
@@ -118,7 +118,7 @@
 
         {% endif %}
 
-          {% set ver = namespace(num = '1.0.5') %}
+          {% set ver = namespace(num = '1.0.6') %}
 
         </ul>
 

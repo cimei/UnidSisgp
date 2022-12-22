@@ -48,7 +48,7 @@ from sqlalchemy.sql import label
 from project import db, mail, app
 from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
                            Log_Unid, catdom, Pessoas, Unidades, Planos_de_Trabalho,\
-                           Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG
+                           Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG, Log_Unid
 
 from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm, LogForm
                                 
@@ -503,8 +503,8 @@ def log ():
 #
 # numeros do usuario
 #
-@usuarios.route("/seus_numeros/<id>")
-def seus_numeros(id):
+@usuarios.route("/seus_numeros/<pessoa_id>")
+def seus_numeros(pessoa_id):
     """+--------------------------------------------------------------------------------------+
        |Alguns números do usuário.                                                            |
        |                                                                                      |
@@ -512,17 +512,19 @@ def seus_numeros(id):
     """
     lista = 'pessoa'
 
-    if id == '*':
+    if pessoa_id == '*':
 
         #pega e-mail do usuário logado
         email = current_user.userEmail
+        user_id = current_user.id
 
         #pega id sisgp do usuário logado
         usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first_or_404()
         
     else:
         #pega id sisgp do usuário informado
-        usuario = db.session.query(Pessoas).filter(Pessoas.pessoaId == int(id)).first_or_404()
+        usuario = db.session.query(Pessoas).filter(Pessoas.pessoaId == int(pessoa_id)).first_or_404()
+        user_id = db.session.query(users.id).filter(users.userEmail==usuario.pesEmail).first()
 
     # unidade do usuário
     unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == usuario.unidadeId).first()
@@ -588,7 +590,49 @@ def seus_numeros(id):
                       .filter(Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
                       .group_by(catdom.descricao)\
                       .all()
-    
+
+    # medindo o comprometimento do usuário (icp) por meio do registro de início de ocorrências das atividades
+    plano_em_exec = db.session.query(Pactos_de_Trabalho.pactoTrabalhoId,
+                                     Pactos_de_Trabalho.dataFim,
+                                     Pactos_de_Trabalho.dataInicio)\
+                              .filter(Pactos_de_Trabalho.situacaoId==405,
+                                      Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
+                              .first()
+
+    ativs_plano_em_exec = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
+                                           Pactos_de_Trabalho_Atividades.dataInicio)\
+                                    .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == plano_em_exec.pactoTrabalhoId).all()
+
+    log_plano = db.session.query(Log_Unid.msg, Log_Unid.data_hora)\
+                          .filter(Log_Unid.msg.like('Atividade%'),
+                                  Log_Unid.msg.like('% colocada em execução.'),
+                                  Log_Unid.user_id == user_id,
+                                  Log_Unid.data_hora > plano_em_exec.dataInicio).all()
+  
+    # iri é o índice de registro de íncio de atividade
+    # iri próximo de 1: registro de início de atividade próximo do início do plano
+    # iri próximo de 0: registro de início de atividade próxomo ao final do plano
+    iris = []
+    reg_log = 0
+    if log_plano:
+        for l in log_plano:
+            if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano_em_exec]:
+                reg_log += 1
+                iri = (plano_em_exec.dataFim - l.data_hora.date())/(plano_em_exec.dataFim - plano_em_exec.dataInicio)
+                iris.append(iri)
+        # icp é o índice de comprometimento agregado para o plano 
+        # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
+        # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano
+        # icp próximo de 0: em média, atividades tiveram registros de início próximos ao final plano
+        if len(iris) > 0: 
+            peso = reg_log/len(ativs_plano_em_exec)       
+            icp = round(peso*(sum(iris)/len(iris)),2)
+        else:
+            icp = 0
+    else:
+        icp = 0            
+
+
     return render_template('numeros.html', pes_nome=usuario.pesNome,
                                            pes_id=usuario.pessoaId,
                                            programas_de_gestao=programas_de_gestao,
@@ -598,8 +642,8 @@ def seus_numeros(id):
                                            ativs=ativs,
                                            objetos=objetos,
                                            unid=unid,
-                                           id = id,
-                                           lista = lista)
+                                           lista = lista,
+                                           icp = icp)
 
 #
 # números da unidade

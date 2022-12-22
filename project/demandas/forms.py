@@ -106,6 +106,7 @@ class SolicitacaoAnaliseForm(FlaskForm):
 
 class InciaConcluiAtivForm(FlaskForm):
 
+    descricao       = TextAreaField('',validators=(Optional(),))
     data_ini        = DateField('Data', format='%Y-%m-%d', validators=(Optional(),))
     data_fim        = DateField('Data', format='%Y-%m-%d', validators=(Optional(),))
     consi_conclu    = TextAreaField('',validators=[DataRequired(message="Insira considerações ou conclusão!")])

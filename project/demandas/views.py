@@ -22,10 +22,10 @@ from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho, \
-                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Reuniao,\
+                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho,\
                            Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades,\
                            Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
-                           Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist, Tipo_Func_Pessoa
+                           Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist, Tipo_Func_Pessoa, Log_Unid
 
 from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, SolicitacaoForm603 , SolicitacaoForm604, SolicitacaoAnaliseForm,\
                                    PreSolicitacaoForm, InciaConcluiAtivForm, AvaliaAtivForm, AddAssuntoForm, CriaPlanoForm,\
@@ -34,7 +34,6 @@ from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, Solic
 from project.usuarios.views import registra_log_unid                                   
 
 from datetime import datetime, date
-# from fpdf import FPDF
 
 import uuid
 import ast
@@ -45,6 +44,7 @@ import random
 import string
 from fpdf import FPDF
 import os
+import time
 
 demandas = Blueprint("demandas",__name__,template_folder='templates')
 
@@ -60,11 +60,44 @@ def ponto_por_virgula(valor):
     else:
         return 'N.I.'            
 
-
 def get_random_string(length):
     # choose from all lowercase letter
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
+
+class TimerError(Exception):
+    """ Exceção customizada para relatar erros no uso da classe Timer """
+
+class Timer:
+    """ Mede intervalo de tempo entre dois eventos 
+        Ex: t=Timer()                              
+            tic = t.start()                        
+              <alguma coisa rondando aqui>           
+            toc = t.stop() 
+        Em stop pode-se alterar a msg e o formato do resultado:
+            toc = t.stop("** bla bla em {:0.2f} segundos")
+        stop também retorna o valor do itervalo medido.
+    """
+
+    def __init__(self):
+        self._start_time = None
+    
+    def start(self):
+        """Iniciando um timer novo"""
+        if self._start_time is not None:
+            raise TimerError(f"Timer está rodando. Use .stop() para parar.")
+        self._start_time = time.perf_counter()
+
+    def stop(self,texto="Tempo decorrido: {:0.2f} segundos."):
+        """Finaliza o timer e informa o tempo decorrido"""
+        if self._start_time is None:
+            raise TimerError(f"Timer não está rodando. Use .start() para iniciar.")
+        elapsed_time = time.perf_counter() - self._start_time
+        self._start_time = None
+        print(texto.format(elapsed_time))
+
+        return elapsed_time
+
 
 #lendo uma demanda
 
@@ -85,18 +118,9 @@ def demanda(pacto_id):
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
 
     # subquery das situações de pacto de trabalho
-    catdom_1 = db.session.query(catdom.catalogoDominioId,
-                                catdom.descricao)\
-                         .filter(catdom.classificacao == 'SituacaoPactoTrabalho')\
-                         .subquery()
+    catdom_1 = aliased(catdom)
 
-    # subquery das situações de atividades de pactos de trabalho
-    catdom_2 = db.session.query(catdom.catalogoDominioId,
-                                catdom.descricao)\
-                         .filter(catdom.classificacao == 'SituacaoAtividadePactoTrabalho')\
-                         .subquery()                     
-
-    # pega o pacto selecionado
+    # pega o pacto (plano de trabalho) selecionado
     demanda = db.session.query(Pactos_de_Trabalho.pactoTrabalhoId,
                                Pactos_de_Trabalho.planoTrabalhoId,
                                Pactos_de_Trabalho.dataInicio,
@@ -108,7 +132,7 @@ def demanda(pacto_id):
                                Pactos_de_Trabalho.formaExecucaoId,
                                Pessoas.pesNome,
                                Unidades.undSigla,
-                               catdom_1.c.descricao,
+                               catdom_1.descricao,
                                label('forma',catdom.descricao),
                                Planos_de_Trabalho.planoTrabalhoId,
                                UFs.ufId,
@@ -121,11 +145,12 @@ def demanda(pacto_id):
                          .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
                          .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
                          .join(UFs, UFs.ufId == Unidades.ufId)\
-                         .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
+                         .join(catdom_1, catdom_1.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                          .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Pactos_de_Trabalho.planoTrabalhoId)\
                          .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
+    
 
     #pega hierarquia superior da unidade da demanda
     unid = db.session.query(Unidades.unidadeId, Unidades.undSigla, VW_Unidades.undSiglaCompleta)\
@@ -138,7 +163,7 @@ def demanda(pacto_id):
     else:
         tree_sup = None
         tree_sup_ids = []
-    
+   
     # pega feriados do DBSISGP
     feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==demanda.ufId,Feriados.ufId==None)).all()
     feriados = [f.ferData for f in feriados]
@@ -159,7 +184,6 @@ def demanda(pacto_id):
         n = 0
     qtd_dias_uteis_sf = n + np.busday_count(demanda.dataInicio,demanda.dataFim,weekmask=[1,1,1,1,1,0,0])
     
-
     # pega as atividades, agrupadas por título, no plano do cidadão
     items_cat = db.session.query(Atividades.titulo,
                                  label('tam_grupo',func.count(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)),
@@ -179,13 +203,13 @@ def demanda(pacto_id):
 
     # conta quantas atividades estão no plano
     qtd_items_cat = len(items_cat)
-
+    
     # conta o número de objetos do PG ao qual o pacto está vinculado
     obj_pg_count = db.session.query(Objeto_PG)\
                         .filter(Objeto_PG.planoTrabalhoId == demanda.planoTrabalhoId)\
                         .count()
 
-    # histórico, reuniões, solicitações e atividades são agrupadas para uma visualização conjunta, para tal, 
+    # histórico, solicitações e atividades são agrupadas para uma visualização conjunta, para tal, 
     # todos tem que ter a mesma quandidade de campos
 
     historico_pg = db.session.query(label('id',Planos_de_Trabalho_Hist.planoTrabalhoHistoricoId),
@@ -245,36 +269,7 @@ def demanda(pacto_id):
                           .all()
 
     qtd_hist = len(historico)                      
-
-    reunioes = db.session.query(label('id',Planos_de_Trabalho_Reuniao.planoTrabalhoReuniaoId),
-                                literal(None).label("situa"),
-                                literal('Reunião').label("tipo"),
-                                Planos_de_Trabalho_Reuniao.data,
-                                literal(None).label("dataFim"),
-                                label('tit',Planos_de_Trabalho_Reuniao.titulo),
-                                literal(None).label('obs'),
-                                label('desc',Planos_de_Trabalho_Reuniao.descricao),
-                                literal(None).label("tempoRealizado"),
-                                literal(None).label("nota"),
-                                literal(None).label("pesNome"),
-                                literal(None).label("titulo"),
-                                literal(None).label("quantidade"),
-                                literal(None).label("tempoPrevistoPorItem"),
-                                literal(None).label("tempoPrevistoTotal"),
-                                literal(None).label("tempoHomologado"),
-                                literal(None).label("justificativa"),
-                                literal(None).label("descricao"),
-                                label('obj',Objetos.descricao),
-                                Objetos.chave,
-                                literal(None).label("analist"))\
-                          .filter(Planos_de_Trabalho_Reuniao.planoTrabalhoId == demanda.planoTrabalhoId)\
-                          .outerjoin(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId == Planos_de_Trabalho_Reuniao.planoTrabalhoObjetoId)\
-                          .outerjoin(Objetos, Objetos.objetoId == Objeto_PG.objetoId)\
-                          .order_by(Planos_de_Trabalho_Reuniao.data.desc())\
-                          .all()
-
-    qtd_reun = len(reunioes)  
-
+    
     ## Atividades no plano (sisgp) ou pacto(banco)
     ativs    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
                                 label('situa',catdom.descricao),
@@ -287,7 +282,7 @@ def demanda(pacto_id):
                          .all()
 
     qtd_ativs_pacto = len(ativs)   
-
+    
     # gera lista das atividades do pacto acrescentando número de sequência para facilitar sua identificação
     ativs_simp    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
                                      Atividades.titulo,
@@ -298,7 +293,7 @@ def demanda(pacto_id):
                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
                          .all()
-
+    
     # calcula a soma dos tempos previstos das atividades no pacto por situação e totaliza tudo no final
     ativs_p_tempo_total = [float(t.tempoPrevistoTotal) for t in ativs if t.situa == 'Programada']
     sum_ativs_p_tempo_total = round(sum(ativs_p_tempo_total),1)
@@ -307,8 +302,8 @@ def demanda(pacto_id):
     ativs_c_tempo_total = [float(t.tempoPrevistoTotal) for t in ativs if t.situa == 'Concluída']
     sum_ativs_c_tempo_total = round(sum(ativs_c_tempo_total),1)
     sum_ativs_tempo_total = sum_ativs_p_tempo_total + sum_ativs_e_tempo_total + sum_ativs_c_tempo_total
-
-    # identificando o analista
+    
+    # pegando solicitações
     analistas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).subquery()
     
     solicit  = db.session.query(label('id',Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId),
@@ -340,7 +335,7 @@ def demanda(pacto_id):
                          .all()
 
     qtd_solic = len(solicit) 
-
+    
     #totalizar horas em pedidos de exclusão pendentes
     solic_exclu_pend = db.session.query(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId,
                                         Pactos_de_Trabalho_Solic.dadosSolicitacao)\
@@ -359,17 +354,17 @@ def demanda(pacto_id):
                                         .first()
 
         tempo_exclu += float(tempo_ativ_exclu.tempoPrevistoTotal)  
-
+    
     # monta dicionários com o campo dadosSolicitacao das solicitações do pacto que está sendo visto
     dados_solic = [[s.id,ast.literal_eval(str(s.tit).replace('null','None').replace('true','True').replace('false','False'))] for s in solicit]
-               
+
     # agrupa reuniões, solicitações, atividades e historicos para a visão conjunta
-    pro_des = reunioes + solicit + historico + historico_pg
+    #pro_des = reunioes + solicit + historico + historico_pg
+    pro_des = solicit + historico + historico_pg
 
     # o agrupamento é então classificado por data na ordem decrescente, visando contar a história do mais recente para o mais antigo
     pro_des.sort(key=lambda ordem: (ordem.data is not None,ordem.data),reverse=True)
 
-    
     # permite a inserção de nova solicitação com verificação prévia do tipo
     form1 = PreSolicitacaoForm()
 
@@ -436,32 +431,24 @@ def demanda(pacto_id):
         percentual_tempo_realizado = 0
     else:
         percentual_tempo_realizado = round(100 * float(tempo_realiz) / float(itens_plano.tempo_prev_tot),2)
-
+    
     # Verifica se tem assuntos e objetos relacionados às atividades 
     tem_assunto = {}
     tem_objeto = {}
     for a in ativs:
-        assuntos = db.session.query(Assuntos)\
-                            .join(Atividade_Pacto_Assunto, Atividade_Pacto_Assunto.assuntoId == Assuntos.assuntoId)\
-                            .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
-                            .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == a.itemCatalogoId,
-                                    Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                            .order_by(Assuntos.chave.desc())\
-                            .all()
+        assuntos = db.session.query(Atividade_Pacto_Assunto)\
+                            .filter(Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId==a.id)\
+                            .first()
         if assuntos:
             tem_assunto[a.titulo] = True
 
-        objetos = db.session.query(Objetos,
-                                   Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
-                        .join(Objeto_Atividade_Pacto, Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
-                        .join(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId == Objeto_Atividade_Pacto.planoTrabalhoObjetoId)\
-                        .join(Objetos, Objetos.objetoId == Objeto_PG.objetoId)\
-                        .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
-                                Pactos_de_Trabalho_Atividades.itemCatalogoId == a.itemCatalogoId)\
-                        .all()
+    for a in ativs:
+        objetos = db.session.query(Objeto_Atividade_Pacto)\
+                        .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == a.id)\
+                        .first()
         if objetos:
             tem_objeto[a.titulo] = True
-
+    
 
     return render_template('ver_demanda.html',
                             id           = pacto_id,
@@ -483,7 +470,6 @@ def demanda(pacto_id):
                             ativs_simp = ativs_simp,
                             qtd_ativs_pacto = qtd_ativs_pacto,
                             qtd_hist = qtd_hist + qtd_hist_pg,
-                            qtd_reun = qtd_reun,
                             qtd_solic = qtd_solic,
                             tree_sup_ids = tree_sup_ids,
                             percentual_qtd_ativs_executado = percentual_qtd_ativs_executado,
@@ -636,7 +622,7 @@ def list_demandas(lista,coord):
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
 
-    #pega unidadeId do usuário logado e unsSigla na tabela Unidades
+    #pega unidadeId do usuário logado e undSigla na tabela Unidades
     unid_id = db.session.query(Pessoas.unidadeId).filter(Pessoas.pesEmail == email).first()
     unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
                            .filter(Unidades.unidadeId == unid_id.unidadeId)\
@@ -837,10 +823,46 @@ def list_demandas(lista,coord):
                                     .filter(Pactos_de_Trabalho.unidadeId == unid, catdom_1.c.descricao.like(lista))\
                                     .count()  
 
-        # verifica se há plano de trabalho (pacto) com nota atribuida em alguma atividade
+        icps = {}
         for d in demandas:
+
+            # verifica se há plano de trabalho (pacto) com nota atribuida em alguma atividade
             if d.qtd_com_nota != None:
-                com_nota = True                                                     
+                com_nota = True 
+
+            # calcula icp para cada plano
+            ativs_plano = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
+                                            Pactos_de_Trabalho_Atividades.dataInicio)\
+                                    .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == d.pactoTrabalhoId).all()
+
+            log_plano = db.session.query(Log_Unid.msg, Log_Unid.data_hora)\
+                                    .filter(Log_Unid.msg.like('Atividade%'),
+                                            Log_Unid.msg.like('% colocada em execução.'),
+                                            Log_Unid.data_hora > d.dataInicio).all()
+
+            # iri é o índice de registro de íncio de atividade
+            # iri próximo de 1: registro de início de atividade próximo do início do plano
+            # iri próximo de 0: registro de início de atividade próxomo ao final do plano
+            iris = []
+            reg_log = 0
+            if log_plano:
+                for l in log_plano:
+                    if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano]:
+                        reg_log += 1
+                        iri = (d.dataFim - l.data_hora.date())/(d.dataFim - d.dataInicio)
+                        iris.append(iri)
+                # icp é o índice de comprometimento agregado para o plano 
+                # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
+                # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano
+                # icp próximo de 0: em média, atividades tiveram registros de início próximos ao final plano
+                if len(iris) > 0: 
+                    peso = reg_log/len(ativs_plano)       
+                    icp = round(peso*(sum(iris)/len(iris)),2)
+                    icps[d.pactoTrabalhoId] = icp
+                else:
+                    icp = 0
+            else:
+                icp = 0
 
     return render_template ('planos.html', lista=lista, 
                                              coord=coord, 
@@ -849,7 +871,8 @@ def list_demandas(lista,coord):
                                              demandas_count_pai=demandas_count_pai,
                                              unid_dados = unid_dados,
                                              usuario = usuario,
-                                             com_nota=com_nota)
+                                             com_nota=com_nota,
+                                             icps = icps)
 
 
 #inserindo uma solicitação
@@ -1854,11 +1877,17 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
                     .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
                     .first()
 
+    if ativ.dataInicio:
+        ativ_ja_iniciada = True
+    else:
+        ativ_ja_iniciada = False
+
     form = InciaConcluiAtivForm()
     
     if form.validate_on_submit():
 
         if acao == 'i':
+            ativ.descricao = form.descricao.data
             ativ.situacaoId = 502
             ativ.dataInicio = form.data_ini.data
             ativ.consideracoesConclusao = form.consi_conclu.data
@@ -1866,6 +1895,7 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             db.session.commit()
             
         elif acao == 'f' or acao == 'c':
+            ativ.descricao = form.descricao.data
             ativ.situacaoId     = 503
             ativ.dataInicio     = form.data_ini.data
             ativ.dataFim        = form.data_fim.data
@@ -1921,13 +1951,17 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
 
             db.session.commit()
 
-
         if acao == 'i':
             registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
             flash('Atividade colocada em execução!','sucesso')
         elif acao == 'f':
-            registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi concluída.')
-            flash('Atividade concluída!','sucesso')
+            if ativ_ja_iniciada:
+                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi concluída.')
+                flash('Atividade concluída!','sucesso')
+            else:
+                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
+                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi concluída.')
+                flash('Atividade iniciada e concluída!','sucesso')   
         elif acao == 'c':
             registra_log_unid(current_user.id,'Atividade concluída '+ ativ_pacto_id +' foi corrigida.')
             flash('Efetuada correção em atividade concluída!','sucesso')    
@@ -1938,13 +1972,14 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
     form.tempo_realizado.data = str(ativ.tempoPrevistoTotal).replace('.',',')
 
     if acao == 'f':
-        form.data_ini.data     = ativ.dataInicio
+        form.data_ini.data = ativ.dataInicio
         form.consi_conclu.data = ativ.consideracoesConclusao
 
     if acao == 'c':
         form.data_ini.data     = ativ.dataInicio
         form.data_fim.data     = ativ.dataFim
-        form.consi_conclu.data = ativ.consideracoesConclusao   
+        form.consi_conclu.data = ativ.consideracoesConclusao
+    
 
     return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
 
@@ -2222,7 +2257,7 @@ def add_assunto(pacto_id,ativ_pacto_id):
 
         flash('Assunto registrado!','sucesso')
 
-        return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
+        return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
 
     return render_template('add_assunto.html', form=form, ativ_pacto_id = ativ_pacto_id,
                                                           ativ=ativ, 
