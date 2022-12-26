@@ -609,7 +609,7 @@ def seus_numeros(pessoa_id):
                                   Log_Unid.user_id == user_id,
                                   Log_Unid.data_hora > plano_em_exec.dataInicio).all()
   
-    # iri é o índice de registro de íncio de atividade
+    # iri é o índice de registro de início de atividade
     # iri próximo de 1: registro de início de atividade próximo do início do plano
     # iri próximo de 0: registro de início de atividade próxomo ao final do plano
     iris = []
@@ -618,8 +618,17 @@ def seus_numeros(pessoa_id):
         for l in log_plano:
             if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano_em_exec]:
                 reg_log += 1
-                iri = (plano_em_exec.dataFim - l.data_hora.date())/(plano_em_exec.dataFim - plano_em_exec.dataInicio)
+                dif_data_plano = plano_em_exec.dataFim - plano_em_exec.dataInicio
+                if not(plano_em_exec.dataFim - l.data_hora.date()) or (plano_em_exec.dataFim - l.data_hora.date()) == 0:
+                    dif_data_reg = 0
+                else:    
+                    dif_data_reg = plano_em_exec.dataFim - l.data_hora.date()
+                if not dif_data_plano or dif_data_plano == 0:
+                    iri = dif_data_reg
+                else:    
+                    iri = dif_data_reg/dif_data_plano
                 iris.append(iri)
+        print ('## ', iris)        
         # icp é o índice de comprometimento agregado para o plano 
         # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
         # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano

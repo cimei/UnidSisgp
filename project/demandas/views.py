@@ -849,7 +849,17 @@ def list_demandas(lista,coord):
                 for l in log_plano:
                     if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano]:
                         reg_log += 1
-                        iri = (d.dataFim - l.data_hora.date())/(d.dataFim - d.dataInicio)
+                        dif_data_plano = d.dataFim - d.dataInicio
+                        if not(d.dataFim - l.data_hora.date()) or (d.dataFim - l.data_hora.date()) == 0:
+                            dif_data_reg = 0
+                        elif d.dataFim < l.data_hora.date():
+                            dif_data_reg = -1    
+                        else:    
+                            dif_data_reg = d.dataFim - l.data_hora.date()
+                        if not dif_data_plano or dif_data_plano == 0:
+                            iri = dif_data_reg
+                        else:    
+                            iri = dif_data_reg/dif_data_plano
                         iris.append(iri)
                 # icp é o índice de comprometimento agregado para o plano 
                 # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas

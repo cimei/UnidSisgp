@@ -84,7 +84,7 @@
                 <td><p align = "center"> {% if demanda.relacaoPrevistoRealizado == None %}N.C.{% else %} {{demanda.relacaoPrevistoRealizado|string()|replace(".",",")}} {% endif %} </p></td> 
                 <td><p align = "center"> {{demanda.tempoTotalDisponivel}} </p></td>
                 {% if icps[demanda.pactoTrabalhoId] %}
-                  <td><p align = "center"> {{icps[demanda.pactoTrabalhoId]}} </p></td>
+                  <td><p align = "center"> {{icps[demanda.pactoTrabalhoId]|string()|replace(".",",")}} </p></td>
                 {% else %}
                   <td><p align = "center"> N.C. </p></td>
                 {% endif %}  
