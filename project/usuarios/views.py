@@ -618,11 +618,13 @@ def seus_numeros(pessoa_id):
         for l in log_plano:
             if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano_em_exec]:
                 reg_log += 1
-                dif_data_plano = plano_em_exec.dataFim - plano_em_exec.dataInicio
+                dif_data_plano = (plano_em_exec.dataFim - plano_em_exec.dataInicio).days
                 if not(plano_em_exec.dataFim - l.data_hora.date()) or (plano_em_exec.dataFim - l.data_hora.date()) == 0:
                     dif_data_reg = 0
+                elif plano_em_exec.dataFim < l.data_hora.date():
+                    dif_data_reg = -1    
                 else:    
-                    dif_data_reg = plano_em_exec.dataFim - l.data_hora.date()
+                    dif_data_reg = (plano_em_exec.dataFim - l.data_hora.date()).days
                 if not dif_data_plano or dif_data_plano == 0:
                     iri = dif_data_reg
                 else:    

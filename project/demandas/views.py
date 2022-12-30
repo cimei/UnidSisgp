@@ -852,13 +852,13 @@ def list_demandas(lista,coord):
                 for l in log_plano:
                     if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano]:
                         reg_log += 1
-                        dif_data_plano = d.dataFim - d.dataInicio
+                        dif_data_plano = (d.dataFim - d.dataInicio).days
                         if not(d.dataFim - l.data_hora.date()) or (d.dataFim - l.data_hora.date()) == 0:
                             dif_data_reg = 0
                         elif d.dataFim < l.data_hora.date():
                             dif_data_reg = -1    
                         else:    
-                            dif_data_reg = d.dataFim - l.data_hora.date()
+                            dif_data_reg = (d.dataFim - l.data_hora.date()).days
                         if not dif_data_plano or dif_data_plano == 0:
                             iri = dif_data_reg
                         else:    
