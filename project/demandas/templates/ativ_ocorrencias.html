@@ -198,15 +198,21 @@
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
                                 <span class="text-muted"> Tempo previsto: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}</b>{% endif %} - </span>
-                                <span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}</b>{% endif %}</span><br>
+                                <span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}</b>{% endif %}</span>
+                            </div>
+                          </li>    
+                          <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <span class="text-muted"> Avaliador: {% if ativs[ns_cont.i-1].responsavelAvaliacao == None%}?{% else %}<b>{{ativs[ns_cont.i-1].responsavelAvaliacao}}</b>{% endif %} -</span>
+                                <span class="text-muted"> Data avaliação: {% if ativs[ns_cont.i-1].dataAvaliacao == None%}?{% else %}<b>{{ativs[ns_cont.i-1].dataAvaliacao.strftime('%d/%m/%Y')}}</b>{% endif %}</span>
+                                <br>
                                 <span class="text-muted"> Tempo homologado: {% if ativs[ns_cont.i-1].tempoHomologado == None%}?{% else %}<b>{{ativs[ns_cont.i-1].tempoHomologado|string()|replace(".",",")}}</b>{% endif %} -</span>
                                 <span class="text-muted"> Nota: {% if ativs[ns_cont.i-1].nota == None%}?{% else %}<b>{{ativs[ns_cont.i-1].nota|string()|replace(".",",")}}</b>{% endif %} </span>
                                 {% if ativs[ns_cont.i-1].justificativa != None and ativs[ns_cont.i-1].justificativa !='' %}
                                  <br><span class="text-muted"> Justificativa: </span>{{ativs[ns_cont.i-1].justificativa}} 
+                                {% endif %} 
                             </div>
                           </li>
-                          
-                          {% endif %}
                         {% endif %}
 
                         {% if qtd_assuntos > 0 %}

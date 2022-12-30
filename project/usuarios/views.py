@@ -628,7 +628,6 @@ def seus_numeros(pessoa_id):
                 else:    
                     iri = dif_data_reg/dif_data_plano
                 iris.append(iri)
-        print ('## ', iris)        
         # icp é o índice de comprometimento agregado para o plano 
         # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
         # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano

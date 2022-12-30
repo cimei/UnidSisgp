@@ -502,16 +502,42 @@ class Atividade_Candidato(db.Model):
     situacaoId                        = db.Column(db.Integer)
     termoAceite                       = db.Column(db.String)
 
-    def __init__(self,planoTrabalhoAtividadeId,pessoaId,situacaoId,termoAceite):
+    def __init__(self,planoTrabalhoAtividadeCandidatoId,planoTrabalhoAtividadeId,pessoaId,situacaoId,termoAceite):
         
+        self.planoTrabalhoAtividadeCandidatoId = planoTrabalhoAtividadeCandidatoId
         self.planoTrabalhoAtividadeId = planoTrabalhoAtividadeId
         self.pessoaId                 = pessoaId
         self.situacaoId               = situacaoId
         self.termoAceite              = termoAceite
 
     def __repr__ (self):
-        return f"{self.planoTrabalhoAtividadeId};{self.pessoaId};{self.situacaoId};{self.termoAceite}"              
+        return f"{self.planoTrabalhoAtividadeCandidatoId};{self.planoTrabalhoAtividadeId};{self.pessoaId};{self.situacaoId};{self.termoAceite}"              
 
+# PG (planotrabalho) atividade candidato histórico
+
+class Atividade_Candidato_Hist(db.Model):
+
+    __tablename__ = 'PlanoTrabalhoAtividadeCandidatoHistorico'
+    __table_args__ = {"schema": "ProgramaGestao"}   
+
+    planoTrabalhoAtividadeCandidatoHistoricoId = db.Column(db.String, primary_key = True)
+    planoTrabalhoAtividadeCandidatoId          = db.Column(db.String)
+    situacaoId                                 = db.Column(db.Integer)
+    data                                       = db.Column(db.Date)
+    descricao                                  = db.Column(db.String)
+    responsavelOperacao                        = db.Column(db.String)
+
+    def __init__(self,planoTrabalhoAtividadeCandidatoHistoricoId,planoTrabalhoAtividadeCandidatoId,situacaoId,data,descricao,responsavelOperacao):
+        
+        self.planoTrabalhoAtividadeCandidatoHistoricoId = planoTrabalhoAtividadeCandidatoHistoricoId
+        self.planoTrabalhoAtividadeCandidatoId          = planoTrabalhoAtividadeCandidatoId
+        self.situacaoId                                 = situacaoId
+        self.data                                       = data
+        self.descricao                                  = descricao
+        self.responsavelOperacao                        = responsavelOperacao
+
+    def __repr__ (self):
+        return f"{self.planoTrabalhoAtividadeCandidatoHistoricoId};{self.planoTrabalhoAtividadeCandidatoId};{self.data}" 
 
 # Pactos de Trabalho
 
@@ -682,10 +708,12 @@ class Pactos_de_Trabalho_Atividades(db.Model):
     justificativa            = db.Column(db.String)
     consideracoesConclusao   = db.Column(db.String)
     modalidadeExecucaoId     = db.Column(db.Integer)
+    responsavelAvaliacao     = db.Column(db.String)
+    dataAvaliacao            = db.Column(db.Date)
 
     def __init__(self,pactoTrabalhoAtividadeId,pactoTrabalhoId,itemCatalogoId,quantidade,tempoPrevistoPorItem,tempoPrevistoTotal,
                 dataInicio,dataFim,tempoRealizado,situacaoId,descricao,tempoHomologado,nota,justificativa,
-                consideracoesConclusao,modalidadeExecucaoId):
+                consideracoesConclusao,modalidadeExecucaoId,responsavelAvaliacao,dataAvaliacao):
 
         self.pactoTrabalhoAtividadeId = pactoTrabalhoAtividadeId
         self.pactoTrabalhoId        = pactoTrabalhoId
@@ -703,12 +731,14 @@ class Pactos_de_Trabalho_Atividades(db.Model):
         self.justificativa          = justificativa
         self.consideracoesConclusao = consideracoesConclusao
         self.modalidadeExecucaoId   = modalidadeExecucaoId
+        self.responsavelAvaliacao   = responsavelAvaliacao
+        self.dataAvaliacao          = dataAvaliacao
 
     def __repr__ (self):
         return f"{self.pactoTrabalhoAtividadeId};{self.pactoTrabalhoId};{self.itemCatalogoId};{self.quantidade};{self.tempoPrevistoPorItem};\
                  {self.tempoPrevistoTotal};{self.dataInicio};{self.dataFim};{self.tempoRealizado};\
-                 {self.situacaoId};{self.descricao};{self.tempoHomologado};\
-                 {self.nota};{self.justificativa};{self.consideracoesConclusao};{self.modalidadeExecucaoId}"
+                 {self.situacaoId};{self.descricao};{self.tempoHomologado};{self.nota};{self.justificativa};\
+                 {self.consideracoesConclusao};{self.modalidadeExecucaoId};{self.consideracoesConclusao};{self.modalidadeExecucaoId}"
 
 # Solicitações nos Pactos de Trabalho 
 

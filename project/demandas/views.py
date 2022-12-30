@@ -22,8 +22,8 @@ from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho, \
-                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho,\
-                           Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades,\
+                           Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Atividade_Candidato_Hist,\
+                           Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades, Atividade_Candidato,\
                            Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
                            Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist, Tipo_Func_Pessoa, Log_Unid
 
@@ -541,7 +541,9 @@ def ativ_ocor(pacto_id,item_cat_id):
                                 Pactos_de_Trabalho_Atividades.tempoHomologado,
                                 Pactos_de_Trabalho_Atividades.justificativa,
                                 Objetos.chave,
-                                label('obj_desc',Objetos.descricao))\
+                                label('obj_desc',Objetos.descricao),
+                                Pactos_de_Trabalho_Atividades.responsavelAvaliacao,
+                                Pactos_de_Trabalho_Atividades.dataAvaliacao)\
                          .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
                                  Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id)\
                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
@@ -683,6 +685,7 @@ def list_demandas(lista,coord):
                                .subquery()                      
 
     com_nota = False
+    icps = {}
 
     if lista == 'solic_pend':
 
@@ -1403,21 +1406,23 @@ def solicitacao_analise(solic_id,pacto_id):
                         modalidade = 101
 
                     nova_ativ = Pactos_de_Trabalho_Atividades(pactoTrabalhoAtividadeId = uuid.uuid4(),
-                                                            pactoTrabalhoId          = pacto_id,
-                                                            itemCatalogoId           = dados_solic['itemCatalogoId'],
-                                                            situacaoId               = dados_solic['situacaoId'],
-                                                            quantidade               = 1,
-                                                            tempoPrevistoPorItem     = dados_solic['tempoPrevistoPorItem'],
-                                                            tempoPrevistoTotal       = dados_solic['tempoPrevistoPorItem'],
-                                                            dataInicio               = dados_solic['dataInicio'],
-                                                            dataFim                  = dados_solic['dataFim'],
-                                                            tempoRealizado           = dados_solic['tempoRealizado'],
-                                                            descricao                = dados_solic['descricao'],
-                                                            tempoHomologado          = None,
-                                                            nota                     = None,
-                                                            justificativa            = None,
-                                                            consideracoesConclusao   = None,
-                                                            modalidadeExecucaoId     = modalidade)                 
+                                                              pactoTrabalhoId          = pacto_id,
+                                                              itemCatalogoId           = dados_solic['itemCatalogoId'],
+                                                              situacaoId               = dados_solic['situacaoId'],
+                                                              quantidade               = 1,
+                                                              tempoPrevistoPorItem     = dados_solic['tempoPrevistoPorItem'],
+                                                              tempoPrevistoTotal       = dados_solic['tempoPrevistoPorItem'],
+                                                              dataInicio               = dados_solic['dataInicio'],
+                                                              dataFim                  = dados_solic['dataFim'],
+                                                              tempoRealizado           = dados_solic['tempoRealizado'],
+                                                              descricao                = dados_solic['descricao'],
+                                                              tempoHomologado          = None,
+                                                              nota                     = None,
+                                                              justificativa            = None,
+                                                              consideracoesConclusao   = None,
+                                                              modalidadeExecucaoId     = modalidade,
+                                                              responsavelAvaliacao     = None,
+                                                              dataAvaliacao            = None)                 
 
                     db.session.add(nova_ativ)
                     db.session.commit()                      
@@ -1664,7 +1669,9 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
                                                       nota                     = None,
                                                       justificativa            = None,
                                                       consideracoesConclusao   = None,
-                                                      modalidadeExecucaoId     = modalidade)                 
+                                                      modalidadeExecucaoId     = modalidade,
+                                                      responsavelAvaliacao     = None,
+                                                      dataAvaliacao            = None)                 
 
             db.session.add(nova_ativ)
             db.session.commit()                      
@@ -2112,6 +2119,8 @@ def avalia_atividade(pacto_id,ativ_pacto_id,acao):
     if form.validate_on_submit():
 
         ativ.nota = form.nota.data
+        ativ.responsavelAvaliacao = avaliador.pesNome
+        ativ.dataAvaliacao = hoje
         if form.tempo_homologado.data == None or form.tempo_homologado.data == '':
             ativ.tempoHomologado = ativ.tempoRealizado
         else:
@@ -2154,6 +2163,7 @@ def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
        |Recebe o ID do pacto e ID da atividade no pacto como parâmetros.                 |
        +---------------------------------------------------------------------------------+
     """
+    hoje = datetime.now()
 
     #pega e-mail do usuário logado
     email = current_user.userEmail
@@ -2184,6 +2194,8 @@ def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
                 ativ_av = db.session.query(Pactos_de_Trabalho_Atividades).filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ.id).first()
 
                 ativ_av.nota = form.nota.data
+                ativ_av.responsavelAvaliacao = avaliador.pesNome
+                ativ_av.dataAvaliacao = hoje
                 if form.tempo_homologado.data == None or form.tempo_homologado.data == '':
                     ativ_av.tempoHomologado = ativ.tempoRealizado
                 else:
@@ -2374,8 +2386,10 @@ def cria_plano(pg_id):
                           Planos_de_Trabalho.dataFim,
                           Planos_de_Trabalho.tempoComparecimento,
                           Planos_de_Trabalho.termoAceite,
-                          Unidades.undSigla)\
+                          Unidades.undSigla,
+                          Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId)\
                    .join(Unidades, Unidades.unidadeId == Planos_de_Trabalho.unidadeId)\
+                   .outerjoin(Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs.planoTrabalhoId==Planos_de_Trabalho.planoTrabalhoId)\
                    .filter(Planos_de_Trabalho.planoTrabalhoId == pg_id)\
                    .first()
 
@@ -2496,7 +2510,9 @@ def cria_plano(pg_id):
                                                                 nota                     = None,
                                                                 justificativa            = None,
                                                                 consideracoesConclusao   = None,
-                                                                modalidadeExecucaoId     = int(field.modalidade.data))
+                                                                modalidadeExecucaoId     = int(field.modalidade.data),
+                                                                responsavelAvaliacao     = None,
+                                                                dataAvaliacao            = None)
 
                     db.session.add(plano_ativs)
 
@@ -2516,6 +2532,26 @@ def cria_plano(pg_id):
             flash('Plano criado e aguardando aprovação!','sucesso')
             db.session.commit()
             registra_log_unid(current_user.id,'Plano de Trabalho criado.')
+
+            ## para efeitos de consistência com o SISGP, registra dados nas classes Atividade_Candidato e Atividade_Candidato_Hist
+            if pg.planoTrabalhoAtividadeId:
+
+                ativ_cand = Atividade_Candidato (planoTrabalhoAtividadeCandidatoId = uuid.uuid4(),
+                                                planoTrabalhoAtividadeId          = pg.planoTrabalhoAtividadeId,
+                                                pessoaId                          = pes.pessoaId,
+                                                situacaoId                        = 804,
+                                                termoAceite                       = pg.termoAceite)
+                db.session.add(ativ_cand)     
+
+                ativ_cand_hist = Atividade_Candidato_Hist (planoTrabalhoAtividadeCandidatoHistoricoId = uuid.uuid4(),
+                                                           planoTrabalhoAtividadeCandidatoId = ativ_cand.planoTrabalhoAtividadeCandidatoId,
+                                                           situacaoId                        = ativ_cand.situacaoId,
+                                                           data                              = hist.dataOperacao,
+                                                           descricao                         = None,
+                                                           responsavelOperacao               = pes.pessoaId)
+                db.session.add(ativ_cand_hist)  
+
+                db.session.commit()                           
 
             return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
 
@@ -2561,6 +2597,7 @@ def analisa_plano(pacto_id):
                                        dataOperacao        = hoje)   
         db.session.add(hist)
 
+        # altera situação do plano (pacto)
         plano.situacaoId = form.parecer.data
 
         db.session.commit()
@@ -2600,6 +2637,9 @@ def inicia_plano(pacto_id):
     #pega o plano
     plano = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
 
+    #pega atividades do plano
+    ativs = db.session.query(Pactos_de_Trabalho_Atividades).filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id).all()
+
     #pega dono do plano
     dono = db.session.query(Pessoas).filter(Pessoas.pessoaId == plano.pessoaId).first()
 
@@ -2614,9 +2654,40 @@ def inicia_plano(pacto_id):
                                        dataOperacao        = hoje)   
         db.session.add(hist)
 
+        # altera situação do plano (pacto)
         plano.situacaoId = 405
 
         db.session.commit()
+
+        # realiza o desmembramento das atividades em ocorrências, caso necessário
+        for a in ativs:
+            if a.quantidade > 1:
+                # desmenbra a atividade em quantidade-1 ocorrências
+                for o in range(a.quantidade-1):
+                    ocor = Pactos_de_Trabalho_Atividades (pactoTrabalhoAtividadeId = uuid.uuid4(),
+                                                          pactoTrabalhoId          = pacto_id,
+                                                          itemCatalogoId           = a.itemCatalogoId,
+                                                          situacaoId               = 501,
+                                                          quantidade               = 1,
+                                                          tempoPrevistoPorItem     = a.tempoPrevistoPorItem,
+                                                          tempoPrevistoTotal       = a.tempoPrevistoPorItem,
+                                                          dataInicio               = None,
+                                                          dataFim                  = None,
+                                                          tempoRealizado           = None,
+                                                          descricao                = None,
+                                                          tempoHomologado          = None,
+                                                          nota                     = None,
+                                                          justificativa            = None,
+                                                          consideracoesConclusao   = None,
+                                                          modalidadeExecucaoId     = a.modalidadeExecucaoId,
+                                                          responsavelAvaliacao     = None,
+                                                          dataAvaliacao            = None)
+
+                    db.session.add(ocor)
+                # reduz a atividade original a uma ocorrência
+                a.quantidade = 1
+                a.tempoPrevistoTotal = a.tempoPrevistoPorItem
+                db.session.commit()
 
         flash('Plano de trabalho colocado em execução!','sucesso')
         registra_log_unid(current_user.id,'Plano de Trabalho colocado em execução.')

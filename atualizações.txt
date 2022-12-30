@@ -1,5 +1,14 @@
 ## Atualizações ##
 
+28/12/2022
+Passa a registrar nome do avaliador de atividade em plano e data da avaliação. 
+Foi alterada a tabela [ProgramaGestao].[PactoTrabalhoAtividade], onde foram acrescentados os campos
+[responsavelAvaliacao] e [dataAvaliacao].
+Visando coerência com o sisgp, tabelas PlanoTrabalhoAtividadeCandidato e PlanoTrabalhoAtividadeCandidatoHistorico são
+alimentadas quando da criação de um pacto.
+Faz o desmembramento de atividades em um pacto quando do seu início, se necessário.  
+v1.0.7
+
 22/12/2022
 
 Ajustes na performance da consulta à plano de trabalho.

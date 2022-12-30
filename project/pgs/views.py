@@ -304,6 +304,9 @@ def cria_pg():
     #pega total de servidores do setor
     total_serv_setor = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).count()
 
+    #pega modalidades de execução
+    mods = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all()
+
     #pega atividades associadas a unidade do usuário
     ativs_unid = db.session.query(Atividades.itemCatalogoId,
                                   label('desc',Atividades.titulo+' - '+Atividades.complexidade+' - (R: '+\
@@ -317,6 +320,10 @@ def cria_pg():
     form = PGForm()
 
     form.ativs.choices = [(a.itemCatalogoId,a.desc) for a in ativs_unid]
+    
+    lista_mods = [(m.catalogoDominioId,m.descricao) for m in mods]
+    lista_mods.insert(0,('',''))
+    form.modalidade.choices = lista_mods 
 
     #pega o termo de aceite que fica na pasta static
     pasta_termo = os.path.normpath('/app/project/static/termo.txt')
@@ -352,8 +359,8 @@ def cria_pg():
         #cria registros em Planos_de_Trabalho_Ativs
         pg_ativs = Planos_de_Trabalho_Ativs(planoTrabalhoAtividadeId = uuid.uuid4(),
                                             planoTrabalhoId         = pg.planoTrabalhoId,
-                                            modalidadeExecucaoId    = 103,
-                                            quantidadeColaboradores = 1,
+                                            modalidadeExecucaoId    = int(form.modalidade.data),
+                                            quantidadeColaboradores = int(form.qtd_colab.data),
                                             descricao               = None)
 
         db.session.add(pg_ativs)
