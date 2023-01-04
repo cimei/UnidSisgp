@@ -44,6 +44,7 @@ from datetime import datetime, timedelta, time
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, distinct
 from sqlalchemy.sql import label
+import ldap3
 
 from project import db, mail, app
 from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
@@ -96,251 +97,75 @@ def send_email(subject, recipients, text_body, html_body):
     thr = Thread(target=send_async_email, args=[msg])
     thr.start()
 
-# helper function que prepara email de conformação de endereço de e-mail
-def send_confirmation_email(user_email):
-    """+--------------------------------------------------------------------------------------+
-       |Preparação dos dados para e-mail de confirmação de usuário                            |
-       +--------------------------------------------------------------------------------------+
-    """
-    confirm_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-    confirm_url = url_for(
-        'usuarios.confirm_email',
-        token=confirm_serializer.dumps(user_email, salt='email-confirmation-salt'),
-        _external=True)
-
-    html = render_template(
-        'email_confirmation.html',
-        confirm_url=confirm_url)
-
-    send_email('Confirme seu endereço de e-mail', [user_email],'', html)
-
-# helper function que prepara email com token para resetar a senha
-def send_password_reset_email(user_email):
-    """+--------------------------------------------------------------------------------------+
-       |Preparação dos dados para e-mail de troca de senha.                                   |
-       +--------------------------------------------------------------------------------------+
-    """
-    password_reset_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-    password_reset_url = url_for(
-        'usuarios.reset_with_token',
-        token = password_reset_serializer.dumps(user_email, salt='password-reset-salt'),
-        _external=True)
-
-    html = render_template(
-        'email_senha_atualiza.html',
-        password_reset_url=password_reset_url)
-
-    send_email('Atualização de senha solicitada', [user_email],'', html)
-
-# registrar
-
-@usuarios.route('/register', methods=['GET','POST'])
-def register():
-    """+--------------------------------------------------------------------------------------+
-       |Efetua o registro de um usuário. Este recebe o aviso para verificar sua caixa de      |
-       |e-mails, pois o aplicativo envia uma mensagem sobre a confirmação do registro.        |
-       +--------------------------------------------------------------------------------------+
-    """
-
-    form = RegistrationForm()
-
-    if form.validate_on_submit():
-        
-        if form.check_username(form.username) and form.check_email(form.email) and form.check_sisgp(form.email):
-
-            # primeiro usuário é cadastrado como ativo
-            if users.query.count() == 0:
-                ativo = True
-                avaliador = 99999
-            else:
-                ativo = False
-                avaliador = None
-
-            user = users(userNome                   = form.username.data,
-                         userEmail                  = form.email.data,
-                         plaintext_password         = form.password.data,
-                         email_confirmation_sent_on = datetime.now(),
-                         userAtivo                  = ativo,
-                         avaliadorId                = avaliador)
-
-            db.session.add(user)
-            db.session.commit()
-
-            last_id = db.session.query(users.id).order_by(users.id.desc()).first()
-
-            registra_log_unid(last_id[0],'Usuário '+ form.username.data +' registrado.')
-
-            send_confirmation_email(user.userEmail)
-            
-            flash('Usuário '+ form.username.data +' registrado! Verifique sua caixa de e-mail para confirmar o endereço.','sucesso')
-            
-            return redirect(url_for('core.index'))
-
-    return render_template('register.html',form=form)
-
-# gera novo link para confirmação de email
-
-@usuarios.route('/<int:userId>/confirm')
-def confirm(userId):
-    """+--------------------------------------------------------------------------------------+
-       |Gera novo link de confirmação de e-mail para usuário novo.                            |
-       +--------------------------------------------------------------------------------------+
-    """
-    user = db.session.query(users.userEmail).filter(users.id == userId).first()
-
-    send_confirmation_email(user.userEmail)
-
-    registra_log_unid(current_user.id,'Novo e-mail de confirmação enviado para '+ user.userEmail +'.')
-
-    flash('Novo e-mail de confirmação enviado para '+ user.userEmail +'.','sucesso')
-
-    return redirect(url_for('usuarios.view_users'))
-
-# confirmar registro
-
-@usuarios.route('/confirm/<token>')
-def confirm_email(token):
-    """+--------------------------------------------------------------------------------------+
-       |Trata o retorno do e-mail de confirmação de registro, verificano se o token enviado   |
-       |é válido (igual ao enviado no momento do registro e tem menos de 1 hora de vida).     |
-       +--------------------------------------------------------------------------------------+
-    """
-    try:
-        confirm_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        email = confirm_serializer.loads(token, salt='email-confirmation-salt', max_age=3600)
-    except:
-        flash('O link de confirmação é inválido ou expirou.', 'erro')
-        return redirect(url_for('usuarios.login'))
-
-    user = users.query.filter_by(userEmail=email).first()
-
-    if user.email_confirmed:
-        flash('Confirmação já realizada. Por favor, faça o login.', 'erro')
-    else:
-        user.email_confirmed = True
-        user.email_confirmed_on = datetime.now()
-
-        db.session.commit()
-        flash('Obrigado por confirmar seu endereço de e-mail! Caso já tenha uma janela do sistema aberta, pode fechar a anterior.','sucesso')
-
-    return redirect(url_for('usuarios.login'))
-
-# gera token para resetar senha
-
-@usuarios.route('/reset', methods=["GET", "POST"])
-def reset():
-    """+--------------------------------------------------------------------------------------+
-       |Trata o pedido de troca de senha. Enviando um e-mail para o usuário.                  |
-       |O usuário deve estar registrado (com registro confirmado) antes de poder efetuar uma  |
-       |troca de senha.                                                                       |
-       |O aplicativo envia uma mensagem ao usuário sobre o procedimento de troca de senha.    |
-       +--------------------------------------------------------------------------------------+
-    """
-    form = EmailForm()
-
-    if form.validate_on_submit():
-        try:
-            user = users.query.filter_by(userEmail=form.email.data).first_or_404()
-        except:
-            flash('Endereço de e-mail inválido!', 'erro')
-            return render_template('email.html', form=form)
-
-        if user.email_confirmed:
-            send_password_reset_email(user.userEmail)
-            flash('Verifique a caixa de entrada de seu e-mail. Uma mensagem com o link de atualização de senha foi enviado.', 'sucesso')
-        else:
-            flash('Seu endereço de e-mail precisa ser confirmado antes de tentar efetuar uma troca de senha.', 'erro')
-        return redirect(url_for('usuarios.login'))
-
-    return render_template('email.html', form=form)
-
-# trocar ou gerar nova senha
-
-@usuarios.route('/reset/<token>', methods=["GET", "POST"])
-def reset_with_token(token):
-    """+--------------------------------------------------------------------------------------+
-       |Trata o retorno do e-mail enviado ao usuário com token de troca de senha.             |
-       |Verifica se o token é válido.                                                         |
-       |Abre tela para o usuário informar nova senha.                                         |
-       +--------------------------------------------------------------------------------------+
-    """
-    try:
-        password_reset_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        email = password_reset_serializer.loads(token, salt='password-reset-salt', max_age=3600)
-    except:
-        flash('O link de atualização de senha é inválido ou expirou.', 'erro')
-        return redirect(url_for('usuarios.login'))
-
-    form = PasswordForm()
-
-    if form.validate_on_submit():
-        try:
-            user = users.query.filter_by(userEmail=email).first_or_404()
-        except:
-            flash('Endereço de e-mail inválido!', 'erro')
-            return redirect(url_for('usuarios.login'))
-
-        user.password_hash = generate_password_hash(form.password.data)
-
-        db.session.commit()
-
-        registra_log_unid(user.id,'Senha alterada.')
-
-        flash('Sua senha foi atualizada!', 'sucesso')
-
-        return redirect(url_for('usuarios.login'))
-
-    return render_template('troca_senha_com_token.html', form=form, token=token)
-
-
 # login
 
 @usuarios.route('/login', methods=['GET','POST'])
 def login():
     """+--------------------------------------------------------------------------------------+
        |Fornece a tela para que o usuário entre no sistema (login).                           |
-       |O acesso é feito por e-mail e senha cadastrados.                                      |
-       |Antes do primeiro acesso após o registro, o usuário precisa cofirmar este registro    |
-       |para poder fazer o login, conforme mensagem enviada.                                  |
+       |O acesso é feito por usuário e senha cadastrados, conforme ldap.                      |
        +--------------------------------------------------------------------------------------+
     """
+
+    if current_user.is_authenticated:
+        flash('Você já estava logado!')
+        return redirect(url_for('core.inicio'))
+
     form = LoginForm()
 
     if form.validate_on_submit():
 
-        user = users.query.filter_by(userEmail=form.email.data).first()
+        username = form.username.data
+        password = form.password.data
 
-        if user is not None:
+        try:
+            conexao = users.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
+        except:
+            flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente.', 'erro')
+            return render_template('login.html', form=form)
 
-            if user.check_password(form.password.data):
-
-                if user.email_confirmed:
-
-                    user.last_logged_in = user.current_logged_in
-                    user.current_logged_in = datetime.now()
-                    db.session.commit()
-
-                    login_user(user)
-
-                    flash('Login bem sucedido!','sucesso')
-
-                    next = request.args.get('next')
-
-                    if next == None or not next[0] == '/':
-                        next = url_for('core.index')
-
-                    return redirect(next)
-
-                else:
-                    flash('Endereço de e-mail não confirmado ainda!','erro')
-
-            else:
-                flash('Senha não confere, favor verificar!','erro')
-
+        if conexao == 'sem_credencial':
+            retorno = False
+            ldap_mail = None
+            ldap_cpf  = None
+            flash('Usuário desconhecido ou senha inválida. Por favor, tente novamente.', 'erro')
+            return render_template('login.html', form=form)
         else:
-            flash('E-mail informado não encontrado, favor verificar!','erro')
+            conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail','carLicense'])
+            retorno = True
+            ldap_mail = str((conexao.entries[0])['mail'])
+            ldap_cpf  = str((conexao.entries[0])['carLicense'])
+            pessoa = Pessoas.query.filter_by(pesEmail = ldap_mail).first()
+            if not pessoa:
+                flash('Seu e-mail no PGD ('+pessoa.pesEmail+') não bate com sei e-mail no LDAP ('+ldap_mail+'). Acesso negado!','erro')
+                return render_template('login.html', form=form)
+        
+        user = users.query.filter_by(userEmail = ldap_mail).first()
+
+        if not user:
+            user = users(userNome                   = pessoa.pesNome,
+                         userEmail                  = pessoa.pesEmail,
+                         plaintext_password         = 'sem_senha',
+                         email_confirmation_sent_on = datetime.now(),
+                         userAtivo                  = True,
+                         avaliadorId                = None)
+            db.session.add(user)
+            db.session.commit()
+
+        user.last_logged_in = user.current_logged_in
+        user.current_logged_in = datetime.now()
+        db.session.commit()
+
+        login_user(user)
+
+        flash('Login bem sucedido!','sucesso')
+
+        next = request.args.get('next')
+
+        if next == None or not next[0] == '/':
+            next = url_for('core.inicio')
+
+        return redirect(next)
 
     return render_template('login.html',form=form)
 

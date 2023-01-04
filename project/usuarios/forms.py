@@ -30,7 +30,7 @@ from project.models import users, Pessoas
 
 class LoginForm(FlaskForm):
 
-    email    = StringField('E-mail: ', validators=[DataRequired(message="Informe seu e-mail registrado!"),Email()])
+    username = StringField('Usuário: ', validators=[DataRequired(message="Informe Usuário!")])
     password = PasswordField('Senha: ', validators=[DataRequired(message="Informe sua senha!")])
     submit   = SubmitField('Entrar')
 

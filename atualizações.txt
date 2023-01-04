@@ -1,5 +1,9 @@
 ## Atualizações ##
 
+04/01/2022
+Acesso de usuário passa a ser via consulta ao banco de dados do LDAP.
+v2.0.0
+
 28/12/2022
 Passa a registrar nome do avaliador de atividade em plano e data da avaliação. 
 Foi alterada a tabela [ProgramaGestao].[PactoTrabalhoAtividade], onde foram acrescentados os campos

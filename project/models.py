@@ -24,18 +24,18 @@
     Abaixo seguem os Modelos e respectivos campos.
 """
 # models.py
-from xmlrpc.client import Boolean
+from project import app
 from project import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from datetime import datetime, date
+from ldap3 import Server, Connection, NTLM
 
 from sqlalchemy.dialects.mssql import NUMERIC
 
 @login_manager.user_loader
 def load_user(user_id):
     return users.query.get(user_id)
-
 
 class users(db.Model, UserMixin):
 
@@ -72,6 +72,17 @@ class users(db.Model, UserMixin):
     def check_password (self,plaintext_password):
 
         return check_password_hash(self.password_hash,plaintext_password)
+
+    @staticmethod
+    def conecta_ldap(username, password, str_DN):
+        server = Server('ldap.cnpq.br:2389')
+        user_str_DN = 'uid='+username.strip()+','+str_DN.strip()
+        conn = Connection(server, user_str_DN, password)
+        status = conn.bind()
+        if status:
+            return conn 
+        else:
+            return 'sem_credencial'
 
     def __repr__(self):
 

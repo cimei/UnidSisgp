@@ -61,11 +61,21 @@ def PegaArquivo(form):
 def index():
     """
     +---------------------------------------------------------------------------------------+
+    |Apresenta a tela de login.                                                             |
+    +---------------------------------------------------------------------------------------+
+    """
+
+    return redirect(url_for('usuarios.login'))
+
+@core.route('/inicio')
+def inicio():
+    """
+    +---------------------------------------------------------------------------------------+
     |Apresenta a tela inicial do aplicativo.                                                |
     +---------------------------------------------------------------------------------------+
     """
 
-    return render_template ('index.html',sistema='Unidade SISGP')
+    return render_template ('index.html',sistema='Unidade SISGP')    
 
 @core.route('/info')
 def info():
@@ -104,13 +114,13 @@ def CarregaTA():
 
             flash('Arquivo com Termo de Aceite salvo!','sucesso')
 
-            return redirect(url_for('core.index'))
+            return redirect(url_for('core.inicio'))
 
         else:
 
             flash('O seu usuário precisa ser ativado para esta operação!','erro')
 
-            return redirect(url_for('core.index'))
+            return redirect(url_for('core.inicio'))
 
     return render_template('grab_file.html',form=form)
 
