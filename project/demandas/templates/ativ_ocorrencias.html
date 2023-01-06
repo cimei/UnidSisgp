@@ -59,7 +59,7 @@
 
                 <div class="card-body text-white bg-secondary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                   </span><br>
 
                   <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
@@ -79,7 +79,7 @@
 
                 <div class="card-body text-white bg-primary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                   <span><br>
                     <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
                       {% if ativs[ns_cont.i-1].quantidade > 1 %}
@@ -109,7 +109,7 @@
                             "card-body text-white bg-info">
                             {% endif %}
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="Clique aqui para ver detalhes"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                   </span><br>
                   <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
                     {% if ativs[ns_cont.i-1].quantidade > 1 %}
@@ -227,6 +227,16 @@
                                 </div>
                               </div>
                             </li>
+                        {% endif %}
+
+                        {% if ativs[ns_cont.i-1].situa == 'Em execução' %}
+                          <li class="list-group-item d-flex justify-content-center">
+                            <div class="ms-2 me-auto">
+                              <div>
+                                <a href="{{url_for('demandas.corrige_ocor_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}">Corrigir</a> 
+                              </div>
+                            </div>
+                          </li>
                         {% endif %}
 
                       </ul>

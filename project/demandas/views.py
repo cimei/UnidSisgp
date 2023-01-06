@@ -565,7 +565,8 @@ def ativ_ocor(pacto_id,item_cat_id):
                          .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Atividade_Pacto_Assunto.pactoTrabalhoAtividadeId)\
                          .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
                                  Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                         .order_by(Assuntos.chave.desc())\
+                         .order_by(Assuntos.chave.desc(),
+                                   Assuntos.valor.desc())\
                          .all()
     qtd_assuntos = len(assuntos)  
 
@@ -1989,16 +1990,63 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
     form.tempo_realizado.data = str(ativ.tempoPrevistoTotal).replace('.',',')
 
     if acao == 'f':
-        form.data_ini.data = ativ.dataInicio
+        form.descricao.data    = ativ.descricao
+        form.data_ini.data     = ativ.dataInicio
         form.consi_conclu.data = ativ.consideracoesConclusao
 
     if acao == 'c':
+        form.descricao.data    = ativ.descricao
         form.data_ini.data     = ativ.dataInicio
         form.data_fim.data     = ativ.dataFim
         form.consi_conclu.data = ativ.consideracoesConclusao
     
 
     return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+
+#corrigindo dados de uma atividae em execução em um pacto (plano de trabalho)
+
+@demandas.route('/corrige_ocor_atividade/<pacto_id>/<ativ_pacto_id>',methods=['GET','POST'])
+@login_required
+def corrige_ocor_atividade(pacto_id,ativ_pacto_id):
+    """+---------------------------------------------------------------------------------+
+       |Corrige dados de uma ocorrência no plano de trabalho.                            |
+       |                                                                                 |
+       |Recebe o ID da atividade no pacto e ID da atividade como parâmetros.             |
+       +---------------------------------------------------------------------------------+
+    """
+
+    acao = 'i'
+
+    # registro a ser alterado
+    ativ = db.session.query(Pactos_de_Trabalho_Atividades).filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id).first()              
+
+    # pega titulo da atividade
+    tit = db.session.query(Atividades.titulo)\
+                    .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.itemCatalogoId == Atividades.itemCatalogoId)\
+                    .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
+                    .first()
+
+    form = InciaConcluiAtivForm()
+    
+    if form.validate_on_submit():
+
+        ativ.descricao = form.descricao.data
+        ativ.situacaoId = 502
+        ativ.dataInicio = form.data_ini.data
+        ativ.consideracoesConclusao = form.consi_conclu.data
+
+        db.session.commit()
+            
+        registra_log_unid(current_user.id,'Atividade em execução '+ ativ_pacto_id +' foi corrigida.')
+
+        return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
+
+    form.descricao.data    = ativ.descricao
+    form.data_ini.data     = ativ.dataInicio
+    form.consi_conclu.data = ativ.consideracoesConclusao
+
+    return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+
 
 #finalizando programadas em lote
 
@@ -2261,8 +2309,7 @@ def add_assunto(pacto_id,ativ_pacto_id):
         assunto = Assuntos(assuntoId    = uuid.uuid4(),
                            assuntoPaiId = None,
                            valor        = form.valor.data,
-                           #chave        = get_random_string(10),
-                           chave        = str(date.today().strftime('%y%m%d')) + get_random_string(4),
+                           chave        = str(date.today().strftime('%y%m%d'))+ str(form.valor.data)[0] + get_random_string(3),
                            ativo        = True)
 
         db.session.add(assunto)

@@ -81,11 +81,11 @@
             {{current_user.userNome}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown5">
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Veja seus Planos</a>
-              <a class="dropdown-item" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=0)}}">Seus objetos</a>
-              <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus números</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Seus Planos</a>
+              <a class="dropdown-item" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=0)}}">Seus Objetos</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus Números</a>
               <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
-              <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver diário</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver Diário</a>
               {% if current_user.userAtivo and current_user.avaliadorId == 99999 %}
                 <a class="dropdown-item"  href="{{ url_for('usuarios.view_users') }}">Ver Usuários</a>
                 <a class="dropdown-item" href="{{url_for('core.CarregaTA')}}">Upload de TA</a>
