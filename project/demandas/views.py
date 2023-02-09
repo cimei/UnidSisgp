@@ -65,6 +65,21 @@ def get_random_string(length):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
 
+def pega_feriados(uf):
+    # pega feriados do DBSISGP, acrescentando os fixos para o ano corrente
+    feriados_db = db.session.query(Feriados.ferData,Feriados.ferFixo).filter(or_(Feriados.ufId==uf,Feriados.ufId==None)).all()
+    feriados = []
+    ano_corrente = int(date.today().year)
+    for f in feriados_db:
+        if f.ferFixo:
+            intervalo = ano_corrente - int(f.ferData.strftime('%Y')) + 1
+            for i in range(intervalo):
+                feriados.append(date(ano_corrente-i,int(f.ferData.strftime('%m')),int(f.ferData.strftime('%d'))))
+        else:
+            feriados.append(f.ferData)
+    return list(set(feriados))
+
+
 class TimerError(Exception):
     """ Exceção customizada para relatar erros no uso da classe Timer """
 
@@ -164,9 +179,8 @@ def demanda(pacto_id):
         tree_sup = None
         tree_sup_ids = []
    
-    # pega feriados do DBSISGP
-    feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==demanda.ufId,Feriados.ufId==None)).all()
-    feriados = [f.ferData for f in feriados]
+    # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+    feriados = pega_feriados(demanda.ufId)
 
     # calcula a quantidade de dias úteis entre hoje e o fim do pacto - com feriados
     if np.is_busday(demanda.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
@@ -358,8 +372,7 @@ def demanda(pacto_id):
     # monta dicionários com o campo dadosSolicitacao das solicitações do pacto que está sendo visto
     dados_solic = [[s.id,ast.literal_eval(str(s.tit).replace('null','None').replace('true','True').replace('false','False'))] for s in solicit]
 
-    # agrupa reuniões, solicitações, atividades e historicos para a visão conjunta
-    #pro_des = reunioes + solicit + historico + historico_pg
+    # agrupa solicitações e historicos para a visão conjunta
     pro_des = solicit + historico + historico_pg
 
     # o agrupamento é então classificado por data na ordem decrescente, visando contar a história do mais recente para o mais antigo
@@ -525,6 +538,36 @@ def ativ_ocor(pacto_id,item_cat_id):
                          .filter(catdom.classificacao == 'SituacaoAtividadePactoTrabalho')\
                          .subquery()                     
               
+    # ativs    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
+    #                             label('situa',catdom_2.c.descricao),
+    #                             Pactos_de_Trabalho_Atividades.nota,
+    #                             Atividades.titulo,
+    #                             Pactos_de_Trabalho_Atividades.quantidade,
+    #                             Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
+    #                             Pactos_de_Trabalho_Atividades.tempoPrevistoTotal,
+    #                             Pactos_de_Trabalho_Atividades.dataInicio,
+    #                             Pactos_de_Trabalho_Atividades.dataFim,
+    #                             label('tit',Pactos_de_Trabalho_Atividades.descricao),
+    #                             label('desc',Pactos_de_Trabalho_Atividades.consideracoesConclusao),
+    #                             catdom.descricao,
+    #                             Pactos_de_Trabalho_Atividades.tempoRealizado,
+    #                             Pactos_de_Trabalho_Atividades.tempoHomologado,
+    #                             Pactos_de_Trabalho_Atividades.justificativa,
+    #                             Objetos.chave,
+    #                             label('obj_desc',Objetos.descricao),
+    #                             Pactos_de_Trabalho_Atividades.responsavelAvaliacao,
+    #                             Pactos_de_Trabalho_Atividades.dataAvaliacao)\
+    #                      .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
+    #                              Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id)\
+    #                      .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+    #                      .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.modalidadeExecucaoId)\
+    #                      .join(catdom_2, catdom_2.c.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
+    #                      .outerjoin(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId==Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+    #                      .outerjoin(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId==Objeto_Atividade_Pacto.planoTrabalhoObjetoId)\
+    #                      .outerjoin(Objetos, Objetos.objetoId==Objeto_PG.objetoId)\
+    #                      .order_by(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+    #                      .all()
+
     ativs    = db.session.query(label('id',Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId),
                                 label('situa',catdom_2.c.descricao),
                                 Pactos_de_Trabalho_Atividades.nota,
@@ -540,8 +583,6 @@ def ativ_ocor(pacto_id,item_cat_id):
                                 Pactos_de_Trabalho_Atividades.tempoRealizado,
                                 Pactos_de_Trabalho_Atividades.tempoHomologado,
                                 Pactos_de_Trabalho_Atividades.justificativa,
-                                Objetos.chave,
-                                label('obj_desc',Objetos.descricao),
                                 Pactos_de_Trabalho_Atividades.responsavelAvaliacao,
                                 Pactos_de_Trabalho_Atividades.dataAvaliacao)\
                          .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id,
@@ -549,13 +590,29 @@ def ativ_ocor(pacto_id,item_cat_id):
                          .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Atividades.modalidadeExecucaoId)\
                          .join(catdom_2, catdom_2.c.catalogoDominioId == Pactos_de_Trabalho_Atividades.situacaoId)\
-                         .outerjoin(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId==Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
-                         .outerjoin(Objeto_PG, Objeto_PG.planoTrabalhoObjetoId==Objeto_Atividade_Pacto.planoTrabalhoObjetoId)\
-                         .outerjoin(Objetos, Objetos.objetoId==Objeto_PG.objetoId)\
                          .order_by(Pactos_de_Trabalho_Atividades.dataInicio.desc(),Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
                          .all()
 
     qtd_ativs = len(ativs)
+
+    # verificando se há solicitação de exclusão vinculada a cada uma das ocorrências da atividade consultada
+    para_excluir = []
+    solics = db.session.query(Pactos_de_Trabalho_Solic.dadosSolicitacao)\
+                       .filter(Pactos_de_Trabalho_Solic.pactoTrabalhoId==pacto_id,
+                               Pactos_de_Trabalho_Solic.tipoSolicitacaoId==604,
+                               Pactos_de_Trabalho_Solic.analisado == False)\
+                       .all()
+    for s in solics:
+        dados_s = ast.literal_eval(str(s.dadosSolicitacao).replace('null','None').replace('true','True').replace('false','False'))
+        para_excluir.append(dados_s['pactoTrabalhoAtividadeId'].lower())
+    cont=0    
+    for a in ativs:
+        if a.id.lower() in para_excluir:
+            cont += 1
+    if cont > 0:
+        tem_exclu = True
+    else:
+        tem_exclu = False    
 
     # resgata assuntos
     assuntos = db.session.query(Assuntos.chave,
@@ -572,13 +629,18 @@ def ativ_ocor(pacto_id,item_cat_id):
 
     #resgata objetos
     objetos = db.session.query(Objetos.chave,
-                                 Objetos.descricao)\
-                                .join(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
-                                .join(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
-                                .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
-                                .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
-                                        Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
-                                .all()                   
+                               Objetos.descricao,
+                               Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId)\
+                        .join(Objeto_PG, Objeto_PG.objetoId==Objetos.objetoId)\
+                        .join(Objeto_Atividade_Pacto,Objeto_Atividade_Pacto.planoTrabalhoObjetoId==Objeto_PG.planoTrabalhoObjetoId)\
+                        .join(Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId)\
+                        .filter(Pactos_de_Trabalho_Atividades.itemCatalogoId == item_cat_id,
+                                Pactos_de_Trabalho_Atividades.pactoTrabalhoId == pacto_id)\
+                        .all()  
+    qtd_objetos = len(objetos)
+    tem_objetos = []
+    for obj in objetos:
+        tem_objetos.append(obj.pactoTrabalhoAtividadeId)
 
     # retorna a parte decimal [posição 0] e a parte inteira [posição 1] da raiz quadrada em uma tupla
     qtd_ativs_sqr = math.modf(math.sqrt(qtd_ativs))
@@ -602,7 +664,11 @@ def ativ_ocor(pacto_id,item_cat_id):
                                                     item_cat_id=item_cat_id,
                                                     assuntos=assuntos,
                                                     qtd_assuntos=qtd_assuntos,
-                                                    objetos=objetos)                   
+                                                    objetos=objetos,
+                                                    qtd_objetos=qtd_objetos,
+                                                    tem_objetos=tem_objetos,
+                                                    para_excluir=para_excluir,
+                                                    tem_exclu=tem_exclu)                   
 
 
 # vendo todas as demandas da unidade
@@ -1128,8 +1194,9 @@ def solicitacao(pacto_id,tipo):
 
             ## crítica tempo total disponível frente ao prazo solicitado  
             # calcula a quantidade de dias úteis entre as datas de início e fim do pacto
-            feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==pacto.ufId,Feriados.ufId==None)).all()
-            feriados = [f.ferData for f in feriados]
+            # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+            feriados = pega_feriados(pacto.ufId)
+
             if np.is_busday(form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
                 n = 1
             else:
@@ -1278,6 +1345,75 @@ def solicitacao(pacto_id,tipo):
                                                    pacto=pacto, 
                                                    items_cat=items_cat,
                                                    sum_ativs_tempo_total = sum_ativs_tempo_total)
+
+
+#registrado uma solicitação de exclusão de ocorrência atividade em um plano (pacto)
+
+@demandas.route('/exclu_ativ/<ativ_id>',methods=['GET','POST'])
+@login_required
+def exclu_ativ(ativ_id):
+    """+---------------------------------------------------------------------------------+
+       |Registra solicitação de exclusão da ocorrência de uma atividade em um            |
+       |em um pacto existente.                                                           |
+       |                                                                                 |
+       |Recebe o ID da ocorrência como parâmetro.                                        |
+       +---------------------------------------------------------------------------------+
+    """
+
+    hoje = datetime.now()
+
+    #pega e-mail do usuário logado
+    email = current_user.userEmail
+
+    #pega id sisgp e unidade do usuário logado
+    solicitante_id = db.session.query(Pessoas.pessoaId, Pessoas.unidadeId, Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == email).first()
+
+    # pega dados da ocorrência
+    ocor = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoId,
+                            Pactos_de_Trabalho_Atividades.itemCatalogoId,
+                            Atividades.titulo,
+                            Atividades.complexidade,
+                            Atividades.tempoPresencial,
+                            Atividades.tempoRemoto)\
+                     .join(Atividades, Atividades.itemCatalogoId==Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                     .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId==ativ_id).first()
+
+    # monta dados da solicitação de exclusão
+    dados_dic = {"pactoTrabalhoId":ocor.pactoTrabalhoId.lower(),\
+                 "pactoTrabalhoAtividadeId":ativ_id.lower(),\
+                 "itemCatalogo":ocor.titulo + " - " + ocor.complexidade + \
+                               " (pres.:" + str(ocor.tempoPresencial).replace('.',',') + \
+                               "h / rem.:" + str(ocor.tempoRemoto).replace('.',',') +"h)",\
+                 "justificativa":"Exclusão necessária para ajuste no plano."}
+
+    dados_solic = str(dados_dic).replace("'",'"').replace('None','null').\
+                                 replace('True','true').replace('False','false').\
+                                 replace('": ','":').replace(', "',',"')
+
+    nova_solic = Pactos_de_Trabalho_Solic(pactoTrabalhoSolicitacaoId = uuid.uuid4(),
+                                          pactoTrabalhoId            = ocor.pactoTrabalhoId,  
+                                          tipoSolicitacaoId          = 604,
+                                          dataSolicitacao            = hoje,
+                                          solicitante                = solicitante_id.pessoaId,
+                                          dadosSolicitacao           = dados_solic,
+                                          observacoesSolicitante     = 'Exclusão necessária para ajuste no plano.',
+                                          analisado                  = False,
+                                          dataAnalise                = None,
+                                          analista                   = None,
+                                          aprovado                   = None,
+                                          observacoesAnalista        = None)
+
+    db.session.add(nova_solic)
+                
+    db.session.commit()
+
+    registra_log_unid(current_user.id,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
+                                      ' de exclusão de ocorrência de atividade inserida no banco de dados.') 
+
+    flash('Solicitação de exclusão registrada.','sucesso')  
+
+    return redirect(url_for('demandas.ativ_ocor', pacto_id=ocor.pactoTrabalhoId,item_cat_id=ocor.itemCatalogoId))                                                   
+
 
 #analisando uma solicitação
 
@@ -1437,8 +1573,9 @@ def solicitacao_analise(solic_id,pacto_id):
                 pacto = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
 
                 # calcula a quantidade de dias úteis entre as datas de início e fim do pacto
-                feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==solicitacao.ufId,Feriados.ufId==None)).all()
-                feriados = [f.ferData for f in feriados]
+                # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+                feriados = pega_feriados(solicitacao.ufId)
+
                 if np.is_busday(pacto.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
                     n = 1
                 else:
@@ -1686,8 +1823,9 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
         pacto = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
 
         # calcula a quantidade de dias úteis entre as datas de início e fim do pacto
-        feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==solicitacao.ufId,Feriados.ufId==None)).all()
-        feriados = [f.ferData for f in feriados]
+        # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+        feriados = pega_feriados(solicitacao.ufId)
+
         if np.is_busday(pacto.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
             n = 1
         else:
@@ -1895,6 +2033,9 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
                     .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
                     .first()
 
+    # pega datas do pacto (plano de trabaho)
+    pacto_datas = db.session.query(Pactos_de_Trabalho.dataInicio, Pactos_de_Trabalho.dataFim).filter(Pactos_de_Trabalho.pactoTrabalhoId==pacto_id).first()
+
     if ativ.dataInicio:
         ativ_ja_iniciada = True
     else:
@@ -1907,16 +2048,28 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
         if acao == 'i':
             ativ.descricao = form.descricao.data
             ativ.situacaoId = 502
-            ativ.dataInicio = form.data_ini.data
+            if form.data_ini.data < pacto_datas.dataInicio:
+                flash('A data de início deve ser maior ou igual a data de início do plano de trabalho','erro')
+                return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+            else:
+                ativ.dataInicio = form.data_ini.data
             ativ.consideracoesConclusao = form.consi_conclu.data
 
             db.session.commit()
             
         elif acao == 'f' or acao == 'c':
-            ativ.descricao = form.descricao.data
-            ativ.situacaoId     = 503
-            ativ.dataInicio     = form.data_ini.data
-            ativ.dataFim        = form.data_fim.data
+            ativ.descricao  = form.descricao.data
+            ativ.situacaoId = 503
+            if form.data_ini.data < pacto_datas.dataInicio:
+                flash('A data de início deve ser maior ou igual a data de início do plano de trabalho','erro')
+                return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+            else:
+                ativ.dataInicio = form.data_ini.data
+            if form.data_fim.data > pacto_datas.dataFim:
+                flash('A data de término deve ser menor ou igual a data de fim do plano de trabalho','erro')
+                return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+            else:    
+                ativ.dataFim  = form.data_fim.data
             ativ.tempoRealizado = form.tempo_realizado.data.replace(',','.')
             ativ.consideracoesConclusao = form.consi_conclu.data
 
@@ -2026,13 +2179,20 @@ def corrige_ocor_atividade(pacto_id,ativ_pacto_id):
                     .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id)\
                     .first()
 
+    # pega datas do pacto (plano de trabaho)
+    pacto_datas = db.session.query(Pactos_de_Trabalho.dataInicio, Pactos_de_Trabalho.dataFim).filter(Pactos_de_Trabalho.pactoTrabalhoId==pacto_id).first()                
+
     form = InciaConcluiAtivForm()
     
     if form.validate_on_submit():
 
         ativ.descricao = form.descricao.data
         ativ.situacaoId = 502
-        ativ.dataInicio = form.data_ini.data
+        if form.data_ini.data < pacto_datas.dataInicio:
+            flash('A data de início deve ser maior ou igual a data de início do plano de trabalho','erro')
+            return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
+        else:
+            ativ.dataInicio = form.data_ini.data
         ativ.consideracoesConclusao = form.consi_conclu.data
 
         db.session.commit()
@@ -2434,7 +2594,8 @@ def cria_plano(pg_id):
                           Planos_de_Trabalho.tempoComparecimento,
                           Planos_de_Trabalho.termoAceite,
                           Unidades.undSigla,
-                          Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId)\
+                          Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId,
+                          Planos_de_Trabalho_Ativs.modalidadeExecucaoId)\
                    .join(Unidades, Unidades.unidadeId == Planos_de_Trabalho.unidadeId)\
                    .outerjoin(Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs.planoTrabalhoId==Planos_de_Trabalho.planoTrabalhoId)\
                    .filter(Planos_de_Trabalho.planoTrabalhoId == pg_id)\
@@ -2455,21 +2616,26 @@ def cria_plano(pg_id):
     ativs = [{'ativ_id':a.itemCatalogoId,'tempo_rem':a.tempoRemoto,'tempo_pre':a.tempoPresencial,'titulo':a.titulo,'modalidade':'','quantidade':0} for a in ativs_pg]                      
     dados = {'data_ini':None, 'data_fim':None, 'ativs':ativs}
 
-    #pega formas de execução
-    formas = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all()
+    # pega modalidade de execução
+    mod = db.session.query(catdom.descricao).filter(catdom.catalogoDominioId == pg.modalidadeExecucaoId).first()
 
     # este formulário tem outro formulário dentro dele, AtivForm, que monta as opções de atividades para escolha do usuário
     form = CriaPlanoForm(data=dados)
-
-    lista_formas = [(f.catalogoDominioId,f.descricao) for f in formas]
-    lista_formas.insert(0,('',''))
-    form.forma.choices = lista_formas
 
     # choices do selectfield pessoa a ser usado se o usuário for algum tipo de chefe
     if chefe:
         lista_pessoas = [(p.pessoaId, p.pesNome) for p in pes]
         lista_pessoas.insert(0,(str(usuario.pessoaId),usuario.pesNome))
         form.pessoa.choices = lista_pessoas
+
+    # limita opções de forma de execução de atividades conforme modalidade do PG do do plano
+    for field in form.ativs:
+        if int(pg.modalidadeExecucaoId) == 101:
+            field.modalidade.choices = [(101, 'Presencial')] 
+        elif int(pg.modalidadeExecucaoId) == 102:
+            field.modalidade.choices = [(103, 'Remoto'), (101, 'Presencial')]
+        elif int(pg.modalidadeExecucaoId) == 103:
+            field.modalidade.choices = [(103, 'Remoto')]    
 
     if form.validate_on_submit(): 
 
@@ -2482,16 +2648,17 @@ def cria_plano(pg_id):
                                 .filter(Pessoas.pessoaId == form.pessoa.data)\
                                 .first()
             # verifica se o sistema tem restrição para chefe
-            if condic == 'chefe_nao_pode_remoto' and pes_sel.pessoaId == usuario.pessoaId and int(form.forma.data) == 103:
+            if condic == 'chefe_nao_pode_remoto' and pes_sel.pessoaId == usuario.pessoaId and int(pg.modalidadeExecucaoId) == 103:
                 flash ('Você possui função de chefia, desta forma não pode realizar um plano com teletrabalho integral!', 'erro')
-                return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, chefe=chefe)
+                return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, mod=mod, chefe=chefe, tipo='inc')
 
         else:
             pes_sel = pes
         
         #calcula tempo total disponível, pegando feriados e contando dias úteis no período do plano
-        feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==pes_sel.ufId,Feriados.ufId==None)).all()
-        feriados = [f.ferData for f in feriados]
+        # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+        feriados = pega_feriados(pes_sel.ufId)
+
         if np.is_busday(form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
             n = 1
         else:
@@ -2504,7 +2671,7 @@ def cria_plano(pg_id):
                                    planoTrabalhoId          = pg_id,
                                    unidadeId                = usuario.unidadeId,
                                    pessoaId                 = pes_sel.pessoaId,
-                                   formaExecucaoId          = form.forma.data,
+                                   formaExecucaoId          = pg.modalidadeExecucaoId,
                                    situacaoId               = 402,
                                    dataInicio               = form.data_ini.data,
                                    dataFim                  = form.data_fim.data,
@@ -2603,7 +2770,214 @@ def cria_plano(pg_id):
             return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
 
 
-    return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, chefe=chefe)                                                                       
+    return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, mod=mod, chefe=chefe, tipo='inc')                                                                       
+
+# alterando um plano de trabalho (pacto)
+
+@demandas.route('/<pg_id>/<pacto_id>/altera_plano', methods=['GET','POST'])
+def altera_plano(pg_id,pacto_id):
+    """
+    +---------------------------------------------------------------------------------------+
+    |Altera um plano de trabalho (pacto de trabalho no DBSISGP).                            |    
+    |                                                                                       |
+    +---------------------------------------------------------------------------------------+
+    """
+
+    # verifica se há condição em variável de ambiente
+    condic = os.environ.get('CONDIC')
+
+    hoje = datetime.now()
+
+    #pega dados em Pessoas do usuário logado
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    #verifica se o usuário logado é chefe
+    chefia = db.session.query(Tipo_Func_Pessoa.tfnIndicadorChefia).filter(Tipo_Func_Pessoa.tipoFuncaoId==usuario.tipoFuncaoId).first()
+    if chefia and chefia.tfnIndicadorChefia:
+        chefe = True
+    else:
+        chefe = False
+
+    #pega dados da pessoa do usuário logado ou da pessoa informada
+    if not chefe:
+        pes = db.session.query(Pessoas.unidadeId, 
+                               Pessoas.pessoaId,
+                               Pessoas.pesNome,
+                               Pessoas.cargaHoraria,
+                               Unidades.ufId)\
+                        .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
+                        .filter(Pessoas.pessoaId == usuario.pessoaId)\
+                        .first()
+    else:
+        pes = db.session.query(Pessoas.pessoaId,
+                               Pessoas.pesNome)\
+                        .filter(Pessoas.unidadeId == usuario.unidadeId, Pessoas.pessoaId != usuario.pessoaId)\
+                        .all()                    
+
+    #pega PG do plano 
+    pg = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
+                          Planos_de_Trabalho.dataInicio,
+                          Planos_de_Trabalho.dataFim,
+                          Planos_de_Trabalho.tempoComparecimento,
+                          Planos_de_Trabalho.termoAceite,
+                          Unidades.undSigla,
+                          Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId,
+                          Planos_de_Trabalho_Ativs.modalidadeExecucaoId)\
+                   .join(Unidades, Unidades.unidadeId == Planos_de_Trabalho.unidadeId)\
+                   .outerjoin(Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs.planoTrabalhoId==Planos_de_Trabalho.planoTrabalhoId)\
+                   .filter(Planos_de_Trabalho.planoTrabalhoId == pg_id)\
+                   .first()
+
+    #pega atividades do PG escolhido pelo usuário
+    ativs_pg = db.session.query(Atividades.itemCatalogoId,
+                                Atividades.titulo,
+                                Atividades.tempoRemoto,
+                                Atividades.tempoPresencial)\
+                           .join(Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Ativs_Items.itemCatalogoId == Atividades.itemCatalogoId)\
+                           .join(Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs.planoTrabalhoAtividadeId == Planos_de_Trabalho_Ativs_Items.planoTrabalhoAtividadeId)\
+                           .filter(Planos_de_Trabalho_Ativs.planoTrabalhoId == pg_id)\
+                           .order_by(Atividades.titulo)\
+                           .all() 
+    
+    # pega plano a ser alterado
+    plano = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId==pacto_id).first()
+
+    # monta opções para atividades no formulário
+    ativs = [{'ativ_id':a.itemCatalogoId,'tempo_rem':a.tempoRemoto,'tempo_pre':a.tempoPresencial,'titulo':a.titulo,'modalidade':'','quantidade':0} for a in ativs_pg]                      
+    dados = {'data_ini':None, 'data_fim':None, 'ativs':ativs}
+
+    # pega modalidade de execução
+    mod = db.session.query(catdom.descricao).filter(catdom.catalogoDominioId == pg.modalidadeExecucaoId).first()
+
+    # este formulário tem outro formulário dentro dele, AtivForm, que monta as opções de atividades para escolha do usuário
+    form = CriaPlanoForm(data=dados)
+
+    # choices do selectfield pessoa a ser usado se o usuário for algum tipo de chefe
+    if chefe:
+        lista_pessoas = [(p.pessoaId, p.pesNome) for p in pes]
+        lista_pessoas.insert(0,(str(usuario.pessoaId),usuario.pesNome))
+        form.pessoa.choices = lista_pessoas
+
+    # limita opções de forma de execução de atividades conforme modalidade do PG do do plano
+    for field in form.ativs:
+        if int(pg.modalidadeExecucaoId) == 101:
+            field.modalidade.choices = [(101, 'Presencial')] 
+        elif int(pg.modalidadeExecucaoId) == 102:
+            field.modalidade.choices = [(103, 'Remoto'), (101, 'Presencial')]
+        elif int(pg.modalidadeExecucaoId) == 103:
+            field.modalidade.choices = [(103, 'Remoto')]
+
+    if form.validate_on_submit(): 
+
+        if chefe:
+            pes_sel = db.session.query(Pessoas.pessoaId,
+                                       Pessoas.pesNome,
+                                       Pessoas.cargaHoraria,
+                                       Unidades.ufId)\
+                                .join(Unidades, Unidades.unidadeId==Pessoas.unidadeId)\
+                                .filter(Pessoas.pessoaId == form.pessoa.data)\
+                                .first()
+            # verifica se o sistema tem restrição para chefe
+            if condic == 'chefe_nao_pode_remoto' and pes_sel.pessoaId == usuario.pessoaId and int(pg.modalidadeExecucaoId) == 103:
+                flash ('Você possui função de chefia, desta forma não pode realizar um plano com teletrabalho integral!', 'erro')
+                return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, mod=mod, chefe=chefe, tipo='alt')
+
+        else:
+            pes_sel = pes
+        
+        #calcula tempo total disponível, pegando feriados e contando dias úteis no período do plano
+        # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+        feriados = pega_feriados(pes_sel.ufId)
+
+        if np.is_busday(form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados):
+            n = 1
+        else:
+            n = 0
+        qtd_dias_uteis = n + np.busday_count(form.data_ini.data,form.data_fim.data,weekmask=[1,1,1,1,1,0,0],holidays=feriados)
+        ttd = int(pes_sel.cargaHoraria * qtd_dias_uteis)
+
+        #altera registro do plano (pacto) selecionado, colocando-o na situação "Enviado para aceite"
+
+        plano.formaExecucaoId = pg.modalidadeExecucaoId
+        plano.situacaoId      = 402
+        plano.dataInicio      = form.data_ini.data
+        plano.dataFim         = form.data_fim.data
+
+        # cria registro em Plactos_de_Trabalho_Hist
+        hist = Pactos_de_Trabalho_Hist(pactoTrabalhoHistoricoId = uuid.uuid4(),
+                                       pactoTrabalhoId     = plano.pactoTrabalhoId,
+                                       situacaoId          = plano.situacaoId,
+                                       observacoes         = 'Alterado de forma direta',
+                                       responsavelOperacao = usuario.pessoaId,
+                                       dataOperacao        = hoje)   
+
+        db.session.add(hist)
+
+        # deleta registros de atividades no plano (pacto) para que novos sejam inseridos
+        plano_ativs_del = db.session.query(Pactos_de_Trabalho_Atividades).filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId==pacto_id).delete()
+
+        #cria registros em Pactos_de_Trabalho_Atividades
+        tempo_plano = 0
+        qtd_ativs = 0
+
+        for field in form.ativs:
+            if field.quantidade.data > 0:
+                for a in range(1,field.quantidade.data + 1):
+                    qtd_ativs += 1
+                    if field.modalidade.data == 101:
+                        tempo_prev = float(field.tempo_pre.data.replace(',','.'))
+                    else:
+                        tempo_prev = float(field.tempo_rem.data.replace(',','.'))
+                    tempo_plano += tempo_prev
+    
+                    plano_ativs = Pactos_de_Trabalho_Atividades (pactoTrabalhoAtividadeId = uuid.uuid4(),
+                                                                 pactoTrabalhoId          = plano.pactoTrabalhoId,
+                                                                 itemCatalogoId           = field.ativ_id.data,
+                                                                 situacaoId               = 501,
+                                                                 quantidade               = 1,
+                                                                 tempoPrevistoPorItem     = tempo_prev,
+                                                                 tempoPrevistoTotal       = tempo_prev,
+                                                                 dataInicio               = None,
+                                                                 dataFim                  = None,
+                                                                 tempoRealizado           = None,
+                                                                 descricao                = None,
+                                                                 tempoHomologado          = None,
+                                                                 nota                     = None,
+                                                                 justificativa            = None,
+                                                                 consideracoesConclusao   = None,
+                                                                 modalidadeExecucaoId     = int(field.modalidade.data),
+                                                                 responsavelAvaliacao     = None,
+                                                                 dataAvaliacao            = None)
+
+                    db.session.add(plano_ativs)
+
+        if qtd_ativs == 0:
+                flash('Plano não foi alterado, pois nenhuma atividade foi selecionada!','erro')
+                db.session.close()
+        elif float(ttd) > tempo_plano:
+            flash('Atividades não ocupam a totalidade do tempo disponível no plano!\
+                 (Tempo disponíel: '+ str(ttd) +'h , Soma dos tempos das atividades: '+ str(tempo_plano).replace('.',',') +' h)','perigo')
+            db.session.close()     
+        elif float(ttd) < tempo_plano:
+            flash('Atividades selecionadas demandam mais tempo do que o disponível no plano!\
+                 (Tempo disponíel: '+ str(ttd) +'h , Soma dos tempos das atividades: '+ str(tempo_plano).replace('.',',') +' h)','erro')
+            db.session.close()     
+        else:
+            
+            flash('Plano alterado e aguardando aprovação!','sucesso')
+            db.session.commit()
+            registra_log_unid(current_user.id,'Plano de Trabalho '+pacto_id+' alterado.')
+
+            return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
+    
+    # preenche tela com dados do plano a ser alterado
+
+    # form.forma.data    = plano.formaExecucaoId
+    form.data_ini.data = plano.dataInicio
+    form.data_fim.data = plano.dataFim
+
+    return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, mod=mod, chefe=chefe, tipo='alt')                                                                       
+
 
 #analisando um pacto encaminhado para aceite
 
@@ -2940,9 +3314,8 @@ def relatorio(pacto_id):
                          .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
 
-    # pega feriados do DBSISGP
-    feriados = db.session.query(Feriados.ferData).filter(or_(Feriados.ufId==demanda.ufId,Feriados.ufId==None)).all()
-    feriados = [f.ferData for f in feriados]
+    # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)
+    feriados = pega_feriados(demanda.ufId)
 
     # calcula a quantidade de dias úteis entre as datas de início e fim do pacto - com feriados
     if np.is_busday(demanda.dataFim,weekmask=[1,1,1,1,1,0,0],holidays=feriados):

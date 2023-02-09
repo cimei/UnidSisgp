@@ -5,8 +5,8 @@
 
   <div class="jumbotron">
 
-    <h4>Plano de Trabalho - Criar</h4>
-    <h5>(PG na unidade {{pg.undSigla}} com vigência de {{pg.dataInicio.strftime('%d/%m/%Y')}} a {{pg.dataFim.strftime('%d/%m/%Y')}})</h5>
+    <h4>Plano de Trabalho - {%if tipo == 'inc' %} Criar{% elif tipo == 'alt'%} Alterar{% endif %}</h4>
+    <h5>(PG na unidade {{pg.undSigla}} com vigência de {{pg.dataInicio.strftime('%d/%m/%Y')}} a {{pg.dataFim.strftime('%d/%m/%Y')}} - Modalidade: {{mod.descricao}})</h5>
 
     {% macro render_field(field,obr) %}
       {% if obr == True %}
@@ -50,11 +50,6 @@
           <div class="col-2">
             <div class="form-group">
               {{ render_field(form.data_fim,class="form-control",obr=True) }}
-            </div>
-          </div>
-          <div class="col-2">
-            <div class="form-group">
-              {{ render_field(form.forma,class="form-control",obr=True) }}
             </div>
           </div>
           {% if chefe %}

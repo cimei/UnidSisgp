@@ -36,22 +36,24 @@
 # views.py na pasta users
 
 from itsdangerous import URLSafeTimedSerializer
-from flask import render_template, url_for, flash, redirect, request, Blueprint
+from flask import render_template, url_for, flash, redirect, request, Blueprint, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 from threading import Thread
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, literal
 from sqlalchemy.sql import label
-import ldap3
+import time
+import uuid
 
 from project import db, mail, app
 from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
                            Log_Unid, catdom, Pessoas, Unidades, Planos_de_Trabalho,\
-                           Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG, Log_Unid
+                           Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG, Log_Unid,\
+                           AgendamentoPresencial
 
-from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm, LogForm
+from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm, LogForm, AgendaForm
                                 
 
 usuarios = Blueprint('usuarios',__name__)
@@ -424,48 +426,50 @@ def seus_numeros(pessoa_id):
                                       Pactos_de_Trabalho.pessoaId == usuario.pessoaId)\
                               .first()
 
-    ativs_plano_em_exec = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
-                                           Pactos_de_Trabalho_Atividades.dataInicio)\
-                                    .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == plano_em_exec.pactoTrabalhoId).all()
-
-    log_plano = db.session.query(Log_Unid.msg, Log_Unid.data_hora)\
+    if plano_em_exec:
+        ativs_plano_em_exec = db.session.query(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId,
+                                               Pactos_de_Trabalho_Atividades.dataInicio)\
+                                .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == plano_em_exec.pactoTrabalhoId).all()
+        log_plano = db.session.query(Log_Unid.msg, Log_Unid.data_hora)\
                           .filter(Log_Unid.msg.like('Atividade%'),
                                   Log_Unid.msg.like('% colocada em execução.'),
                                   Log_Unid.user_id == user_id,
-                                  Log_Unid.data_hora > plano_em_exec.dataInicio).all()
-  
-    # iri é o índice de registro de início de atividade
-    # iri próximo de 1: registro de início de atividade próximo do início do plano
-    # iri próximo de 0: registro de início de atividade próxomo ao final do plano
-    iris = []
-    reg_log = 0
-    if log_plano:
-        for l in log_plano:
-            if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano_em_exec]:
-                reg_log += 1
-                dif_data_plano = (plano_em_exec.dataFim - plano_em_exec.dataInicio).days
-                if not(plano_em_exec.dataFim - l.data_hora.date()) or (plano_em_exec.dataFim - l.data_hora.date()) == 0:
-                    dif_data_reg = 0
-                elif plano_em_exec.dataFim < l.data_hora.date():
-                    dif_data_reg = -1    
-                else:    
-                    dif_data_reg = (plano_em_exec.dataFim - l.data_hora.date()).days
-                if not dif_data_plano or dif_data_plano == 0:
-                    iri = dif_data_reg
-                else:    
-                    iri = dif_data_reg/dif_data_plano
-                iris.append(iri)
-        # icp é o índice de comprometimento agregado para o plano 
-        # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
-        # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano
-        # icp próximo de 0: em média, atividades tiveram registros de início próximos ao final plano
-        if len(iris) > 0: 
-            peso = reg_log/len(ativs_plano_em_exec)       
-            icp = round(peso*(sum(iris)/len(iris)),2)
+                                  Log_Unid.data_hora > plano_em_exec.dataInicio).all()                        
+    
+        # iri é o índice de registro de início de atividade
+        # iri próximo de 1: registro de início de atividade próximo do início do plano
+        # iri próximo de 0: registro de início de atividade próxomo ao final do plano
+        iris = []
+        reg_log = 0
+        if log_plano:
+            for l in log_plano:
+                if l.msg[11:47] in [a.pactoTrabalhoAtividadeId for a in ativs_plano_em_exec]:
+                    reg_log += 1
+                    dif_data_plano = (plano_em_exec.dataFim - plano_em_exec.dataInicio).days
+                    if not(plano_em_exec.dataFim - l.data_hora.date()) or (plano_em_exec.dataFim - l.data_hora.date()) == 0:
+                        dif_data_reg = 0
+                    elif plano_em_exec.dataFim < l.data_hora.date():
+                        dif_data_reg = -1    
+                    else:    
+                        dif_data_reg = (plano_em_exec.dataFim - l.data_hora.date()).days
+                    if not dif_data_plano or dif_data_plano == 0:
+                        iri = dif_data_reg
+                    else:    
+                        iri = dif_data_reg/dif_data_plano
+                    iris.append(iri)
+            # icp é o índice de comprometimento agregado para o plano 
+            # corresponde à média dos iris vezes o peso correspondente à quantidade relativa de atividades iniciadas
+            # icp próximo de 1: em média, atividades tiveram registros de início próximos ao início plano
+            # icp próximo de 0: em média, atividades tiveram registros de início próximos ao final plano
+            if len(iris) > 0: 
+                peso = reg_log/len(ativs_plano_em_exec)       
+                icp = round(peso*(sum(iris)/len(iris)),2)
+            else:
+                icp = 0
         else:
             icp = 0
     else:
-        icp = 0            
+        icp = 0                     
 
 
     return render_template('numeros.html', pes_nome=usuario.pesNome,
@@ -580,3 +584,158 @@ def unidade_numeros(id):
                                            id = id,
                                            lista = lista)
 
+# calendário de presença
+
+@usuarios.route('/calendario')
+@login_required
+
+def calendario():
+    """+--------------------------------------------------------------------------------------+
+       |Prepara calendário com pessoas presentes na unidade conforme o agendamento.           |
+       +--------------------------------------------------------------------------------------+
+    """
+
+    # pega unidadeId e pessoaId do usuário
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    # pega pessoas com agenda da unidade do usuário
+    pessoas_orig = db.session.query(label('id',AgendamentoPresencial.agendamentoPresencialId),
+                               label('title',Pessoas.pesNome),
+                               label('data',AgendamentoPresencial.dataAgendada))\
+                        .join(AgendamentoPresencial, AgendamentoPresencial.pessoaId == Pessoas.pessoaId)\
+                        .filter(Pessoas.unidadeId == user_pes.unidadeId)\
+                        .order_by(Pessoas.pesNome)\
+                        .all()
+
+    nomes = set([p.title for p in pessoas_orig])
+    list_classes = ['event-important','event-warning','event-info','event-inverse','event-success','event-specioal','event-error']
+    nome_classe = {}
+    i = 0
+    for n in nomes:
+        nome_classe[n] = list_classes[i]
+        i += 1
+        if i == len(list_classes):
+            i = 0
+
+    pessoas_list = []
+    for p in pessoas_orig:
+        pessoas_dic = {}
+        pessoas_dic['id']    = p.id
+        pessoas_dic['title'] = p.title
+        pessoas_dic['url']   = 'agenda_remove/'+p.id
+        pessoas_dic['class'] = nome_classe[p.title]
+        pessoas_dic['start'] = int(time.mktime(p.data.timetuple()))*1000
+        pessoas_dic['end']   = int(time.mktime(p.data.timetuple()))*1000
+        pessoas_list.append(pessoas_dic)
+
+    resp = jsonify({'success' : 1, 'result' : pessoas_list})
+    resp.status_code = 200
+
+    #return render_template('calendario.html', resp=resp)
+    return resp
+
+#
+# chama calendário de presença
+
+@usuarios.route('/mostra_calendario')
+@login_required
+
+def mostra_calendario():
+    """+--------------------------------------------------------------------------------------+
+       |Mostra calendário com pessoas presentes na unidade conforme o agendamento.            |
+       +--------------------------------------------------------------------------------------+
+    """
+
+    return render_template('calendario.html')
+
+## agendamento de presença 
+
+@usuarios.route("/agenda_presenca", methods=['GET', 'POST'])
+@login_required
+def agenda_presenca():
+    """
+    +----------------------------------------------------------------------------------------------+
+    |Cria agendamento presencial para pessoa da unidade.                                           |
+    |                                                                                              |
+    +----------------------------------------------------------------------------------------------+
+    """
+
+    # pega unidadeId e pessoaId do usuário logado
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+
+    # pega pessoas da unidade do usuário
+    pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
+                        .filter(Pessoas.unidadeId == user_pes.unidadeId)\
+                        .all()
+
+    # o choices do campo atividade são definidos aqui e não no form
+    lista_pes = [(p.pessoaId,p.pesNome) for p in pessoas]
+    lista_pes.insert(0,('',''))                    
+
+    form = AgendaForm()
+
+    form.pessoa.choices = lista_pes
+
+    if form.validate_on_submit():
+
+        if current_user.userAtivo:
+
+            nome_pessoa =  db.session.query(Pessoas.pesNome)\
+                                     .filter(Pessoas.pessoaId == form.pessoa.data)\
+                                     .first()
+
+            ver_previa = db.session.query(AgendamentoPresencial)\
+                                   .filter(AgendamentoPresencial.pessoaId == form.pessoa.data,
+                                           AgendamentoPresencial.dataAgendada == form.data_agenda.data)\
+                                   .first()
+
+            if ver_previa:
+                flash('Pessoa '+ nome_pessoa.pesNome +' já estava agendada para a data informada.','perigo')
+                return redirect(url_for('usuarios.mostra_calendario'))
+            else:    
+                agendamento = AgendamentoPresencial(agendamentoPresencialId = uuid.uuid4(),
+                                                    pessoaId                = form.pessoa.data,
+                                                    dataAgendada            = form.data_agenda.data)
+                db.session.add(agendamento)
+                db.session.commit()
+
+            registra_log_unid(current_user.id,'Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.')
+
+            flash('Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.','sucesso')
+
+            return redirect(url_for('usuarios.mostra_calendario'))
+
+        else:
+
+            flash('O seu usuário precisa ser ativado para esta operação!','erro')
+
+            return redirect(url_for('usuarios.mostra_calendário'))
+
+
+    return render_template('agenda_presenca.html',form=form)
+
+#    
+## remoção de agendamento de presença 
+
+@usuarios.route("/agenda_remove/<id>")
+@login_required
+def agenda_remove(id):
+    """
+    +----------------------------------------------------------------------------------------------+
+    |Remove agendamento presencial para pessoa da unidade.                                         |
+    |                                                                                              |
+    +----------------------------------------------------------------------------------------------+
+    """
+
+    agendamento = db.session.query(AgendamentoPresencial).filter(AgendamentoPresencial.agendamentoPresencialId==id).first()
+
+    pessoa = db.session.query(Pessoas.pesNome).filter(Pessoas.pessoaId==agendamento.pessoaId).first()
+
+    db.session.delete(agendamento)
+    db.session.commit()
+
+    registra_log_unid(current_user.id,'Um agendamento presencial de '+ pessoa.pesNome +' foi removido.')
+
+    flash('Um agendamento presencial de '+ pessoa.pesNome +' foi removido.','sucesso')
+
+    return redirect(url_for('usuarios.mostra_calendario'))

@@ -52,8 +52,14 @@
             </div>
           </li>
 
-          <li class="nav-item active">
-            <a class="nav-link" href="{{url_for('pessoas.lista_pessoas_unid', coord='*')}}">Pessoas</a>
+          <li class="nav-item dropdown active">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Pessoas
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown2">
+              <a class="dropdown-item" href="{{url_for('pessoas.lista_pessoas_unid', coord='*')}}">Pessoas</a>
+              <a class="dropdown-item" href="{{url_for('usuarios.mostra_calendario')}}">Agendamento Presencial</a>
+            </div>  
           </li>
 
           <li class="nav-item active">
@@ -61,10 +67,10 @@
           </li>
 
           <li class="nav-item dropdown active">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               Planos de Trabalho
             </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown3">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Todas', coord = '*')}}">Todos</a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*')}}"><span class="text-warning">Enviados para aceite</span></a>
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas', lista = 'solic_pend', coord = '*')}}"><span class="text-warning">Com solicitações pendentes</span></a>
@@ -77,10 +83,10 @@
         {% if current_user.is_authenticated %}
 
           <li class="nav-item dropdown active">
-            <a class="nav-link dropdown-toggle text-success" href="#" id="navbarDropdown5" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <a class="nav-link dropdown-toggle text-success" href="#" id="navbarDropdown4" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             {{current_user.userNome}}
             </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown5">
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown4">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Seus Planos</a>
               <a class="dropdown-item" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=0)}}">Seus Objetos</a>
               <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus Números</a>
@@ -114,7 +120,7 @@
 
         {% endif %}
 
-          {% set ver = namespace(num = '2.0.0') %}
+          {% set ver = namespace(num = '2.1.0') %}
 
         </ul>
 

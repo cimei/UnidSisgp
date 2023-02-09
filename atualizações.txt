@@ -1,5 +1,17 @@
 ## Atualizações ##
 
+13/01/2022
+Datas de início e fim de atividades limitadas às datas do respectivo plano.
+Plano rejeitado pode ser alterado e resubmetido para aceite.
+Modalidade de execução do plano restrita à modalidade do PG.
+Formas de execução das atividades restritas à modalidade de execução do plano.
+Possibilidade de exclusão individual de ocorrência de atividade no painel de ocorrências.
+Possibilidade de associar mais de um objeto a uma ocorrência de atividade em plano de trabalho.
+Considera feriados fixos nos cálculos de quantidade de dias nos planos.
+Implemendada possibilidade de registro de agendamento presencial.
+v2.1.0
+
+
 04/01/2022
 Acesso de usuário passa a ser via consulta ao banco de dados do LDAP.
 v2.0.0

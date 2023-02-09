@@ -106,3 +106,10 @@ class LogForm(FlaskForm):
     data_fim = DateField('Data Final: ', format='%Y-%m-%d')
 
     submit   = SubmitField('Procurar')
+
+class AgendaForm(FlaskForm):
+
+    pessoa = SelectField('Pessoa:')
+    data_agenda = DateField('Data:', format='%Y-%m-%d')
+
+    submit    = SubmitField('Registrar')    

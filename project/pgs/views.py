@@ -19,6 +19,7 @@ from flask import render_template, url_for, flash, redirect, Blueprint
 from flask_login import current_user, login_required
 from sqlalchemy import func, cast, String
 from sqlalchemy.sql import label
+from sqlalchemy.orm import aliased
 from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Planos_de_Trabalho_Hist, Unidades, Pessoas, Planos_de_Trabalho,\
                            Atividades, VW_Unidades, cat_item_cat, catdom, Pactos_de_Trabalho, Planos_de_Trabalho_Metas, Objeto_PG, unidade_ativ
@@ -143,6 +144,9 @@ def plano_trabalho(lista,coord):
     if lista == 'Todas':
         lista = '%'
 
+    # alias do catdom para pegar modalidade de execução do PG
+    catdom_1 = aliased(catdom)    
+
     planos_trab_unid = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
                                         Planos_de_Trabalho.situacaoId,
                                         Planos_de_Trabalho.dataInicio,
@@ -153,10 +157,13 @@ def plano_trabalho(lista,coord):
                                         pactos.c.qtd_pactos,
                                         objetos.c.qtd_objetos,
                                         Unidades.undSigla,
-                                        Unidades.unidadeId)\
+                                        Unidades.unidadeId,
+                                        label('modalidade',catdom_1.descricao))\
                                  .join(catdom, catdom.catalogoDominioId == Planos_de_Trabalho.situacaoId)\
                                  .join(ativs, ativs.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .join(Unidades, Unidades.unidadeId == Planos_de_Trabalho.unidadeId)\
+                                 .join(Planos_de_Trabalho_Ativs,Planos_de_Trabalho_Ativs.planoTrabalhoId==Planos_de_Trabalho.planoTrabalhoId)\
+                                 .join(catdom_1, catdom_1.catalogoDominioId == Planos_de_Trabalho_Ativs.modalidadeExecucaoId)\
                                  .outerjoin(metas, metas.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .outerjoin(pactos,pactos.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .outerjoin(objetos,objetos.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
@@ -356,7 +363,7 @@ def cria_pg():
 
         db.session.add(hist)
 
-        #cria registros em Planos_de_Trabalho_Ativs
+        #cria um registro em Planos_de_Trabalho_Ativs
         pg_ativs = Planos_de_Trabalho_Ativs(planoTrabalhoAtividadeId = uuid.uuid4(),
                                             planoTrabalhoId         = pg.planoTrabalhoId,
                                             modalidadeExecucaoId    = int(form.modalidade.data),
@@ -365,7 +372,7 @@ def cria_pg():
 
         db.session.add(pg_ativs)
 
-        #cria registros em Planos_de_Trabalho_Ativs_Itens
+        #cria registros em Planos_de_Trabalho_Ativs_Itens (um para cada atividade escolhida)
         for a in form.ativs.data:
 
             pg_ativs_item = Planos_de_Trabalho_Ativs_Items (planoTrabalhoAtividadeItemId = uuid.uuid4(),

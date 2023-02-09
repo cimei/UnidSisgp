@@ -35,14 +35,20 @@
                   {% if (usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None) and post.descricao == 'Em execução' %}
                     <button type="button" class="btn btn-success btn-sm" data-toggle='modal' data-target='#encerra_modal'>Encerrar Plano</button>
                   {% endif %}
+                  {% if (usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None) and post.descricao == 'Rejeitado' %}
+                    <a href="{{url_for('demandas.altera_plano',pg_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-danger btn-sm" role="button" aria-pressed="true">Alterar Plano</a>
+                  {% endif %}
                   {% if usuario.pesNome != post.pesNome and usuario.tipoFuncaoId != None and post.descricao == 'Executado' %}
                     <button type="button" class="btn btn-danger btn-sm" data-toggle='modal' data-target='#reabre_modal'>Reabrir Plano</button>
                   {% endif %}
+                  {% if usuario.pesNome != post.pesNome and usuario.tipoFuncaoId != None and post.descricao == ' Enviado para aceite' %}
+                    <a href="{{url_for('demandas.analisa_plano',pacto_id=id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">Aceitar ou Recusar</a>
+                  {% endif %}
                 </div>  
                 <div class="col-4" align="right">
-                  {% if usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None %}
-                    <a href="{{url_for('objetos.add_objeto',plano_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">Criar objeto no PG</a>
-                  {% endif %}
+                  <!-- {% if usuario.pesNome == post.pesNome or usuario.tipoFuncaoId != None %}
+                    <a href="{{url_for('objetos.add_objeto',plano_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">Registrar objeto</a>
+                  {% endif %} -->
                 </div>
               </div> 
 
@@ -493,7 +499,7 @@
                                   {% if d[1]['pactoTrabalhoAtividadeId']|lower == a.id|lower %}
                                     <li class="list-group-item d-flex justify-content-between align-items-start">
                                       <div class="ms-2 me-auto">
-                                        <div><span class="text-muted"> Situação </span><b>{{a.situa}}</b></div>
+                                        <div><span class="text-muted"> Situação da atividade: </span><b>{{a.situa}}</b></div>
                                       </div>
                                     </li>
                                   {% endif %}   

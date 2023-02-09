@@ -14,7 +14,7 @@
           <div class="row d-flex justify-content-center"><small>Situações: </small></div>
           <div class="row d-flex justify-content-center"><small>Ações: </small></div>
         </div>
-        <div class="col align-self-center" style="width: 950px;">
+        <div class="col align-self-center" style="width: 960px;">
           <div class = "row d-flex justify-content-center">
             <div class="col d-flex justify-content-center" style="width: 100px;"><span class="badge badge-secondary"><small>Programada</small></span></div>
             <div class="col d-flex justify-content-center" style="width: 100px;"><span class="badge badge-primary"><small>Em execução</small></span></div>
@@ -26,9 +26,10 @@
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-success"><small>f</small></span><small> finalizar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-info"><small>a</small></span><small> assunto</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-light"><small>o</small></span><small> objeto</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-danger"><small>x</small></span><small> excluir</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>A</small></span><small> Avaliar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>R</small></span><small> Reavaliar</small></div>
-            <div class="col align-self-center" style="width: 10px;"><span class="text-danger"><small>c</small></span><small>  Corrigir</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>c</small></span><small>  Corrigir</small></div>
           </div> 
         </div> 
       </div>
@@ -59,7 +60,13 @@
 
                 <div class="card-body text-white bg-secondary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% if ativs[ns_cont.i-1].id|lower in para_excluir %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(164, 0, 0);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% elif ativs[ns_cont.i-1].id not in tem_objetos %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% else %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% endif %}
                   </span><br>
 
                   <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
@@ -69,9 +76,12 @@
  
                     {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405%}
                       <p></p>
-                      <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}" class="btn btn-primary btn-sm" role="button" aria-pressed="true">i</a></small>
-                      <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>                    
-                      <small><a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-light btn-sm" role="button" aria-pressed="true">o</a></small>
+                      <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='i')}}"><span class="badge badge-pill badge-primary"><small>i</small></span></a>
+                      <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}"><span class="badge badge-pill badge-success"><small>f</small></span></a>
+                      <a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-light"><small>o</small></span></a>
+                      {% if ativs[ns_cont.i-1].id|lower not in para_excluir %}
+                        <a href="" data-toggle='modal' data-target='#exclu_modal{{ns_cont.i}}'><span class="badge badge-pill badge-danger"><small>x</small></span></a>
+                      {% endif %}  
                     {% endif %}  
                 </div>
 
@@ -79,7 +89,11 @@
 
                 <div class="card-body text-white bg-primary">
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% if ativs[ns_cont.i-1].id not in tem_objetos %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% else %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% endif %}
                   <span><br>
                     <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
                       {% if ativs[ns_cont.i-1].quantidade > 1 %}
@@ -90,9 +104,9 @@
                   {% if usuario.pesNome == demanda.pesNome %}
 
                     <p></p>
-                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}" class="btn btn-success btn-sm" role="button" aria-pressed="true">f</a></small>
-                    <small><a href="{{url_for('demandas.add_assunto',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">a</a></small>
-                    <small><a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}" class="btn btn-light btn-sm" role="button" aria-pressed="true">o</a></small>
+                    <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}"><span class="badge badge-pill badge-success"><small>f</small></span></a>
+                    <a href="{{url_for('demandas.add_assunto',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-info"><small>a</small></a>
+                    <a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-light"><small>o</small></span></a>
                     
                   {% endif %}
 
@@ -109,7 +123,11 @@
                             "card-body text-white bg-info">
                             {% endif %}
                   <span class="card-title">
-                    <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% if ativs[ns_cont.i-1].id not in tem_objetos %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% else %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% endif %}
                   </span><br>
                   <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
                     {% if ativs[ns_cont.i-1].quantidade > 1 %}
@@ -131,15 +149,15 @@
                   {% if (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
                         <p></p>
                         {% if ativs[ns_cont.i-1].nota != None and ativs[ns_cont.i-1].nota != '' %}
-                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='reavaliar')}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">R</a></small>
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='reavaliar')}}"><span class="badge badge-pill badge-warning"><small>R</small></span></a></small>
                         {% else %}
-                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='avaliar')}}" class="btn btn-warning btn-sm" role="button" aria-pressed="true">A</a></small>
+                          <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='avaliar')}}"><span class="badge badge-pill badge-warning"><small>A</small></span></a></small>
                         {% endif %}
                   {% endif %}
 
                   {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 and (ativs[ns_cont.i-1].nota == None or ativs[ns_cont.i-1].nota == '') %}
                     <p></p>
-                    <small><a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='c')}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">c</a></small>
+                    <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='c')}}"><span class="badge badge-pill badge-secondary"><small>c</small></span></a>
                   {% endif %}
 
                 </div>  
@@ -157,6 +175,36 @@
 
             {% if ns_cont.i <= qtd_ativs %}
 
+              {# modal para confirmar solicitação de exclusão de ocorrência de atividade #}
+
+              <div class="modal" tabindex="-1" role="dialog" id="exclu_modal{{ns_cont.i}}">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <div class="p-3 mb-2 bg-danger text-white">
+                      <h5 class="modal-title">Postar solicitação de exclusão?</h5>
+                      </div>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Deseja registrar uma solicitação para a excusão de uma ocorrência desta atividade no seu Plano?</p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+
+                      <form action="{{url_for('demandas.exclu_ativ',ativ_id=ativs[ns_cont.i-1].id)}}" method="post">
+                        <input class="btn btn-danger" type="submit" name="" value="Registrar">
+                      </form>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+
               {# modal com dados da atividade #}
 
               <div class="modal" tabindex="-1" role="dialog" id="ativ_modal{{ns_cont.i}}">
@@ -166,17 +214,27 @@
 
                       <ul class="small list-group">
 
-                        {% if ativs[ns_cont.i-1].chave != None %}
-                          <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="ms-2 me-auto">
-                              <div><span class="text-muted"> Objeto: </span><br>{{ativs[ns_cont.i-1].chave}} - {% if ativs[ns_cont.i-1].obj_desc == None%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].obj_desc}}{% endif %} </div>
-                            </div>
-                          </li>
-                        {% endif %}  
+                        {% if qtd_objetos > 0 %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                              <div class="ms-2 me-auto">
+                                <div><span class="text-muted"> Objetos: </span>
+                                  {% for o in objetos %}
+                                    {% if ativs[ns_cont.i-1].id == o.pactoTrabalhoAtividadeId %} 
+                                      <br> {{o.chave}} - {{o.descricao}} 
+                                    {% endif %}
+                                  {% endfor %}  
+                                </div>
+                              </div>
+                            </li>
+                        {% endif %}
 
                         <li class="list-group-item d-flex justify-content-between align-items-start">
                           <div class="ms-2 me-auto">
-                            <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
+                            {% if ativs[ns_cont.i-1].id|lower in para_excluir %}
+                              <div><span class="text-muted"> Atividade com solicitação de exclusão pendente!</span></div>
+                            {% else %}
+                              <div><span class="text-muted"> Descrição: </span><br> {% if ativs[ns_cont.i-1].tit == None%}Não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} </div>
+                            {% endif %}
                           </div>
                         </li> 
                         
@@ -268,42 +326,42 @@
       </div>
       {% endif %}
 
-      {% if ns_programada.i > 0 and usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 %}
-      <br>
-      <div class="row justify-content-center">
-        <a data-toggle='modal' data-target='#finaliza_lote' class="btn btn-outline-secondary btn-sm" role="button" aria-pressed="true">Finalizar todas as programadas?</a>
-      </div>
+      {% if ns_programada.i > 0 and usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 and not tem_exclu %}
+        <br>
+        <div class="row justify-content-center">
+          <a data-toggle='modal' data-target='#finaliza_lote' class="btn btn-outline-secondary btn-sm" role="button" aria-pressed="true">Finalizar todas as programadas?</a>
+        </div>
 
-      {# modal finalizar lote de atividades #}
+        {# modal finalizar lote de atividades #}
 
-      <div class="modal" tabindex="-1" role="dialog" id="finaliza_lote">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <div class="p-3 mb-2 bg-danger text-white">
-              <h5 class="modal-title">Finalizar lote de atividade?</h5>
+        <div class="modal" tabindex="-1" role="dialog" id="finaliza_lote">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <div class="p-3 mb-2 bg-danger text-white">
+                <h5 class="modal-title">Finalizar lote de atividade?</h5>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
               </div>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <p>Deseja realmente finalizar o lote de atividade programadas em tela?</p>
-              <p>As datas de início e fim serão as mesmas do Plano de Trabalho.</p>
-              <p>O tempo realizado será igual ao tempo previsto para cada uma.</p>
-              <p>A conclusão será registrada como "Atividade concluída".</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+              <div class="modal-body">
+                <p>Deseja realmente finalizar o lote de atividade programadas em tela?</p>
+                <p>As datas de início e fim serão as mesmas do Plano de Trabalho.</p>
+                <p>O tempo realizado será igual ao tempo previsto para cada uma.</p>
+                <p>A conclusão será registrada como "Atividade concluída".</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
 
-              <form action="{{url_for('demandas.finaliza_lote_atividade',pacto_id=pacto_id,item_cat_id=item_cat_id)}}" method="post">
-                <input class="btn btn-danger" type="submit" name="" value="Finalizar">
-              </form>
+                <form action="{{url_for('demandas.finaliza_lote_atividade',pacto_id=pacto_id,item_cat_id=item_cat_id)}}" method="post">
+                  <input class="btn btn-danger" type="submit" name="" value="Finalizar">
+                </form>
 
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {% endif %}
 

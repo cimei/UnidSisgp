@@ -70,6 +70,7 @@
         <tr>
           <th scope="col"><p align = "center">#</p></th>
           <th scope="col" data-field="Unidade" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Unidade</p></th>
+          <th scope="col" data-field="Modalidade" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Modalidade</p></th>
           <th scope="col" data-field="Situação" data-filter-control="input" data-sortable="true" data-filter-control-placeholder="Termo de pesquisa..."><p align = "center">Situação</p></th>
           <th scope="col" data-sortable="true"><p align = "center">Início</p></th>
           <th scope="col" data-sortable="true"><p align = "center">Fim</p></th>
@@ -88,6 +89,7 @@
           <th scope="row"><p align = "center"> <a class="" href="{{url_for('pgs.ver_pg',pg_id=pt.planoTrabalhoId)}}">
             <abbr title="Clique aqui para ver detalhes do PG.">{{planos_trab_unid.index(pt) + 1}} </abbr></a></p></th>
           <td><p align = "center"> {{pt.undSigla}} </p></td>
+          <td><p align = "center"> {{pt.modalidade}} </p></td>
           <td><p align = "center"> {{pt.descricao}} </p></td>
           <td><p align = "center"> {{pt.dataInicio.strftime('%d/%m/%Y')}} </p></td>
           <td><p align = "center"> {{pt.dataFim.strftime('%d/%m/%Y')}} </p></td>

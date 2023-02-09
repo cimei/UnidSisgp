@@ -136,15 +136,14 @@ class AtivForm(Form):
     titulo     = StringField('Titulo')
     tempo_rem  = StringField('Tempo remoto')
     tempo_pre  = StringField('Tempo presencial')
-    modalidade = SelectField('Modalidade', choices=[(103, 'Remoto'), (101, 'Presencial')])
+    modalidade = SelectField('Modalidade')
+    # modalidade = SelectField('Modalidade', choices=[(103, 'Remoto'), (101, 'Presencial')])
     quantidade = IntegerField('Quantidade')
-    # selecionar = SelectField(choices=[('n', 'Não'), ('s', 'Sim')])
 
 class CriaPlanoForm(FlaskForm):
     pessoa   = SelectField('Pessoa', validators=(Optional(),))
     data_ini = DateField('Data início', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de início!")])
     data_fim = DateField('Data fim', format='%Y-%m-%d', validators=[DataRequired(message="Informe data de fim!")])
-    forma    = SelectField('Forma', validators=[DataRequired(message="Indique a forma de execução!")])
     ativs    = FieldList(FormField(AtivForm))
 
     submit      = SubmitField('Registrar')

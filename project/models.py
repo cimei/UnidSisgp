@@ -295,6 +295,27 @@ class Tipo_Vinculo_Pessoa(db.Model):
     def __repr__ (self):
         return f"{self.tvnDescricao};"            
 
+# agendamento presencial
+
+class AgendamentoPresencial(db.Model):
+
+    __tablename__ = 'AgendamentoPresencial'
+    __table_args__ = {"schema": "ProgramaGestao"}
+
+    agendamentoPresencialId = db.Column(db.String, primary_key = True)
+    pessoaId                = db.Column(db.BigInteger)
+    dataAgendada            = db.Column(db.Date)
+
+
+    def __init__(self, agendamentoPresencialId, pessoaId, dataAgendada):
+
+        self.agendamentoPresencialId = agendamentoPresencialId
+        self.pessoaId                = pessoaId
+        self.dataAgendada            = dataAgendada
+
+    def __repr__ (self):
+        return f"{self.agendamentoPresencialId};{self.pessoaId};{self.dataAgendada};"
+
 # unidades da federação
 class UFs(db.Model):
 

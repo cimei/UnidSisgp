@@ -155,7 +155,7 @@ def lista_objetos_pessoa(pessoa):
     unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == pes.unidadeId).first()
 
     # resgata objetos 
-    objetos = db.session.query(distinct(Objetos.objetoId),
+    objetos = db.session.query(label('objetoId',distinct(Objetos.objetoId)),
                                Objetos.descricao,
                                Objetos.tipo,
                                Objetos.chave,
@@ -334,20 +334,29 @@ def objeto_ativ_pacto(pacto_id,pacto_ativ_id):
 
         for ocorrencia in ocorrencias:
 
-            obj_atual = db.session.query(Objeto_Atividade_Pacto)\
-                                  .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
-                                  .first()
+            ## somente um objeto por ocorrência
+            # obj_atual = db.session.query(Objeto_Atividade_Pacto)\
+            #                       .filter(Objeto_Atividade_Pacto.pactoTrabalhoAtividadeId == ocorrencia.pactoTrabalhoAtividadeId)\
+            #                       .first()
 
-            if obj_atual:
-                # permite trocar objeto atual, caso ele exista
-                obj_atual.planoTrabalhoObjetoId = form.obj.data
-            else:
-                # cria nova associação da ocorrência ao objeto escolhido 
-                obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
-                                                        planoTrabalhoObjetoId = form.obj.data,
-                                                        pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
+            # if obj_atual:
+            #     # permite trocar objeto atual, caso ele exista
+            #     obj_atual.planoTrabalhoObjetoId = form.obj.data
+            # else:
+            #     # cria nova associação da ocorrência ao objeto escolhido 
+            #     obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
+            #                                             planoTrabalhoObjetoId = form.obj.data,
+            #                                             pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
 
-                db.session.add(obj_ativ_pacto)
+            #     db.session.add(obj_ativ_pacto)
+
+            ## mais de um objeto por ocorrência
+            # cria nova associação da ocorrência ao objeto escolhido 
+            obj_ativ_pacto = Objeto_Atividade_Pacto(pactoAtividadePlanoObjetoId = uuid.uuid4(),
+                                                    planoTrabalhoObjetoId = form.obj.data,
+                                                    pactoTrabalhoAtividadeId = ocorrencia.pactoTrabalhoAtividadeId)
+
+            db.session.add(obj_ativ_pacto)    
 
             db.session.commit()
 
