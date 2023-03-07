@@ -1,5 +1,9 @@
 ## Atualizações ##
 
+23/02/2023
+Ordenação no histórico de assuntos relacionados a um objeto.
+v2.1.0.a
+
 13/01/2022
 Datas de início e fim de atividades limitadas às datas do respectivo plano.
 Plano rejeitado pode ser alterado e resubmetido para aceite.
@@ -10,7 +14,6 @@ Possibilidade de associar mais de um objeto a uma ocorrência de atividade em pl
 Considera feriados fixos nos cálculos de quantidade de dias nos planos.
 Implemendada possibilidade de registro de agendamento presencial.
 v2.1.0
-
 
 04/01/2022
 Acesso de usuário passa a ser via consulta ao banco de dados do LDAP.

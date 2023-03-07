@@ -458,7 +458,7 @@ def objeto_hist(objeto_id):
                              .outerjoin(Pactos_de_Trabalho,Pactos_de_Trabalho.pactoTrabalhoId==Pactos_de_Trabalho_Atividades.pactoTrabalhoId)\
                              .outerjoin(Unidades,Unidades.unidadeId==Pactos_de_Trabalho.unidadeId)\
                              .filter(Objetos.objetoId==objeto_id)\
-                             .order_by(Pactos_de_Trabalho_Atividades.dataFim)\
+                             .order_by(Pactos_de_Trabalho_Atividades.dataFim, Assuntos.chave)\
                              .all() 
                              
     quantidade = len(ativs_objeto)
