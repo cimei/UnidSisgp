@@ -341,14 +341,7 @@
 
                     <div class="row">
                       <div class="col-3">
-                        {% if item.tam_grupo > 1 %}
-                          {{(item.tam_grupo * item.tempoPrevistoPorItem)|string()|replace(".",",")}} h total
-                        {% else %}
-                          {{item.tempoPrevistoTotal|string()|replace(".",",")}} h total
-                        {% endif %}
-                      </div>
-                      <div class="col-3">
-                        {{item.tempoPrevistoPorItem|string()|replace(".",",")}} h item
+                        {{item.tempo_prev_total|string()|replace(".",",")}} h total
                       </div>
                       {% if tem_assunto[item.titulo] or tem_objeto[item.titulo] %}
                       <div class="col">    

@@ -87,7 +87,8 @@
             {{current_user.userNome}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown4">
-              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Seus Planos</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Em execução',pessoa_id=0)}}">Seus Planos Em execução</a>
+              <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Todas',pessoa_id=0)}}">Todos os seus Planos</a>
               <a class="dropdown-item" href="{{url_for('objetos.lista_objetos_pessoa',pessoa=0)}}">Seus Objetos</a>
               <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus Números</a>
               <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
@@ -120,7 +121,7 @@
 
         {% endif %}
 
-          {% set ver = namespace(num = '2.1.0') %}
+          {% set ver = namespace(num = '2.1.1') %}
 
         </ul>
 

@@ -95,6 +95,11 @@ class SolicitacaoForm604(FlaskForm):
 
     submit     = SubmitField('Registrar')      
 
+class SolicitacaoDesc(FlaskForm):
+
+    desc       = TextAreaField('Justificativa:',validators=[DataRequired(message="Insira justificativa!")])
+
+    submit     = SubmitField('Registrar') 
 
 class SolicitacaoAnaliseForm(FlaskForm):
 

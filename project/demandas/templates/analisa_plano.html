@@ -23,7 +23,16 @@
             </div>
             <p></p>
 
-            <p>Tempo Total Disponível: {{plano.tempoTotalDisponivel}} h</p>
+            <p>Atividades (qtd): <b>{{ativs.qtd_ativs}}</b></p>
+
+            <p>Tempo Previsto Total: 
+              {% if ativs.tempo_prev_tot != plano.tempoTotalDisponivel%}
+                <b><span class="text-danger">{{ativs.tempo_prev_tot|round(1)|string()|replace(".",",")}}</span></b> h</p>
+              {% else %}  
+                <b>{{ativs.tempo_prev_tot}}</b> h</p>
+              {% endif %}  
+
+            <p>Tempo Total Disponível: <b>{{plano.tempoTotalDisponivel}}</b> h</p>
 
             <p>Carga Horária Diária: {{plano.cargaHorariaDiaria}} h</p>
 

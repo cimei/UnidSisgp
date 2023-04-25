@@ -37,12 +37,16 @@
                           <small class="text-muted"> Data Fim: </small>
                           <span class="card-text"> <b>{{(dados_solic['dataFim']|str_to_date).strftime('%d/%m/%Y')}}</b> </span>
                           </p> 
-                        {% elif solicitacao.tipo[18:22] == 'Excl' %}
-                          <p>
-                            <small class="text-muted"> Atividade: </small>
-                            <span class="card-text"> <b>{{dados_solic['itemCatalogo']}}</b></span>
-                          </p>  
-                          
+                        {% else %}
+                          <p><small class="text-muted"> Atividade: </small><span class="card-text"> <b>{{ativ_solic.titulo}}</b></span></p>
+                            <p>Desc.: {{ativ_solic.descricao}}</p>
+                            <p>Tempo Previsto: {{ativ_solic.tempoPrevistoPorItem}}</p>
+                            <p>Tempo Realizado: {% if ativ_solic.tempoRealizado %}
+                                                  {{ativ_solic.tempoRealizado}}
+                                                {% else %}
+                                                  0
+                                                {% endif %}
+                            </p>
                         {% endif %}
 
                     <div class="row">

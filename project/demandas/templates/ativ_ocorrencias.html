@@ -29,7 +29,8 @@
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-danger"><small>x</small></span><small> excluir</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>A</small></span><small> Avaliar</small></div>
             <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-warning"><small>R</small></span><small> Reavaliar</small></div>
-            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>c</small></span><small>  Corrigir</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>c</small></span><small> Corrigir</small></div>
+            <div class="col align-self-center" style="width: 10px;"><span class="badge badge-pill badge-secondary"><small>J</small></span><small> Justificar</small></div>
           </div> 
         </div> 
       </div>
@@ -61,18 +62,18 @@
                 <div class="card-body text-white bg-secondary">
                   <span class="card-title">
                     {% if ativs[ns_cont.i-1].id|lower in para_excluir %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(164, 0, 0);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(164, 0, 0);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} - CONSTA SOLICITAÇÃO DE EXCLUSÃO"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% elif ativs[ns_cont.i-1].id not in tem_objetos %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% else %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% endif %}
                   </span><br>
 
-                  <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                    {% if ativs[ns_cont.i-1].quantidade > 1 %}
-                     - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
-                    {% endif %} </small>
+                  <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h</small>
  
                     {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405%}
                       <p></p>
@@ -80,7 +81,8 @@
                       <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='f')}}"><span class="badge badge-pill badge-success"><small>f</small></span></a>
                       <a href="{{url_for('objetos.objeto_ativ_pacto',pacto_id=pacto_id,pacto_ativ_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-light"><small>o</small></span></a>
                       {% if ativs[ns_cont.i-1].id|lower not in para_excluir %}
-                        <a href="" data-toggle='modal' data-target='#exclu_modal{{ns_cont.i}}'><span class="badge badge-pill badge-danger"><small>x</small></span></a>
+                        <!-- <a href="" data-toggle='modal' data-target='#exclu_modal{{ns_cont.i}}'><span class="badge badge-pill badge-danger"><small>x</small></span></a> -->
+                        <a href="{{url_for('demandas.exclu_ativ',ativ_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-danger"><small>x</small></span></a>
                       {% endif %}  
                     {% endif %}  
                 </div>
@@ -90,15 +92,14 @@
                 <div class="card-body text-white bg-primary">
                   <span class="card-title">
                     {% if ativs[ns_cont.i-1].id not in tem_objetos %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% else %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% endif %}
                   <span><br>
-                    <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                      {% if ativs[ns_cont.i-1].quantidade > 1 %}
-                       - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
-                      {% endif %} </small><br>
+                    <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h</small><br>
                   <small>(i) {{ativs[ns_cont.i-1].dataInicio.strftime('%d/%m/%Y')}}</small>
 
                   {% if usuario.pesNome == demanda.pesNome %}
@@ -123,16 +124,22 @@
                             "card-body text-white bg-info">
                             {% endif %}
                   <span class="card-title">
-                    {% if ativs[ns_cont.i-1].id not in tem_objetos %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% if ativs[ns_cont.i-1].id|lower in para_justificar %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(90, 90, 90);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %} - CONSTA JUSTIFICATIVA DE ESTOURO DE PRAZO"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                    {% elif ativs[ns_cont.i-1].id not in tem_objetos %}
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(202, 202, 202);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% else %}
-                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);"><abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
+                      <a href="" data-toggle='modal' data-target='#ativ_modal{{ns_cont.i}}' style="color:rgb(255, 255, 255);">
+                        <abbr title="{% if ativs[ns_cont.i-1].tit == None or ativs[ns_cont.i-1].tit == ''%}Descrição não informada{% else %}{{ativs[ns_cont.i-1].tit}}{% endif %}"><b>{{ns_cont.i}}/{{qtd_ativs}}</b></abbr></a>
                     {% endif %}
                   </span><br>
                   <small>{{ativs[ns_cont.i-1].quantidade}} - {{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}} h
-                    {% if ativs[ns_cont.i-1].quantidade > 1 %}
-                     - {{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}} h
-                    {% endif %} </small><br>
+                    {% if ativs[ns_cont.i-1].tempoRealizado != ativs[ns_cont.i-1].tempoPrevistoPorItem %}
+                      - {{ ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",") }}
+                    {% endif %}
+                  </small><br>
                   <small>(i) {% if ativs[ns_cont.i-1].dataInicio == None or ativs[ns_cont.i-1].dataInicio == '' %}
                               ?
                              {% else %} 
@@ -158,6 +165,9 @@
                   {% if usuario.pesNome == demanda.pesNome and demanda.situacaoId == 405 and (ativs[ns_cont.i-1].nota == None or ativs[ns_cont.i-1].nota == '') %}
                     <p></p>
                     <a href="{{url_for('demandas.inicia_finaliza_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='c')}}"><span class="badge badge-pill badge-secondary"><small>c</small></span></a>
+                    {% if ativs[ns_cont.i-1].tempoPrevistoPorItem < ativs[ns_cont.i-1].tempoRealizado and ativs[ns_cont.i-1].id|lower not in para_justificar %} 
+                      <a href="{{url_for('demandas.prazo_ativ',ativ_id=ativs[ns_cont.i-1].id)}}"><span class="badge badge-pill badge-secondary"><small>J</small></span></a>
+                    {% endif %}
                   {% endif %}
 
                 </div>  
@@ -165,7 +175,7 @@
               {% else %}
               
                 <div class="card-body text-white bg-warning">
-                    <div class="col">{{ns_cont.i}} <small>{{ativs[ns_cont.i-1].tempoPrevistoTotal}}</small></div>
+                    <div class="col">{{ns_cont.i}} <small>{{ativs[ns_cont.i-1].tempoPrevistoPorItem}}</small></div>
                 </div>
               
               {% endif %}
@@ -255,7 +265,7 @@
                         {% if ativs[ns_cont.i-1].situa == 'Concluída' %}
                           <li class="list-group-item d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                                <span class="text-muted"> Tempo previsto: {% if ativs[ns_cont.i-1].tempoPrevistoTotal == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoPrevistoTotal|string()|replace(".",",")}}</b>{% endif %} - </span>
+                                <span class="text-muted"> Tempo previsto: {% if ativs[ns_cont.i-1].tempoPrevistoPorItem == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoPrevistoPorItem|string()|replace(".",",")}}</b>{% endif %} - </span>
                                 <span class="text-muted"> Tempo realizado: {% if ativs[ns_cont.i-1].tempoRealizado == None%}0{% else %}<b>{{ativs[ns_cont.i-1].tempoRealizado|string()|replace(".",",")}}</b>{% endif %}</span>
                             </div>
                           </li>    

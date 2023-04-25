@@ -1,7 +1,12 @@
 ## Atualizações ##
 
+25/04/2023
+Implementação da solicitação de tempo estourado em atividade.
+v2.1.1
+
 23/02/2023
 Ordenação no histórico de assuntos relacionados a um objeto.
+Usando Python 3.10 no Dockerfile
 v2.1.0.a
 
 13/01/2022

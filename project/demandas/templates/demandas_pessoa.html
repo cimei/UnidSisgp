@@ -8,7 +8,9 @@
     <h5>Lista de Planos de Trabalho de {{nome}}</h5>
     <p>Total de <span class="badge badge-success badge-pill">{{demandas_count}}</span> Planos
      {% if lista == '%' %}
-       (Todas)
+       (Todos)
+     {% elif lista == 'Em execução' %}
+      (Em execução)  
      {% else %}
        (forma e situação selecionadas)
      {% endif %}</p>

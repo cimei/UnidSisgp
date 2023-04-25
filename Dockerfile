@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.9-bullseye
+
+FROM python:3.10-bullseye
 WORKDIR /app
 
 ENV PYTHONIOENCODING=utf-8

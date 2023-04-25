@@ -9,41 +9,82 @@
       <div class="col-sm-6">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Registrar Alteração</h5>
+            {% if pacto %}
+              <h5 class="card-title">Dados do Plano</h5>
 
-            <p><h6 class="">Resp.: <b>{{pacto.pesNome}} ({{pacto.undSigla}})</b></h6></p>
+              <p><h6 class="">Resp.: <b>{{pacto.pesNome}} ({{pacto.undSigla}})</b></h6></p>
 
-            <p><h6 class="text-muted">Forma: <b>{{pacto.forma}}</b> - Situação: <b>{{pacto.descricao}}</b></h6></p>  
+              <p><h6 class="text-muted">Forma: <b>{{pacto.forma}}</b> - Situação: <b>{{pacto.descricao}}</b></h6></p>  
 
-            <p class="small"><b>Data Início:</b> {{pacto.dataInicio.strftime('%d/%m/%Y')}}</p>
-            <p class="small"><b>Data Fim:</b> {{pacto.dataFim.strftime('%d/%m/%Y')}}</h7><br>
+              <p><h6>Data Início: <b>{{pacto.dataInicio.strftime('%d/%m/%Y')}}</b></h6></p>
+              <p><h6>Data Fim: <b>{{pacto.dataFim.strftime('%d/%m/%Y')}}</b></h6></p>
 
-            <h6>Carga horária diária: <b>{{pacto.cargaHorariaDiaria}}</b></h6>
+              <h6>Carga horária diária: <b>{{pacto.cargaHorariaDiaria}}</b></h6>
+              
+              <h6>Percentual execução: {% if pacto.percentualExecucao %}
+                                        <b>{{pacto.percentualExecucao|round(1)|string()|replace(".",",")}}</b>
+                                      {% else %}  
+                                        <b>0</b>
+                                      {% endif %}
+              </h6>
+              
+              <h6>Rel. previsto/realizado: {% if pacto.relacaoPrevistoRealizado %}
+                                              <b>{{pacto.relacaoPrevistoRealizado|round(1)|string()|replace(".",",")}}</b>
+                                            {% else %}  
+                                              <b>0</b>
+                                            {% endif %}
+              </h6>
+
+              <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|string()|replace(".",",")}} h</b> 
+                - Já comprometido: <b>{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}} h</b></h6>
             
-            <h6>Percentual execução: {% if pacto.percentualExecucao %}
-                                      <b>{{pacto.percentualExecucao|round(1)|string()|replace(".",",")}}</b>
-                                     {% else %}  
-                                      <b>0</b>
-                                     {% endif %}
-            </h6>
+            {% else %} 
             
-            <h6>Rel. previsto/realizado: {% if pacto.relacaoPrevistoRealizado %}
-                                            <b>{{pacto.relacaoPrevistoRealizado|round(1)|string()|replace(".",",")}}</b>
-                                          {% else %}  
-                                            <b>0</b>
-                                          {% endif %}
-            </h6>
+              <h5 class="card-title">Dados da Ocorrência da Atividade</h5>
 
-            <h6>Tempo total disponível: <b>{{pacto.tempoTotalDisponivel|string()|replace(".",",")}} h</b> 
-              - Já comprometido: <b>{{sum_ativs_tempo_total|round(1)|string()|replace(".",",")}} h</b></h6>
+              <p><h6>Ativ.: <b>{{items_cat.titulo}}</b></h6></p>
+              <p><h6>Complexidade: <b>{{items_cat.complexidade}}</b></h6></p>
+              <h6>Tempo Presencial: {% if items_cat.tempoPresencial %}
+                <b>{{items_cat.tempoPresencial|round(1)|string()|replace(".",",")}}</b>
+                {% else %}  
+                  <b>0</b>
+                {% endif %}
+              </h6>  
+              <h6>Tempo Remoto: {% if items_cat.tempoRemoto %}
+                <b>{{items_cat.tempoRemoto|round(1)|string()|replace(".",",")}}</b>
+                {% else %}  
+                  <b>0</b>
+                {% endif %}
+              </h6>  
+              <p><h6>Descrição: <b>{% if items_cat.descricao %}
+                                    {{items_cat.descricao}}
+                                   {% else %}
+                                    Não informada
+                                   {% endif %}  
+                                </b>
+              </h6></p>
+              <h6>Tempo Previsto por Item: {% if items_cat.tempoPrevistoPorItem %}
+                <b>{{items_cat.tempoPrevistoPorItem|round(1)|string()|replace(".",",")}}</b>
+                {% else %}  
+                  <b>0</b>
+                {% endif %}
+              </h6>
+              <h6>Tempo Realizado: {% if items_cat.tempoRealizado %}
+                <b>{{items_cat.tempoRealizado|round(1)|string()|replace(".",",")}}</b>
+                {% else %}  
+                  <b>0</b>
+                {% endif %}
+              </h6>  
+                
+            {% endif %}   
           </div>
         </div>
       </div>
       <div class="col-sm-6">
         <div class="card">
           <div class="card-body">
-            <h6 class="card-title text-info font-weight-bold">Solicitação: "{{tipo}}"</h6>
-              <h4>Fazer Solicitação</h4>
+            <h4>Solicitação:</h4>
+            <h4 class="card-title text-info font-weight-bold">"{{tipo}}"</h4>
 
               {% macro render_field(field,obr) %}
                 {% if obr == True %}
@@ -108,7 +149,7 @@
                     {{ render_field(form.quantidade,class="form-control",obr=False) }}
                   </div>
 
-                {% elif tipo == 'Alteração prazo'%}
+                {% elif tipo == 'Alteração prazo' %}
                   
                   <div class="form-group col-5">
                     {{ render_field(form.data_fim,class="form-control",obr=True) }}
@@ -118,7 +159,7 @@
                     {{ render_field(form.desc,class="form-control form-control-lg",size=2000, maxlength=2000, rows="3",obr=True) }}
                   </div>
 
-                  {% elif tipo == 'Excluir atividade'%}
+                {% elif tipo == 'Excluir atividade' %}
 
                   <div class="form-group">
                     {{ render_field(form.atividade,class="form-control",obr=True) }}
@@ -131,6 +172,12 @@
                   <div class="form-group">
                     {{ render_field(form.desc,class="form-control form-control-lg",size=2000, maxlength=2000, rows="3",obr=True) }}
                   </div>  
+
+                {% elif tipo == 'Excluir ocorrência de atividade' or tipo == 'Justificar estouro de prazo' %}
+                
+                  <div class="form-group">
+                    {{ render_field(form.desc,class="form-control form-control-lg",size=2000, maxlength=2000, rows="3",obr=True) }}
+                  </div>   
 
                 {% else %}
 

@@ -120,39 +120,47 @@ def login():
         username = form.username.data
         password = form.password.data
 
-        try:
-            conexao = users.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
-        except:
-            flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente.', 'erro')
-            return render_template('login.html', form=form)
-
-        if conexao == 'sem_credencial':
-            retorno = False
-            ldap_mail = None
-            ldap_cpf  = None
-            flash('Usuário desconhecido ou senha inválida. Por favor, tente novamente.', 'erro')
-            return render_template('login.html', form=form)
-        else:
-            conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail','carLicense'])
-            retorno = True
-            ldap_mail = str((conexao.entries[0])['mail'])
-            ldap_cpf  = str((conexao.entries[0])['carLicense'])
-            pessoa = Pessoas.query.filter_by(pesEmail = ldap_mail).first()
-            if not pessoa:
-                flash('Seu e-mail no PGD ('+pessoa.pesEmail+') não bate com sei e-mail no LDAP ('+ldap_mail+'). Acesso negado!','erro')
+        # abertura para login com usuarios de teste
+        if username == 'Chefe_1':
+            user = users.query.filter_by(userNome = username).first()
+            if not user:
+                flash('User de teste não cadastrado!', 'erro')
                 return render_template('login.html', form=form)
-        
-        user = users.query.filter_by(userEmail = ldap_mail).first()
 
-        if not user:
-            user = users(userNome                   = pessoa.pesNome,
-                         userEmail                  = pessoa.pesEmail,
-                         plaintext_password         = 'sem_senha',
-                         email_confirmation_sent_on = datetime.now(),
-                         userAtivo                  = True,
-                         avaliadorId                = None)
-            db.session.add(user)
-            db.session.commit()
+        else:    
+            try:
+                conexao = users.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
+            except:
+                flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente.', 'erro')
+                return render_template('login.html', form=form)
+
+            if conexao == 'sem_credencial':
+                retorno = False
+                ldap_mail = None
+                ldap_cpf  = None
+                flash('Usuário desconhecido ou senha inválida. Por favor, tente novamente.', 'erro')
+                return render_template('login.html', form=form)
+            else:
+                conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail','carLicense'])
+                retorno = True
+                ldap_mail = str((conexao.entries[0])['mail'])
+                ldap_cpf  = str((conexao.entries[0])['carLicense'])
+                pessoa = Pessoas.query.filter_by(pesEmail = ldap_mail).first()
+                if not pessoa:
+                    flash('Seu e-mail no PGD ('+pessoa.pesEmail+') não bate com sei e-mail no LDAP ('+ldap_mail+'). Acesso negado!','erro')
+                    return render_template('login.html', form=form)
+            
+            user = users.query.filter_by(userEmail = ldap_mail).first()
+
+            if not user:
+                user = users(userNome                   = pessoa.pesNome,
+                            userEmail                  = pessoa.pesEmail,
+                            plaintext_password         = 'sem_senha',
+                            email_confirmation_sent_on = datetime.now(),
+                            userAtivo                  = True,
+                            avaliadorId                = None)
+                db.session.add(user)
+                db.session.commit()
 
         user.last_logged_in = user.current_logged_in
         user.current_logged_in = datetime.now()
