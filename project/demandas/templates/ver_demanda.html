@@ -340,7 +340,7 @@
                     </div>
 
                     <div class="row">
-                      <div class="col-3">
+                      <div class="col-5">
                         {{item.tempo_prev_total|string()|replace(".",",")}} h total
                       </div>
                       {% if tem_assunto[item.titulo] or tem_objeto[item.titulo] %}
@@ -558,7 +558,7 @@
                           
                         </div>
                         <div class="col-6">
-                          {% if (item.dataFim == None or item.dataFim == '') and (usuario.tipoFuncaoId != None or usuario.pessoaId == post.avaliadorId) and post.pesEmail != current_user.userEmail %}
+                          {% if (item.dataFim == None or item.dataFim == '') and usuario.tipoFuncaoId != None and post.pesEmail != current_user.pesEmail %}
                             <a href="{{url_for('demandas.solicitacao_analise',solic_id=item.id,pacto_id=id)}}" 
                             class="btn btn-warning btn-sm" role="button" aria-pressed="true">Analisar</a>
                           {% endif %}

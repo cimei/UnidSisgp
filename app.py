@@ -6,8 +6,8 @@ from threading import Timer
 
 # filtros cusomizado para o jinja
 #
-@app.template_filter('verifica_serv_bd')
-def verifica_serv_bd(chave):
+@app.template_filter('retorna_var_amb')
+def retorna_var_amb(chave):
     return os.getenv(chave)
 
 @app.template_filter('str_to_date')

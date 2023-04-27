@@ -1,7 +1,8 @@
 """
 .. topic:: Demandas (views)
 
-    Compõe o trabalho diário da coordenação. Consistem da atividades da coordenação, cadastratas no PGD.
+    Compõe o trabalho diário da coordenação. Consistem das atividades da unidade, conforme cadastrado no PGD.
+    Corresponde aos planos de atividades de cada um na unidade.
 
 .. topic:: Ações relacionadas às demandas
 
@@ -24,7 +25,7 @@ from project import db
 from project.models import Planos_de_Trabalho_Ativs, Planos_de_Trabalho_Ativs_Items, Unidades, Pessoas, Planos_de_Trabalho, \
                            Atividades, VW_Unidades, catdom, Pactos_de_Trabalho, Atividade_Candidato_Hist,\
                            Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Atividades, Atividade_Candidato,\
-                           Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs, users,\
+                           Pactos_de_Trabalho_Hist, Objetos, Objeto_Atividade_Pacto, Objeto_PG, Feriados, UFs,\
                            Assuntos, Atividade_Pacto_Assunto, Planos_de_Trabalho_Hist, Tipo_Func_Pessoa, Log_Unid
 
 from project.demandas.forms import SolicitacaoForm601, SolicitacaoForm602, SolicitacaoForm603 , SolicitacaoForm604, SolicitacaoAnaliseForm,\
@@ -117,7 +118,9 @@ class Timer:
 #lendo uma demanda
 
 @demandas.route('/demanda/<pacto_id>',methods=['GET','POST'])
+@login_required
 def demanda(pacto_id):
+
     """+---------------------------------------------------------------------------------+
        |Resgata, para leitura, uma demanda (plano no sisgp, pacto no banco) e registros  |
        |associados.                                                                      |
@@ -127,7 +130,7 @@ def demanda(pacto_id):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
@@ -154,8 +157,7 @@ def demanda(pacto_id):
                                Pessoas.pesEmail,
                                Pactos_de_Trabalho.unidadeId,
                                Unidades.pessoaIdChefe,
-                               Unidades.pessoaIdChefeSubstituto,
-                               users.avaliadorId)\
+                               Unidades.pessoaIdChefeSubstituto)\
                          .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
                          .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
                          .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
@@ -163,7 +165,6 @@ def demanda(pacto_id):
                          .join(catdom_1, catdom_1.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                          .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Pactos_de_Trabalho.planoTrabalhoId)\
-                         .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
     
 
@@ -491,8 +492,8 @@ def demanda(pacto_id):
                             tem_objeto = tem_objeto)
 
 # ocorrências de uma atividade
-
 @demandas.route('/<pacto_id>/<item_cat_id>/ativ_ocor')
+@login_required
 def ativ_ocor(pacto_id,item_cat_id):
 
     """
@@ -504,7 +505,7 @@ def ativ_ocor(pacto_id,item_cat_id):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
@@ -514,11 +515,9 @@ def ativ_ocor(pacto_id,item_cat_id):
                                Pessoas.pesNome,
                                Pactos_de_Trabalho.planoTrabalhoId,
                                Pactos_de_Trabalho.unidadeId,
-                               users.avaliadorId,
                                Pactos_de_Trabalho.situacaoId)\
                          .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
                          .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
-                         .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
 
     #pega hierarquia superior da unidade da demanda
@@ -564,6 +563,11 @@ def ativ_ocor(pacto_id,item_cat_id):
                          .all()
 
     qtd_ativs = len(ativs)
+
+    #calcula o tempo previsto total da atividade (soma das ocorrências)
+    tempo_previsto_total = 0
+    for a in ativs:
+        tempo_previsto_total += a.tempoPrevistoPorItem
 
     # verificando se há solicitação de exclusão vinculada a cada uma das ocorrências da atividade consultada
     para_excluir = []
@@ -660,12 +664,13 @@ def ativ_ocor(pacto_id,item_cat_id):
                                                     para_excluir=para_excluir,
                                                     tem_exclu=tem_exclu,
                                                     tem_justificativa=tem_justificativa,
-                                                    para_justificar=para_justificar)                   
+                                                    para_justificar=para_justificar,
+                                                    tempo_previsto_total=tempo_previsto_total)                   
 
 
 # vendo todas as demandas da unidade
-
 @demandas.route('/<lista>/<coord>/demandas')
+@login_required
 def list_demandas(lista,coord):
 
     """
@@ -678,7 +683,7 @@ def list_demandas(lista,coord):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
@@ -762,7 +767,6 @@ def list_demandas(lista,coord):
                                     Unidades.undSigla,
                                     catdom_1.c.descricao,
                                     label('forma',catdom.descricao),
-                                    users.avaliadorId,    
                                     Pessoas.pesEmail,
                                     Pactos_de_Trabalho.situacaoId)\
                             .filter(Pactos_de_Trabalho.unidadeId.in_(tree[unid_dados.undSigla]),
@@ -774,7 +778,6 @@ def list_demandas(lista,coord):
                             .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                             .join(Pactos_de_Trabalho_Solic, Pactos_de_Trabalho_Solic.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
                             .order_by(Unidades.unidadeId,Pactos_de_Trabalho.situacaoId,Pactos_de_Trabalho.dataInicio.desc())\
-                            .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                             .all()
 
         demandas_count = db.session.query(label('pactoTrabahoId',distinct(Pactos_de_Trabalho.pactoTrabalhoId)))\
@@ -808,7 +811,6 @@ def list_demandas(lista,coord):
                                     Unidades.undSigla,
                                     catdom_1.c.descricao,
                                     label('forma',catdom.descricao),
-                                    users.avaliadorId,    
                                     Pessoas.pesEmail,
                                     Pactos_de_Trabalho.situacaoId,
                                     ativs.c.qtd_ativs,
@@ -821,7 +823,6 @@ def list_demandas(lista,coord):
                             .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                             .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                             .order_by(Unidades.unidadeId,Pactos_de_Trabalho.situacaoId,Pactos_de_Trabalho.dataInicio.desc())\
-                            .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                             .outerjoin(ativs_com_nota, ativs_com_nota.c.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
                             .outerjoin(ativs, ativs.c.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
                             .all()
@@ -859,7 +860,6 @@ def list_demandas(lista,coord):
                                     Unidades.undSigla,
                                     catdom_1.c.descricao,
                                     label('forma',catdom.descricao),
-                                    users.avaliadorId,    
                                     Pessoas.pesEmail,
                                     Pactos_de_Trabalho.situacaoId,
                                     ativs.c.qtd_ativs,
@@ -870,7 +870,6 @@ def list_demandas(lista,coord):
                             .join(catdom_1, catdom_1.c.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                             .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                             .order_by(Unidades.unidadeId,Pactos_de_Trabalho.situacaoId,Pactos_de_Trabalho.dataInicio.desc())\
-                            .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                             .outerjoin(ativs_com_nota, ativs_com_nota.c.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
                             .outerjoin(ativs, ativs.c.pactoTrabalhoId == Pactos_de_Trabalho.pactoTrabalhoId)\
                             .all()
@@ -948,10 +947,10 @@ def list_demandas(lista,coord):
 
 
 #inserindo uma solicitação em um plano (pacto)
-
 @demandas.route('/solicitacao/<pacto_id>/<tipo>',methods=['GET','POST'])
 @login_required
 def solicitacao(pacto_id,tipo):
+
     """+---------------------------------------------------------------------------------+
        |Insere uma solicitação para um pacto existente.                                  |
        |                                                                                 |
@@ -962,7 +961,7 @@ def solicitacao(pacto_id,tipo):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp e unidade do usuário logado
     solicitante_id = db.session.query(Pessoas.pessoaId, Pessoas.unidadeId, Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == email).first()
@@ -1331,7 +1330,7 @@ def solicitacao(pacto_id,tipo):
                 
             db.session.commit()
 
-            registra_log_unid(current_user.id,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
+            registra_log_unid(current_user.pessoaId,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
                                               ' de '+ tipo_solic.descricao  +' inserida no banco de dados.')
 
         if quantidade == 0 and tipo_solic.descricao == 'Excluir atividade':
@@ -1355,10 +1354,10 @@ def solicitacao(pacto_id,tipo):
 
 
 #registrado uma solicitação de exclusão de ocorrência em atividade de um plano (pacto)
-
 @demandas.route('/exclu_ativ/<ativ_id>',methods=['GET','POST'])
 @login_required
 def exclu_ativ(ativ_id):
+
     """+---------------------------------------------------------------------------------+
        |Registra solicitação de exclusão da ocorrência de uma atividade em um            |
        |em um pacto existente.                                                           |
@@ -1370,7 +1369,7 @@ def exclu_ativ(ativ_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp e unidade do usuário logado
     solicitante_id = db.session.query(Pessoas.pessoaId, Pessoas.unidadeId, Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == email).first()
@@ -1421,7 +1420,7 @@ def exclu_ativ(ativ_id):
                     
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
+        registra_log_unid(current_user.pessoaId,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
                                         ' de exclusão de ocorrência de atividade inserida no banco de dados.') 
 
         flash('Solicitação de exclusão registrada.','sucesso')  
@@ -1436,10 +1435,10 @@ def exclu_ativ(ativ_id):
 
 
 #registrado uma solicitação de estouro de praxo em ocorrência de atividade em um plano (pacto)
-
 @demandas.route('/prazo_ativ/<ativ_id>',methods=['GET','POST'])
 @login_required
 def prazo_ativ(ativ_id):
+
     """+---------------------------------------------------------------------------------+
        |Registra solicitação de estouro de prazo em ocorrência de uma atividade em um    |
        |em um pacto existente.                                                           |
@@ -1451,7 +1450,7 @@ def prazo_ativ(ativ_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp e unidade do usuário logado
     solicitante_id = db.session.query(Pessoas.pessoaId, Pessoas.unidadeId, Pessoas.tipoFuncaoId).filter(Pessoas.pesEmail == email).first()
@@ -1499,7 +1498,7 @@ def prazo_ativ(ativ_id):
                     
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
+        registra_log_unid(current_user.pessoaId,'Solicitação '+ nova_solic.pactoTrabalhoSolicitacaoId +\
                                         ' de estouro de prazo em ocorrência de atividade inserida no banco de dados.') 
 
         flash('Solicitação de estouro de prazo registrada.','sucesso')  
@@ -1514,10 +1513,10 @@ def prazo_ativ(ativ_id):
 
 
 #analisando uma solicitação
-
 @demandas.route('/solicitacao_analise/<solic_id>/<pacto_id>',methods=['GET','POST'])
 @login_required
 def solicitacao_analise(solic_id,pacto_id):
+
     """+---------------------------------------------------------------------------------+
        |Realiza a analise de uma solicitação em um pacto existente.                      |
        |                                                                                 |
@@ -1528,7 +1527,7 @@ def solicitacao_analise(solic_id,pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp do usuário logado
     analista = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).filter(Pessoas.pesEmail == email).first_or_404()
@@ -1673,7 +1672,7 @@ def solicitacao_analise(solic_id,pacto_id):
                     db.session.add(nova_ativ)
                     db.session.commit()                      
 
-                    registra_log_unid(current_user.id,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
+                    registra_log_unid(current_user.pessoaId,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
 
                 flash(str(ocor_nova_qtd)+' nova(s) atividade(s) registrada(s)!','sucesso')
 
@@ -1697,7 +1696,7 @@ def solicitacao_analise(solic_id,pacto_id):
 
                 db.session.commit()
 
-                registra_log_unid(current_user.id,'Plano ' + pacto_id + ' teve sua data final alterada.')
+                registra_log_unid(current_user.pessoaId,'Plano ' + pacto_id + ' teve sua data final alterada.')
 
                 flash('Data fim do plano foi alterada!','sucesso')
 
@@ -1716,7 +1715,7 @@ def solicitacao_analise(solic_id,pacto_id):
 
                 db.session.commit() 
 
-                registra_log_unid(current_user.id,'Atividade  '+ dados_solic['pactoTrabalhoAtividadeId'] +' com estouro de prazo aprovado.')
+                registra_log_unid(current_user.pessoaId,'Atividade  '+ dados_solic['pactoTrabalhoAtividadeId'] +' com estouro de prazo aprovado.')
                     
                 flash('Estouro de prazo aprovado!','sucesso')   
 
@@ -1745,7 +1744,7 @@ def solicitacao_analise(solic_id,pacto_id):
                         db.session.delete(ativ)
                         db.session.commit()
 
-                        registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
+                        registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
                     
                     flash(str(ocor_ativ_qtd)+' atividade(s) retirada(s) do plano de trabalho!','sucesso') 
                 
@@ -1770,14 +1769,14 @@ def solicitacao_analise(solic_id,pacto_id):
                     db.session.delete(ativ)
                     db.session.commit()
 
-                    registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
+                    registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
                     
                     flash('Atividade retirada do plano de trabalho!','sucesso')   
     
         if form.replicas.data:
-            registra_log_unid(current_user.id,'Lote de solicitações a partir da '+ solic_id +' foi analisado.')
+            registra_log_unid(current_user.pessoaId,'Lote de solicitações a partir da '+ solic_id +' foi analisado.')
         else:
-            registra_log_unid(current_user.id,'Solicitação '+ solic_id +' foi analisada.')
+            registra_log_unid(current_user.pessoaId,'Solicitação '+ solic_id +' foi analisada.')
 
         flash('Solicitação analisada!','sucesso')
 
@@ -1794,7 +1793,6 @@ def solicitacao_analise(solic_id,pacto_id):
 
 
 #analisando automaticamente uma solicitação feita pelo chefe
-
 @demandas.route('/solicitacao_chefe_analise/<solic_id>/<pacto_id>',methods=['GET','POST'])
 @login_required
 def solicitacao_chefe_analise(solic_id,pacto_id):
@@ -1809,7 +1807,7 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp do usuário logado
     analista = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).filter(Pessoas.pesEmail == email).first_or_404()
@@ -1938,7 +1936,7 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
             db.session.add(nova_ativ)
             db.session.commit()                      
 
-            registra_log_unid(current_user.id,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
+            registra_log_unid(current_user.pessoaId,'Atividade ' + nova_ativ.pactoTrabalhoAtividadeId + ' inserida no plano ' + pacto_id + '.')
 
         flash(str(ocor_nova_qtd)+' nova(s) atividade(s) registrada(s)!','sucesso')
 
@@ -1962,7 +1960,7 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
 
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Plano ' + pacto_id + ' teve sua data final alterada.')
+        registra_log_unid(current_user.pessoaId,'Plano ' + pacto_id + ' teve sua data final alterada.')
 
         flash('Data fim do plano foi alterada!','sucesso')
 
@@ -1982,7 +1980,7 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
 
         db.session.commit() 
 
-        registra_log_unid(current_user.id,'Atividade  '+ dados_solic['pactoTrabalhoAtividadeId'] +' com estouro de prazo aprovado.')
+        registra_log_unid(current_user.pessoaId,'Atividade  '+ dados_solic['pactoTrabalhoAtividadeId'] +' com estouro de prazo aprovado.')
             
         flash('Estouro de prazo aprovado!','sucesso') 
 
@@ -2009,11 +2007,11 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
             db.session.delete(ativ)
             db.session.commit()
 
-            registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
+            registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi retirada do plano de trabalho mediante aprovação.')
         
         flash(str(ocor_ativ_qtd)+' atividade(s) retirada(s) do plano de trabalho!','sucesso') 
            
-    registra_log_unid(current_user.id,'Solicitação, ou solicitações, registradas pela chefia foram analisadas automaticamente.')
+    registra_log_unid(current_user.pessoaId,'Solicitação, ou solicitações, registradas pela chefia foram analisadas automaticamente.')
 
     flash('Alteração realizada!','sucesso')
 
@@ -2021,8 +2019,8 @@ def solicitacao_chefe_analise(solic_id,pacto_id):
 
 
 # vendo todas as demandas de um usuário
-
 @demandas.route('/<lista>/<int:pessoa_id>/list_demandas_usu')
+@login_required
 def list_demandas_usu(lista,pessoa_id):
 
     """
@@ -2035,7 +2033,7 @@ def list_demandas_usu(lista,pessoa_id):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     # possibilidade de consultar outra pessoa
     if pessoa_id != 0:
@@ -2179,7 +2177,6 @@ def list_demandas_usu(lista,pessoa_id):
 
 
 #iniciando ou finalizando uma atividade em pacto de trabalho
-
 @demandas.route('/inicia_finaliza_atividade/<pacto_id>/<ativ_pacto_id>/<acao>',methods=['GET','POST'])
 @login_required
 def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
@@ -2193,7 +2190,7 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     # registro a ser alterado
     ativ = db.session.query(Pactos_de_Trabalho_Atividades).filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId == ativ_pacto_id).first()              
@@ -2294,18 +2291,18 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
             db.session.commit()
 
         if acao == 'i':
-            registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
+            registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
             flash('Atividade colocada em execução!','sucesso')
         elif acao == 'f':
             if ativ_ja_iniciada:
-                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi concluída.')
+                registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi concluída.')
                 flash('Atividade concluída!','sucesso')
             else:
-                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
-                registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi concluída.')
+                registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi colocada em execução.')
+                registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi concluída.')
                 flash('Atividade iniciada e concluída!','sucesso')   
         elif acao == 'c':
-            registra_log_unid(current_user.id,'Atividade concluída '+ ativ_pacto_id +' foi corrigida.')
+            registra_log_unid(current_user.pessoaId,'Atividade concluída '+ ativ_pacto_id +' foi corrigida.')
             flash('Efetuada correção em atividade concluída!','sucesso')    
 
         # return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
@@ -2328,7 +2325,6 @@ def inicia_finaliza_atividade(pacto_id,ativ_pacto_id,acao):
     return render_template('inicia_conclui_atividade.html', form=form, acao=acao, sit = ativ.situacaoId, tit=tit)
 
 #corrigindo dados de uma atividae em execução em um pacto (plano de trabalho)
-
 @demandas.route('/corrige_ocor_atividade/<pacto_id>/<ativ_pacto_id>',methods=['GET','POST'])
 @login_required
 def corrige_ocor_atividade(pacto_id,ativ_pacto_id):
@@ -2368,7 +2364,7 @@ def corrige_ocor_atividade(pacto_id,ativ_pacto_id):
 
         db.session.commit()
             
-        registra_log_unid(current_user.id,'Atividade em execução '+ ativ_pacto_id +' foi corrigida.')
+        registra_log_unid(current_user.pessoaId,'Atividade em execução '+ ativ_pacto_id +' foi corrigida.')
 
         return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
 
@@ -2380,7 +2376,6 @@ def corrige_ocor_atividade(pacto_id,ativ_pacto_id):
 
 
 #finalizando programadas em lote
-
 @demandas.route('/finaliza_lote_atividade/<pacto_id>/<item_cat_id>',methods=['GET','POST'])
 @login_required
 def finaliza_lote_atividade(pacto_id,item_cat_id):
@@ -2465,14 +2460,13 @@ def finaliza_lote_atividade(pacto_id,item_cat_id):
 
         db.session.commit()
 
-    registra_log_unid(current_user.id,'Lote de programadas no pacto '+ pacto_id +' foi concluído.')
+    registra_log_unid(current_user.pessoaId,'Lote de programadas no pacto '+ pacto_id +' foi concluído.')
     flash('Lote de programadas concluído!','sucesso')
 
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 
 #avaliando atividade
-
 @demandas.route('/avalia_atividade/<pacto_id>/<acao>/<ativ_pacto_id>',methods=['GET','POST'])
 @login_required
 def avalia_atividade(pacto_id,ativ_pacto_id,acao):
@@ -2486,7 +2480,7 @@ def avalia_atividade(pacto_id,ativ_pacto_id,acao):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp do usuário logado
     avaliador = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).filter(Pessoas.pesEmail == email).first_or_404()
@@ -2510,13 +2504,13 @@ def avalia_atividade(pacto_id,ativ_pacto_id,acao):
 
         if acao == 'avaliar':
 
-            registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi avaliada.')
+            registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi avaliada.')
             
             flash('Atividade avaliada!','sucesso')
 
         elif acao == 'reavaliar':
 
-            registra_log_unid(current_user.id,'Atividade  '+ ativ_pacto_id +' foi reavaliada.')
+            registra_log_unid(current_user.pessoaId,'Atividade  '+ ativ_pacto_id +' foi reavaliada.')
             
             flash('Atividade reavaliada!','sucesso')
 
@@ -2532,7 +2526,6 @@ def avalia_atividade(pacto_id,ativ_pacto_id,acao):
     return render_template('avalia_atividade.html', form=form, avaliador = avaliador, tipo='unic', acao=acao)
 
 #avaliando atividade
-
 @demandas.route('/avalia_lote_atividade/<pacto_id>/<ativ_pacto_id>,<item_cat_id>',methods=['GET','POST'])
 @login_required
 def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
@@ -2545,7 +2538,7 @@ def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp do usuário logado
     avaliador = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).filter(Pessoas.pesEmail == email).first_or_404()
@@ -2583,7 +2576,7 @@ def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
             
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Atividade (todas as ocorrências) '+ ativ_pacto_id +' foi avaliada.')
+        registra_log_unid(current_user.pessoaId,'Atividade (todas as ocorrências) '+ ativ_pacto_id +' foi avaliada.')
         
         flash('Toda as ocorrências da Atividade avaliadas!','sucesso')
 
@@ -2592,7 +2585,6 @@ def avalia_lote_atividade(pacto_id,ativ_pacto_id,item_cat_id):
     return render_template('avalia_atividade.html', form=form, avaliador = avaliador, tipo='lote', acao='avaliar')
 
 #registrar assuntos
-
 @demandas.route('/add_assunto/<pacto_id>/<ativ_pacto_id>',methods=['GET','POST'])
 @login_required
 def add_assunto(pacto_id,ativ_pacto_id):
@@ -2653,7 +2645,7 @@ def add_assunto(pacto_id,ativ_pacto_id):
         db.session.add(assunto_ativ)
         db.session.commit()                      
 
-        registra_log_unid(current_user.id,'Assunto '+ assunto.assuntoId +' inserido no banco de dados.')
+        registra_log_unid(current_user.pessoaId,'Assunto '+ assunto.assuntoId +' inserido no banco de dados.')
 
         flash('Assunto registrado!','sucesso')
 
@@ -2666,8 +2658,8 @@ def add_assunto(pacto_id,ativ_pacto_id):
                                                           objetos = objetos)
 
 ## lista assuntos associadas a uma atividade de um plano de trabalho
-
 @demandas.route('/<item_cat_id>/<pacto_id>/lista_assuntos')
+@login_required
 def lista_assuntos(item_cat_id,pacto_id):
     """
     +---------------------------------------------------------------------------------------+
@@ -2717,8 +2709,8 @@ def lista_assuntos(item_cat_id,pacto_id):
                                                   ativ=ativ)
 
 # criando um plano de trabalho (pacto)
-
 @demandas.route('/<pg_id>/cria_plano', methods=['GET','POST'])
+@login_required
 def cria_plano(pg_id):
     """
     +---------------------------------------------------------------------------------------+
@@ -2733,7 +2725,7 @@ def cria_plano(pg_id):
     hoje = datetime.now()
 
     #pega dados em Pessoas do usuário logado
-    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).first()
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.pesEmail).first()
 
     #verifica se o usuário logado é chefe
     chefia = db.session.query(Tipo_Func_Pessoa.tfnIndicadorChefia).filter(Tipo_Func_Pessoa.tipoFuncaoId==usuario.tipoFuncaoId).first()
@@ -2915,7 +2907,7 @@ def cria_plano(pg_id):
                 flash('Plano criado e aguardando aprovação!','sucesso')
             
             db.session.commit()
-            registra_log_unid(current_user.id,'Plano de Trabalho criado.')
+            registra_log_unid(current_user.pessoaId,'Plano de Trabalho criado.')
 
             ## para efeitos de consistência com o SISGP, registra dados nas classes Atividade_Candidato e Atividade_Candidato_Hist
             if pg.planoTrabalhoAtividadeId:
@@ -2943,8 +2935,8 @@ def cria_plano(pg_id):
     return render_template('add_plano.html', form=form, ativs_pg=ativs_pg, pg=pg, mod=mod, chefe=chefe, tipo='inc')                                                                       
 
 # alterando um plano de trabalho (pacto)
-
 @demandas.route('/<pg_id>/<pacto_id>/altera_plano', methods=['GET','POST'])
+@login_required
 def altera_plano(pg_id,pacto_id):
     """
     +---------------------------------------------------------------------------------------+
@@ -2959,7 +2951,7 @@ def altera_plano(pg_id,pacto_id):
     hoje = datetime.now()
 
     #pega dados em Pessoas do usuário logado
-    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).first()
+    usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.pesEmail).first()
 
     #verifica se o usuário logado é chefe
     chefia = db.session.query(Tipo_Func_Pessoa.tfnIndicadorChefia).filter(Tipo_Func_Pessoa.tipoFuncaoId==usuario.tipoFuncaoId).first()
@@ -3136,7 +3128,7 @@ def altera_plano(pg_id,pacto_id):
             
             flash('Plano alterado e aguardando aprovação!','sucesso')
             db.session.commit()
-            registra_log_unid(current_user.id,'Plano de Trabalho '+pacto_id+' alterado.')
+            registra_log_unid(current_user.pessoaId,'Plano de Trabalho '+pacto_id+' alterado.')
 
             return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
     
@@ -3150,7 +3142,6 @@ def altera_plano(pg_id,pacto_id):
 
 
 #analisando um pacto encaminhado para aceite
-
 @demandas.route('/analisa_plano/<pacto_id>',methods=['GET','POST'])
 @login_required
 def analisa_plano(pacto_id):
@@ -3164,7 +3155,7 @@ def analisa_plano(pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id sisgp do usuário logado
     analista = db.session.query(Pessoas.pessoaId, Pessoas.pesNome).filter(Pessoas.pesEmail == email).first_or_404()
@@ -3202,12 +3193,12 @@ def analisa_plano(pacto_id):
         if plano.situacaoId == 404:
 
             flash('Plano de trabalho foi recusado!','erro')
-            registra_log_unid(current_user.id,'Plano de Trabalho recusado.')
+            registra_log_unid(current_user.pessoaId,'Plano de Trabalho recusado.')
         
         if plano.situacaoId == 403:
 
             flash('Plano de trabalho foi aceito!','sucesso')
-            registra_log_unid(current_user.id,'Plano de Trabalho aceito.')
+            registra_log_unid(current_user.pessoaId,'Plano de Trabalho aceito.')
 
         return redirect(url_for('demandas.list_demandas', lista = 'Enviado para aceite', coord = '*'))
 
@@ -3215,7 +3206,6 @@ def analisa_plano(pacto_id):
 
 
 #iniciando um plano de trabalho (pacto) que foi aceito
-
 @demandas.route('/inicia_plano/<pacto_id>',methods=['GET','POST'])
 @login_required
 def inicia_plano(pacto_id):
@@ -3229,7 +3219,7 @@ def inicia_plano(pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega o plano
     plano = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
@@ -3287,7 +3277,7 @@ def inicia_plano(pacto_id):
                 db.session.commit()
 
         flash('Plano de trabalho colocado em execução!','sucesso')
-        registra_log_unid(current_user.id,'Plano de Trabalho colocado em execução.')
+        registra_log_unid(current_user.pessoaId,'Plano de Trabalho colocado em execução.')
     
     else:    
         flash('Este plano não é seu, não pode iniciá-lo!','erro')
@@ -3295,7 +3285,6 @@ def inicia_plano(pacto_id):
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 #finalizando um plano de trabalho (pacto)
-
 @demandas.route('/finaliza_plano/<pacto_id>',methods=['GET','POST'])
 @login_required
 def finaliza_plano(pacto_id):
@@ -3309,7 +3298,7 @@ def finaliza_plano(pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega o plano
     plano = db.session.query(Pactos_de_Trabalho).filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id).first()
@@ -3380,7 +3369,7 @@ def finaliza_plano(pacto_id):
         db.session.commit()
 
         flash('Plano de trabalho colocado como executado!','sucesso')
-        registra_log_unid(current_user.id,'Plano de Trabalho colocado como executado.')
+        registra_log_unid(current_user.pessoaId,'Plano de Trabalho colocado como executado.')
     
     else:    
         flash('Este plano não é seu, não pode finalizá-lo!','erro')
@@ -3388,7 +3377,6 @@ def finaliza_plano(pacto_id):
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 #finalizando um plano de trabalho (pacto)
-
 @demandas.route('/reabre_plano/<pacto_id>',methods=['GET','POST'])
 @login_required
 def reabre_plano(pacto_id):
@@ -3402,7 +3390,7 @@ def reabre_plano(pacto_id):
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega id do usuário logado
     usu = db.session.query(Pessoas.pessoaId).filter(Pessoas.pesEmail==email).first()
@@ -3424,15 +3412,16 @@ def reabre_plano(pacto_id):
     db.session.add(hist)
 
     flash('Plano de trabalho reaberto!','sucesso')
-    registra_log_unid(current_user.id,'Plano de Trabalho reaberto.')
+    registra_log_unid(current_user.pessoaId,'Plano de Trabalho reaberto.')
     
     return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 
 
 # gera relatório de um plano de trabalho (pacto)
-
 @demandas.route('/<pacto_id>/relatorio')
+@login_required
 def relatorio(pacto_id):
+
     """+--------------------------------------------------------------------------------------+
        |Gera relatório em pdf de uma atividade.                                               |
        |                                                                                      |
@@ -3478,8 +3467,7 @@ def relatorio(pacto_id):
                                Pessoas.pesEmail,
                                Pactos_de_Trabalho.unidadeId,
                                Unidades.pessoaIdChefe,
-                               Unidades.pessoaIdChefeSubstituto,
-                               users.avaliadorId)\
+                               Unidades.pessoaIdChefeSubstituto)\
                          .filter(Pactos_de_Trabalho.pactoTrabalhoId == pacto_id)\
                          .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho.pessoaId)\
                          .join(Unidades, Unidades.unidadeId == Pactos_de_Trabalho.unidadeId)\
@@ -3487,7 +3475,6 @@ def relatorio(pacto_id):
                          .join(catdom_1, catdom_1.catalogoDominioId == Pactos_de_Trabalho.situacaoId)\
                          .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho.formaExecucaoId)\
                          .join(Planos_de_Trabalho, Planos_de_Trabalho.planoTrabalhoId == Pactos_de_Trabalho.planoTrabalhoId)\
-                         .outerjoin(users, users.userEmail == Pessoas.pesEmail)\
                          .first()
 
     # pega feriados do DBSISGP, acrescentando os fixos para os anos de início de de fim da demanda (pacto)

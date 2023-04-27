@@ -2,7 +2,7 @@
 {% block content %}
 <div class="jumbotron">
 
-    <div class="row justify-content-center"><h5>Atividade: <b>{{ativs[0].titulo}}</b> ({{qtd_ativs}} ocorrências) no 
+    <div class="row justify-content-center"><h5>Atividade: <b>{{ativs[0].titulo}}</b> ({{qtd_ativs}} ocorrências - {{tempo_previsto_total|round(1)|string()|replace(".",",")}} h) no 
       <a href="{{url_for('demandas.demanda',pacto_id=pacto_id)}}"><abbr title="Clique aqui para retornar ao painel do Plano de Trabalho">Plano</abbr></a> 
       de <b>{{demanda.pesNome}}</b></h5></div>
     <br>
@@ -153,7 +153,7 @@
                              {% endif %}
                   </small>
 
-                  {% if (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
+                  {% if usuario.tipoFuncaoId != None and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
                         <p></p>
                         {% if ativs[ns_cont.i-1].nota != None and ativs[ns_cont.i-1].nota != '' %}
                           <small><a href="{{url_for('demandas.avalia_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[ns_cont.i-1].id,acao='reavaliar')}}"><span class="badge badge-pill badge-warning"><small>R</small></span></a></small>
@@ -329,7 +329,7 @@
         </div>    
       </div>
 
-      {% if ns_conclu.i >0 and (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
+      {% if ns_conclu.i >0 and usuario.tipoFuncaoId != None and usuario.unidadeId in tree_sup_ids and usuario.pesNome != demanda.pesNome %}
       <br>
       <div class="row justify-content-center">
         <a href="{{url_for('demandas.avalia_lote_atividade',pacto_id=pacto_id,ativ_pacto_id=ativs[0].id,item_cat_id=item_cat_id)}}" class="btn btn-outline-danger btn-sm" role="button" aria-pressed="true">Avaliar, ou reavaliar, todas as concluídas?</a>

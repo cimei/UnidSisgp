@@ -1,63 +1,44 @@
 """
 .. topic:: users (views)
 
-    users são as pessoas que podem acessar o ApoioSisgp.
-
-    O registro é feito por meio da respectiva opção no menu do aplicativo, com o preenchimento dos dados
-    básicos do usuário. Este registro precisa ser confirmado com o token enviado pelo sistema, por e-mail,
-    ao usúario.
-
-    Para entrar no aplicativo, o usuário se idenfica com seu e-mail e informa sua senha pessoal.
-
-    Para alterar sua senha, seja por motivo de esquecimento, ou simplemente porque quer alterá-la, 
-    o procedimento envolve o envio de um e-mail do sistema para seu endereço de e-mail registrado, 
-    com o token que abre uma tela para registro de nova senha. Este token tem validade de uma hora.
+    Objetos relativos a usuários
 
 .. topic:: Ações relacionadas aos usuários:
 
-    * Funções auxiliares:
-        * Envia e-mail de forma assincrona: send_async_email
-        * Prepara e-mail: send_email
-        * Dados para e-mail de confirmação: send_confirmation_email
-        * Dados para e-mail de troca de senha: send_password_reset_email
-    * Registro de usuário: register
-    * Trata retorno da confirmação: confirm_email
-    * Trata pedido de troca de senha: reset
-    * Realiza troca de senha: reset_with_token
-    * Entrada de usuário: login
-    * Saída de usuário: logout
-    * Atualizar dados do usuário: account
-    * Visão dos usuários: view_users
-    * Log de atividades: user_log
-    * Registro de observações do usuário no log: user_obs
-    * Ver lista de usuários ativos da coordenação: coord_view_users
+    * Funções:
+        * Registro dos principais comits: registra_log_unid
+        * Entrada de usuário: login
+        * Saída de usuário: logout
+
+    * Log de atividades: log
+    * Números do usuário: seus_numeros
+    * Números da unidade: unidade_numeros
+    * Prepara o calendário dos presentes: calendario
+    * Mostra o calendário: mostra_calendario
+    * Agenda presença no calendário: agenda_presenca
+    * Remove um agendamento: agenda_remove
 
 """
 # views.py na pasta users
 
-from itsdangerous import URLSafeTimedSerializer
 from flask import render_template, url_for, flash, redirect, request, Blueprint, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
-from flask_mail import Message
-from threading import Thread
 from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash
 from sqlalchemy import func, distinct, literal
 from sqlalchemy.sql import label
 import time
 import uuid
+import os
 
-from project import db, mail, app
-from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic, users,\
+from project import db, app
+from project.models import Pactos_de_Trabalho_Atividades, Pactos_de_Trabalho_Solic,\
                            Log_Unid, catdom, Pessoas, Unidades, Planos_de_Trabalho,\
                            Pactos_de_Trabalho, Atividade_Candidato, Objeto_Atividade_Pacto, Objeto_PG, Log_Unid,\
                            AgendamentoPresencial
 
-from project.usuarios.forms import RegistrationForm, LoginForm, EmailForm, PasswordForm, AdminForm, LogForm, AgendaForm
-                                
+from project.usuarios.forms import LoginForm, LogForm, AgendaForm
 
 usuarios = Blueprint('usuarios',__name__)
-
 
 # função para registrar comits no log
 def registra_log_unid(user_id,msg):
@@ -78,29 +59,7 @@ def registra_log_unid(user_id,msg):
 
     return
 
-# helper function para envio de email em outra thread
-def send_async_email(msg):
-    """+--------------------------------------------------------------------------------------+
-       |Executa o envio de e-mails de forma assíncrona.                                       |
-       +--------------------------------------------------------------------------------------+
-    """
-    with app.app_context():
-        mail.send(msg)
-
-# helper function para enviar e-mail
-def send_email(subject, recipients, text_body, html_body):
-    """+--------------------------------------------------------------------------------------+
-       |Envia e-mails.                                                                        |
-       +--------------------------------------------------------------------------------------+
-    """
-    msg = Message(subject, recipients=recipients)
-    msg.body = text_body
-    msg.html = html_body
-    thr = Thread(target=send_async_email, args=[msg])
-    thr.start()
-
 # login
-
 @usuarios.route('/login', methods=['GET','POST'])
 def login():
     """+--------------------------------------------------------------------------------------+
@@ -120,16 +79,21 @@ def login():
         username = form.username.data
         password = form.password.data
 
-        # abertura para login com usuarios de teste
-        if username == 'Chefe_1':
-            user = users.query.filter_by(userNome = username).first()
-            if not user:
-                flash('User de teste não cadastrado!', 'erro')
-                return render_template('login.html', form=form)
+        str_conexao     = os.environ.get('STR_CONEXAO')
+        str_search      = os.environ.get('STR_SEARCH')
+        str_atributo    = os.environ.get('STR_ATRIBUTO')
 
+        # abertura para login com usuarios de teste, gatilho para se conseguir logar com usuários que não existem no DIT do LDAP
+        if username == 'Chefe_1' or username == 'Chefe_2' or username == 'Pessoa_1' or username == 'Pessoa_2':
+            pessoa = Pessoas.query.filter_by(pesNome = username).first()
+
+            if not pessoa:
+                flash(username + ' não existe na tabela Pessoas do DBSISGP!', 'erro')
+                return render_template('login.html', form=form)
         else:    
             try:
-                conexao = users.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
+                #conexao = Pessoas.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
+                conexao = Pessoas.conecta_ldap(username,password,str_conexao)
             except:
                 flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente.', 'erro')
                 return render_template('login.html', form=form)
@@ -141,32 +105,19 @@ def login():
                 flash('Usuário desconhecido ou senha inválida. Por favor, tente novamente.', 'erro')
                 return render_template('login.html', form=form)
             else:
-                conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail','carLicense'])
+                #conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail','carLicense'])
+                #conexao.search('dc=cnpq,dc=br', '(uid='+username+')', attributes=['mail'])
+                conexao.search(str_search, '(uid='+username+')', attributes=[str_atributo])
                 retorno = True
-                ldap_mail = str((conexao.entries[0])['mail'])
-                ldap_cpf  = str((conexao.entries[0])['carLicense'])
+                #ldap_mail = str((conexao.entries[0])['mail'])
+                ldap_mail = str((conexao.entries[0])[str_atributo])
+                #ldap_cpf  = str((conexao.entries[0])['carLicense'])
                 pessoa = Pessoas.query.filter_by(pesEmail = ldap_mail).first()
                 if not pessoa:
                     flash('Seu e-mail no PGD ('+pessoa.pesEmail+') não bate com sei e-mail no LDAP ('+ldap_mail+'). Acesso negado!','erro')
                     return render_template('login.html', form=form)
             
-            user = users.query.filter_by(userEmail = ldap_mail).first()
-
-            if not user:
-                user = users(userNome                   = pessoa.pesNome,
-                            userEmail                  = pessoa.pesEmail,
-                            plaintext_password         = 'sem_senha',
-                            email_confirmation_sent_on = datetime.now(),
-                            userAtivo                  = True,
-                            avaliadorId                = None)
-                db.session.add(user)
-                db.session.commit()
-
-        user.last_logged_in = user.current_logged_in
-        user.current_logged_in = datetime.now()
-        db.session.commit()
-
-        login_user(user)
+        login_user(pessoa)
 
         flash('Login bem sucedido!','sucesso')
 
@@ -180,7 +131,6 @@ def login():
     return render_template('login.html',form=form)
 
 # logout
-
 @usuarios.route('/logout')
 def logout():
     """+--------------------------------------------------------------------------------------+
@@ -191,108 +141,11 @@ def logout():
     return redirect(url_for("core.index"))
 
 
-# Lista dos usuários
-
-@usuarios.route('/view_users')
-@login_required
-
-def view_users():
-    """+--------------------------------------------------------------------------------------+
-       |Mostra lista dos usuários da unidade do usuário logado.                               |
-       +--------------------------------------------------------------------------------------+
-    """
-
-    pessoas_sub = db.session.query(Pessoas).subquery()
-
-    lista = db.session.query(users.id,
-                             users.userNome,
-                             users.userEmail,
-                             pessoas_sub.c.unidadeId,
-                             users.registered_on,
-                             users.email_confirmed,
-                             users.email_confirmed_on,
-                             users.current_logged_in,
-                             users.userAtivo,
-                             users.avaliadorId,
-                             label('avalNome',Pessoas.pesNome),
-                             label('avalUnid',Pessoas.unidadeId))\
-                      .outerjoin(Pessoas, Pessoas.pessoaId == users.avaliadorId)\
-                      .outerjoin(pessoas_sub, pessoas_sub.c.pesEmail == users.userEmail)\
-                      .order_by(users.userNome).all()
-
-    return render_template('view_users.html', lista=lista)
-
-#
-## alterações em users 
-
-@usuarios.route("/<int:user_id>/update_user", methods=['GET', 'POST'])
-@login_required
-def update_user(user_id):
-    """
-    +----------------------------------------------------------------------------------------------+
-    |Permite ao admin atualizar dados de um user.                                                  |
-    |                                                                                              |
-    |Recebe o id do user como parâmetro.                                                           |
-    +----------------------------------------------------------------------------------------------+
-    """
-    # pega usuário 
-    user = users.query.get_or_404(user_id)
-
-    # pega unidadeId e pessoaId do usuário
-    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == user.userEmail).first()
-
-    # pega pessoas da unidade do usuário
-    pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
-                        .filter(Pessoas.unidadeId == user_pes.unidadeId,
-                                Pessoas.pessoaId != user_pes.pessoaId)\
-                        .all()
-
-    # o choices do campo atividade são definidos aqui e não no form
-    lista_avalia = [(p.pessoaId,p.pesNome) for p in pessoas]
-    lista_avalia.insert(0,('99999','RH'))
-    lista_avalia.insert(0,('',''))                    
-
-    form = AdminForm()
-
-    form.avaliador.choices = lista_avalia
-
-    if form.validate_on_submit():
-
-        if current_user.userAtivo:
-
-            user.userAtivo   = form.ativo.data
-            user.avaliadorId = form.avaliador.data
-
-            db.session.commit()
-
-            registra_log_unid(current_user.id,'Usuário '+ user.userNome +' atualizado.')
-
-            flash('Usuário '+ user.userNome +' atualizado!','sucesso')
-
-            return redirect(url_for('usuarios.view_users'))
-
-        else:
-
-            flash('O seu usuário precisa ser ativado para esta operação!','erro')
-
-            return redirect(url_for('usuarios.view_users'))
-
-
-    # traz a informação atual do usuário
-    elif request.method == 'GET':
-
-        form.ativo.data     = user.userAtivo
-        form.avaliador.data = str(user.avaliadorId)
-
-    return render_template('update_user.html', title='Update', name=user.userNome,
-                            form=form)
-
-#
 # mostra log
 
 @usuarios.route("/log", methods=['GET', 'POST'])
 @login_required
-def log ():
+def log():
     """+--------------------------------------------------------------------------------------+
        |Mostra a atividade no sistema em função dos principais commits.                       |
        |                                                                                      |
@@ -308,15 +161,15 @@ def log ():
 
         log = db.session.query(Log_Unid.id,
                                Log_Unid.data_hora,
-                               users.userNome,
+                               Pessoas.pesNome,
                                Log_Unid.msg)\
-                        .outerjoin(users, Log_Unid.user_id == users.id)\
-                        .filter(Log_Unid.data_hora >= datetime.combine(data_ini,time.min),
-                                Log_Unid.data_hora <= datetime.combine(data_fim,time.max))\
+                        .outerjoin(Pessoas, Log_Unid.user_id == Pessoas.pessoaId)\
+                        .filter(Log_Unid.data_hora >= datetime.combine(data_ini,datetime.min.time()),
+                                Log_Unid.data_hora <= datetime.combine(data_fim,datetime.max.time()))\
                         .order_by(Log_Unid.id.desc())\
                         .all()
 
-        return render_template('user_log.html', log=log, name=current_user.userNome,
+        return render_template('user_log.html', log=log, name=current_user.pesNome,
                                form=form)
 
 
@@ -325,20 +178,20 @@ def log ():
 
         log = db.session.query(Log_Unid.id,
                                Log_Unid.data_hora,
-                               users.userNome,
+                               Pessoas.pesNome,
                                Log_Unid.msg)\
-                        .join(users, Log_Unid.user_id == users.id)\
+                        .join(Pessoas, Log_Unid.user_id == Pessoas.pessoaId)\
                         .filter(Log_Unid.data_hora >= (datetime.now()-timedelta(days=1)))\
                         .order_by(Log_Unid.id.desc())\
                         .all()
 
-        return render_template('user_log.html', log=log, name=current_user.userNome,
+        return render_template('user_log.html', log=log, name=current_user.pesNome,
                            form=form)
 
 #
 # numeros do usuario
-#
 @usuarios.route("/seus_numeros/<pessoa_id>")
+@login_required
 def seus_numeros(pessoa_id):
     """+--------------------------------------------------------------------------------------+
        |Alguns números do usuário.                                                            |
@@ -350,8 +203,8 @@ def seus_numeros(pessoa_id):
     if pessoa_id == '*':
 
         #pega e-mail do usuário logado
-        email = current_user.userEmail
-        user_id = current_user.id
+        email = current_user.pesEmail
+        user_id = current_user.pessoaId
 
         #pega id sisgp do usuário logado
         usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first_or_404()
@@ -359,7 +212,7 @@ def seus_numeros(pessoa_id):
     else:
         #pega id sisgp do usuário informado
         usuario = db.session.query(Pessoas).filter(Pessoas.pessoaId == int(pessoa_id)).first_or_404()
-        user_id = db.session.query(users.id).filter(users.userEmail==usuario.pesEmail).first()
+        user_id = usuario.pessoaId
 
     # unidade do usuário
     unid = db.session.query(Unidades.undSigla).filter(Unidades.unidadeId == usuario.unidadeId).first()
@@ -494,8 +347,8 @@ def seus_numeros(pessoa_id):
 
 #
 # números da unidade
-#
 @usuarios.route("/unidade_numeros/<id>")
+@login_required
 def unidade_numeros(id):
     """+--------------------------------------------------------------------------------------+
        |Alguns números da unidade.                                                            |
@@ -507,7 +360,7 @@ def unidade_numeros(id):
     if id == '*':
 
         #pega e-mail do usuário logado
-        email = current_user.userEmail
+        email = current_user.pesEmail
 
         #pega id sisgp do usuário logado
         usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first_or_404()
@@ -593,10 +446,8 @@ def unidade_numeros(id):
                                            lista = lista)
 
 # calendário de presença
-
 @usuarios.route('/calendario')
 @login_required
-
 def calendario():
     """+--------------------------------------------------------------------------------------+
        |Prepara calendário com pessoas presentes na unidade conforme o agendamento.           |
@@ -604,7 +455,7 @@ def calendario():
     """
 
     # pega unidadeId e pessoaId do usuário
-    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.pesEmail).first()
 
     # pega pessoas com agenda da unidade do usuário
     pessoas_orig = db.session.query(label('id',AgendamentoPresencial.agendamentoPresencialId),
@@ -644,10 +495,8 @@ def calendario():
 
 #
 # chama calendário de presença
-
 @usuarios.route('/mostra_calendario')
 @login_required
-
 def mostra_calendario():
     """+--------------------------------------------------------------------------------------+
        |Mostra calendário com pessoas presentes na unidade conforme o agendamento.            |
@@ -669,7 +518,7 @@ def agenda_presenca():
     """
 
     # pega unidadeId e pessoaId do usuário logado
-    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+    user_pes = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.pesEmail).first()
 
     # pega pessoas da unidade do usuário
     pessoas = db.session.query(Pessoas.pessoaId, Pessoas.pesNome)\
@@ -686,45 +535,36 @@ def agenda_presenca():
 
     if form.validate_on_submit():
 
-        if current_user.userAtivo:
+        nome_pessoa =  db.session.query(Pessoas.pesNome)\
+                                    .filter(Pessoas.pessoaId == form.pessoa.data)\
+                                    .first()
 
-            nome_pessoa =  db.session.query(Pessoas.pesNome)\
-                                     .filter(Pessoas.pessoaId == form.pessoa.data)\
-                                     .first()
+        ver_previa = db.session.query(AgendamentoPresencial)\
+                                .filter(AgendamentoPresencial.pessoaId == form.pessoa.data,
+                                        AgendamentoPresencial.dataAgendada == form.data_agenda.data)\
+                                .first()
 
-            ver_previa = db.session.query(AgendamentoPresencial)\
-                                   .filter(AgendamentoPresencial.pessoaId == form.pessoa.data,
-                                           AgendamentoPresencial.dataAgendada == form.data_agenda.data)\
-                                   .first()
-
-            if ver_previa:
-                flash('Pessoa '+ nome_pessoa.pesNome +' já estava agendada para a data informada.','perigo')
-                return redirect(url_for('usuarios.mostra_calendario'))
-            else:    
-                agendamento = AgendamentoPresencial(agendamentoPresencialId = uuid.uuid4(),
-                                                    pessoaId                = form.pessoa.data,
-                                                    dataAgendada            = form.data_agenda.data)
-                db.session.add(agendamento)
-                db.session.commit()
-
-            registra_log_unid(current_user.id,'Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.')
-
-            flash('Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.','sucesso')
-
+        if ver_previa:
+            flash('Pessoa '+ nome_pessoa.pesNome +' já estava agendada para a data informada.','perigo')
             return redirect(url_for('usuarios.mostra_calendario'))
+        else:    
+            agendamento = AgendamentoPresencial(agendamentoPresencialId = uuid.uuid4(),
+                                                pessoaId                = form.pessoa.data,
+                                                dataAgendada            = form.data_agenda.data)
+            db.session.add(agendamento)
+            db.session.commit()
 
-        else:
+        registra_log_unid(current_user.pessoaId,'Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.')
 
-            flash('O seu usuário precisa ser ativado para esta operação!','erro')
+        flash('Pessoa '+ nome_pessoa.pesNome +' agendada para trabalho presencial.','sucesso')
 
-            return redirect(url_for('usuarios.mostra_calendário'))
+        return redirect(url_for('usuarios.mostra_calendario'))
 
 
     return render_template('agenda_presenca.html',form=form)
 
 #    
 ## remoção de agendamento de presença 
-
 @usuarios.route("/agenda_remove/<id>")
 @login_required
 def agenda_remove(id):
@@ -742,7 +582,7 @@ def agenda_remove(id):
     db.session.delete(agendamento)
     db.session.commit()
 
-    registra_log_unid(current_user.id,'Um agendamento presencial de '+ pessoa.pesNome +' foi removido.')
+    registra_log_unid(current_user.pessoaId,'Um agendamento presencial de '+ pessoa.pesNome +' foi removido.')
 
     flash('Um agendamento presencial de '+ pessoa.pesNome +' foi removido.','sucesso')
 

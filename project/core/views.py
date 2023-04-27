@@ -100,7 +100,7 @@ def CarregaTA():
 
     if form.validate_on_submit():
 
-        if current_user.userAtivo and current_user.avaliadorId == 99999:
+        if current_user.tipoFuncaoId:
 
             arq = PegaArquivo(form)
 
@@ -110,7 +110,7 @@ def CarregaTA():
 
             os.popen('cp '+ arq +' /app/project/static/termo.txt')
 
-            registra_log_unid(current_user.id,'Upload de arquivo com Termo de Aceite.')
+            registra_log_unid(current_user.pessoaId,'Upload de arquivo com Termo de Aceite.')
 
             flash('Arquivo com Termo de Aceite salvo!','sucesso')
 
@@ -118,7 +118,7 @@ def CarregaTA():
 
         else:
 
-            flash('O seu usuário precisa ser ativado para esta operação!','erro')
+            flash('É necessário ter uma função para executar esta operação!','erro')
 
             return redirect(url_for('core.inicio'))
 

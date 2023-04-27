@@ -1,74 +1,58 @@
 # UnidSisgp
-Aplicativo de apoio à gestão do PGD em cada unidade por meio da gestão por demandas usando dados do DBSISGP.
+Aplicativo desenvolvido em Python para a gestão do PGD em cada unidade.
 
-Considerando que você tem o Python instalado em sua máquina, baixe os arquivos deste repositório. 
-Lembre-se de criar um ambiente para o sistema. Para tal user o arquivo environment.yml, ou o arquivo requirements.txt, de acordo com sua preferência e ajustando-os para seu caso. 
-No environment.yml, por exemplo, o nome do ambiente (name) e sua localização (prefix) deverão ser ajustados. 
-Consulte https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html (conda) e https://pip.pypa.io/en/latest/user_guide/#requirements-files (pip) para detalhes de como lidar com ambientes.
+Este aplicativo utiliza o banco de dados do SISGP (SUSEP), o que permite seu uso concomitante a este sistema.
 
-Como o código é reaproveitado de um projeto anterior, pode ocorrer de ter mais pacotes instalados do que o realmente necessário, mas isto não é um impedimento.
+Além da gestão individual dos planos de trablho, as pessoas alocadas na unidade possam ver os planos umas das outras. 
 
-Certifique-se que o pacote pyodbc está instalado: pip install pyodbc
+Das suas características, destacam-se não haver fase de candidatura, não haver envio de e-mails, algumas ações podem ser 
+realizadas em lote e objetos e assuntos podem ser relacionados às atividades dos planos de trabalho de cada pessoa.
 
-Na pasta Instance, há o arquivo flask exemplo.cfg. Este, depois de ter sido ajustado para o seu caso, deve ser renomeado para flask.cfg. É neste arquivo que residem a de SECRECT_KEY do sistema,
-a string para acesso ao banco de dados do DBSISGP e também os dados da conta de e-mail que o sistema utilizará.
+Como este sistema registra o log dos commits realizados, é necessário uma tabela no DBSISGP. Abaixo seguem as instruções SQL para tal:
 
-Como este sistema faz controle de acesso e registra o log dos commits realizados, é necessário criar duas tabelas no DBSISGP. Abaixo seguem as instruções SQL para tal:
-
-      CREATE SCHEMA [Apoio]
+      USE [DBSISGP]   
       GO
-      
-      /****** Object:  Table [Apoio].[User]  e [Apoio].[log_unid]  ******/
+
+      /****** Object:  Table [Apoio].[log_unid]  ******/
       SET ANSI_NULLS ON
       GO
-      
+
       SET QUOTED_IDENTIFIER ON
       GO
-      
-      CREATE TABLE [Apoio].[User](
-            [id] [bigint] IDENTITY(1,1) NOT NULL,
-            [userNome] [varchar](150) NOT NULL,
-            [userEmail] [varchar](150) NOT NULL,
-            [password_hash] [varchar](128) NOT NULL,
-            [email_confirmation_sent_on] [datetime] NULL,
-            [email_confirmed] [bit] NULL,
-            [email_confirmed_on] [datetime] NULL,
-            [registered_on] [datetime] NULL,
-            [last_logged_in] [datetime] NULL,
-            [current_logged_in] [datetime] NULL,
-            [userAtivo] [bit] NULL,
-       CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED 
-      (
-      	[id] ASC
-      )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)       ON [PRIMARY]
-      ) ON [PRIMARY]
-      GO
-      
+
       CREATE TABLE [Apoio].[log_unid](
-	      [id] [bigint] IDENTITY(1,1) NOT NULL,
-      	[data_hora] [datetime] NOT NULL,
-	      [user_id] [bigint] NOT NULL,
-      	[msg] [varchar](150) NOT NULL,
-       CONSTRAINT [PK_log_unid] PRIMARY KEY CLUSTERED 
+            [id] [bigint] IDENTITY(1,1) NOT NULL,
+            [data_hora] [datetime] NOT NULL,
+            [user_id] [bigint] NOT NULL,
+            [msg] [varchar](150) NOT NULL,
+      CONSTRAINT [PK_log_unid] PRIMARY KEY CLUSTERED 
       (
-	      [id] ASC
+            [id] ASC
       )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
       ) ON [PRIMARY]
       GO
 
-      ALTER TABLE [Apoio].[log_unid]  WITH CHECK ADD  CONSTRAINT [FK_log_unid_user_id] FOREIGN KEY([user_id])
-      REFERENCES [Apoio].[User] ([id])
-      GO
+Caso não exista, é necessário criar previamente o schema Apoio.
 
-      ALTER TABLE [Apoio].[log_unid] CHECK CONSTRAINT [FK_log_unid_user_id]
-      GO
+O acesso se vale do DIT do LDAP da instituição. Em resumo, o sistema pega as credenciais do usuário e, com elas, se conecta no servidor LDAP. Caso o usuário exista no DIT,
+o sistema verifica se o e-mail cadastrado na tabela Pessoas do DBSISGP corresponde ao e-mail cadastrado no DIT. Confirmando, o acesso é fornecido.
 
-O aplicativo está preparado para ser executado via conteiner Docker. Com o ambiente pronto, a imagem pode ser gerada via 
+Existem 4 usuárois de teste: Chefe_1, Chefe_2, Pessoa_1, Pessoa_2. Caso estes existam na tabela Pessoas (campo pesNome), o sistema permite o login sem consulta ao LDAP. 
+Recomenda-se então usar somente  no ambiente de testes/homologação.
 
-      docker build -t unidsisgp . 
+O código está preparado para ter sua imagem docker gerada (portas 5002:5002), sendo necessárias as seguintes variáveis de ambiente:
 
-Para executar o conteiner:
+      DB_SERVER: nome do servidor onde reside o banco de dados
+      DB_PORT: número da porta de acesso ao banco de dados
+      DB_DATABASE: nome do bando de dados, geralmente "DBSISGP"
+      DB_USER: nome do usuário de acesso ao banco de dados
+      DB_PWD: senha do usuário de acesso ao banco de dados
+      LDAP_URL: url do servidor do LDAP, com  a informação da porta usada, exemplo: "ldap.xxx.xx:1234"
+      STR_CONEXAO: string de para conexão com o LDAP, exemplo: "ou=People,dc=xxxx,dc=xx"
+      STR_SEARCH: string de procura no DIT do LDAP, exemplo "dc=xxxx,dc=xx"
+      STR_ATRIBUTO: este sistema só usa o artibuto de e-mail, por exemplo: "mail"
+      CONDIC: se informada com o valor "chefe_nao_pode_remoto", indica ao sistema que nenhuma pessoa com função pode realizar teletrabalho integral. Caso contrário, informar "".
 
-      docker run -dp 5002:5002 unidsisgp 
+Ao gerar sua própria imagem, recomenda-se alterar no arquivo flask.cfg a SECRECT_KEY do sistema, ou torne ela uma variável de sistema, se preferir.      
 
 ...

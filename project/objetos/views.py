@@ -34,6 +34,7 @@ objetos = Blueprint("objetos",__name__,template_folder='templates')
 ## lista objetos
 
 @objetos.route('/<coord>/lista_objetos')
+@login_required
 def lista_objetos(coord):
     """
     +---------------------------------------------------------------------------------------+
@@ -42,7 +43,7 @@ def lista_objetos(coord):
     +---------------------------------------------------------------------------------------+
     """
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega unidade do usuário logado
     unid_id    = db.session.query(Pessoas.unidadeId).filter(Pessoas.pesEmail == email).first()
@@ -102,6 +103,7 @@ def lista_objetos(coord):
 ## lista objetos por PG
 
 @objetos.route('/<pg>/lista_objetos_pg')
+@login_required
 def lista_objetos_pg(pg):
     """
     +---------------------------------------------------------------------------------------+
@@ -128,6 +130,7 @@ def lista_objetos_pg(pg):
 ## lista objetos por Pessoa
 
 @objetos.route('/<int:pessoa>/lista_objetos_pessoa')
+@login_required
 def lista_objetos_pessoa(pessoa):
     """
     +---------------------------------------------------------------------------------------+
@@ -137,7 +140,7 @@ def lista_objetos_pessoa(pessoa):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     # possibilidade de consultar outra pessoa
     if pessoa != 0:
@@ -217,7 +220,7 @@ def add_objeto(plano_id,pacto_id):
         db.session.add(objeto_pg)
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Objeto '+ obj_id +' inserido no banco de dados.')
+        registra_log_unid(current_user.pessoaId,'Objeto '+ obj_id +' inserido no banco de dados.')
 
         flash('Objeto registrado!','sucesso')
 
@@ -257,7 +260,7 @@ def altera_objeto(objeto_id):
 
         db.session.commit()
 
-        registra_log_unid(current_user.id,'Objeto '+ objeto_id +' alterado.')
+        registra_log_unid(current_user.pessoaId,'Objeto '+ objeto_id +' alterado.')
 
         flash('Objeto alterado!','sucesso')
 
@@ -361,9 +364,9 @@ def objeto_ativ_pacto(pacto_id,pacto_ativ_id):
             db.session.commit()
 
         if form.replicar.data:
-            registra_log_unid(current_user.id,'Objeto relacionado à atividade de pacto de trabalho e demais ocorrências sem objeto prévio.')  
+            registra_log_unid(current_user.pessoaId,'Objeto relacionado à atividade de pacto de trabalho e demais ocorrências sem objeto prévio.')  
         else:
-            registra_log_unid(current_user.id,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
+            registra_log_unid(current_user.pessoaId,'Objeto relacionado à uma ocorrência de atividade de pacto de trabalho.')
 
         return redirect(url_for('demandas.ativ_ocor', pacto_id=pacto_id,item_cat_id=ativ.itemCatalogoId))
 
@@ -422,7 +425,7 @@ def objeto_reuniao(plano_id,reuniao_id,pacto_id):
 
         db.session.commit()        
 
-        registra_log_unid(current_user.id,'Objeto relacionado a uma reunião.')                                 
+        registra_log_unid(current_user.pessoaId,'Objeto relacionado a uma reunião.')                                 
 
         return redirect(url_for('demandas.demanda',pacto_id=pacto_id))
 

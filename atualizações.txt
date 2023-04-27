@@ -1,5 +1,10 @@
 ## Atualizações ##
 
+27/04/2023
+Dados para acesso ao ldap informados como variáveis de ambiente.
+Não é mais necessária a tabela Apoio.User_Unid.
+v2.1.2
+
 25/04/2023
 Implementação da solicitação de tempo estourado em atividade.
 v2.1.1

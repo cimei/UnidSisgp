@@ -26,6 +26,7 @@ pessoas = Blueprint('pessoas',__name__, template_folder='templates')
 ## lista pessoas de uma unidade
 
 @pessoas.route('<coord>/lista_pessoas_unid')
+@login_required
 def lista_pessoas_unid(coord):
     """
     +---------------------------------------------------------------------------------------+
@@ -35,7 +36,7 @@ def lista_pessoas_unid(coord):
     """
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()

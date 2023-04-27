@@ -73,7 +73,7 @@ def plano_trabalho(lista,coord):
     +---------------------------------------------------------------------------------------+
     """
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega dados em Pessoas do usuário logado
     usuario = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
@@ -192,7 +192,6 @@ def plano_trabalho(lista,coord):
 
 @pgs.route('/<pg>/lista_atividades_pg')
 @login_required
-
 def lista_atividades_pg(pg):
     """
     +---------------------------------------------------------------------------------------+
@@ -222,7 +221,6 @@ def lista_atividades_pg(pg):
 
 @pgs.route('/<pg>/lista_metas_pg')
 @login_required
-
 def lista_metas_pg(pg):
     """
     +---------------------------------------------------------------------------------------+
@@ -250,7 +248,6 @@ def lista_metas_pg(pg):
 
 @pgs.route('/<pg>/lista_pactos_pg')
 @login_required
-
 def lista_pactos_pg(pg):
     """
     +---------------------------------------------------------------------------------------+
@@ -294,7 +291,6 @@ def lista_pactos_pg(pg):
 
 @pgs.route('/cria_pg', methods=['GET','POST'])
 @login_required
-
 def cria_pg():
     """
     +---------------------------------------------------------------------------------------+
@@ -306,10 +302,10 @@ def cria_pg():
     hoje = datetime.now()
 
     #pega unidade e id pessoa do usuário logado
-    unid = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.userEmail).first()
+    unid = db.session.query(Pessoas.unidadeId, Pessoas.pessoaId).filter(Pessoas.pesEmail == current_user.pesEmail).first()
 
     #pega total de servidores do setor
-    total_serv_setor = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.userEmail).count()
+    total_serv_setor = db.session.query(Pessoas).filter(Pessoas.pesEmail == current_user.pesEmail).count()
 
     #pega modalidades de execução
     mods = db.session.query(catdom).filter(catdom.classificacao == 'ModalidadeExecucao').all()
@@ -383,7 +379,7 @@ def cria_pg():
 
         db.session.commit()                                                  
           
-        registra_log_unid(current_user.id,'Programa de Gestão criado.')                                 
+        registra_log_unid(current_user.pessoaId,'Programa de Gestão criado.')                                 
 
         return redirect(url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*'))
 
@@ -395,7 +391,6 @@ def cria_pg():
 
 @pgs.route('/finaliza_pgs',methods=['GET','POST'])
 @login_required
-
 def finaliza_pgs():
     """
     +---------------------------------------------------------------------------------------+
@@ -407,7 +402,7 @@ def finaliza_pgs():
     hoje = datetime.now()
 
     #pega e-mail do usuário logado
-    email = current_user.userEmail
+    email = current_user.pesEmail
 
     #pega unidade do usuário logado
     unid = db.session.query(Pessoas).filter(Pessoas.pesEmail == email).first()
@@ -452,7 +447,7 @@ def finaliza_pgs():
 
         db.session.commit()    
 
-    registra_log_unid(current_user.id,'Procedimento de finalização de PGs vencidos foi realizado. '+str(quantidade)+' registros afetados.')
+    registra_log_unid(current_user.pessoaId,'Procedimento de finalização de PGs vencidos foi realizado. '+str(quantidade)+' registros afetados.')
     flash(str(quantidade) +' Programas de Gestão foram Concluídos ou Executados por estarem com vigência encerrada!','sucesso')
 
     return redirect(url_for('pgs.plano_trabalho', lista = 'Todas', coord = '*'))

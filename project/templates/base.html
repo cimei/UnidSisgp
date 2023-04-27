@@ -40,7 +40,7 @@
             <a class="nav-link" href="{{url_for('core.info')}}">Sobre</a>
           </li>
 
-         {% if current_user.is_authenticated and current_user.userAtivo %}
+         {% if current_user.is_authenticated %}
 
           <li class="nav-item dropdown active">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -84,7 +84,7 @@
 
           <li class="nav-item dropdown active">
             <a class="nav-link dropdown-toggle text-success" href="#" id="navbarDropdown4" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            {{current_user.userNome}}
+            {{current_user.pesNome}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown4">
               <a class="dropdown-item" href="{{url_for('demandas.list_demandas_usu',lista='Em execução',pessoa_id=0)}}">Seus Planos Em execução</a>
@@ -93,8 +93,7 @@
               <a class="dropdown-item" href="{{url_for('usuarios.seus_numeros',pessoa_id='*')}}">Seus Números</a>
               <a class="dropdown-item" href="{{url_for('usuarios.unidade_numeros',id='*')}}">Números da Unidade</a>
               <a class="dropdown-item" href="{{url_for('usuarios.log')}}">Ver Diário</a>
-              {% if current_user.userAtivo and current_user.avaliadorId == 99999 %}
-                <a class="dropdown-item"  href="{{ url_for('usuarios.view_users') }}">Ver Usuários</a>
+              {% if current_user.tipoFuncaoId %}
                 <a class="dropdown-item" href="{{url_for('core.CarregaTA')}}">Upload de TA</a>
               {% endif %}
               
@@ -113,26 +112,12 @@
 
         {% endif %}  
 
-        {% if current_user.is_authenticated and not current_user.userAtivo %}
-
-          <li class="nav-item">
-            <span class="navbar-text text-danger">    ATENÇÃO! USUÁRIO NÃO ATIVADO!</span>
-          </li>
-
-        {% endif %}
-
-          {% set ver = namespace(num = '2.1.1') %}
+        {% set ver = namespace(num = '2.1.2') %}
 
         </ul>
 
         <span class="navbar-text"> 
-          <span class="text-primary">( DBSISGP
-            {% if 'AMBIENTE'|verifica_serv_bd == None %}
-              )
-            {% else %}
-              de {{'AMBIENTE'|verifica_serv_bd}} )
-            {% endif %}  
-          </span>
+          <span class="text-primary">(Base em {{'DB_SERVER'|retorna_var_amb}})</span>
           v. {{ ver.num }} <small>cbt</small> 
         </span>
 

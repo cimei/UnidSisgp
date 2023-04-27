@@ -88,7 +88,7 @@
                 {% else %}
                   <td><p align = "center"> N.C. </p></td>
                 {% endif %}  
-                {% if lista == 'Enviado para aceite' and (usuario.tipoFuncaoId != None or usuario.pessoaId == demanda.avaliadorId) and demanda.pesEmail != current_user.userEmail %}
+                {% if lista == 'Enviado para aceite' and usuario.tipoFuncaoId != None and demanda.pesEmail != current_user.pesEmail %}
                   <td><p align = "center"><a href="{{url_for('demandas.analisa_plano',pacto_id=demanda.pactoTrabalhoId)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true"><abbr title="Avaliar">A</abbr></a></p></td>
                 {% endif %}
                 {% if com_nota %}

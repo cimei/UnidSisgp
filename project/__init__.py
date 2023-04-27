@@ -4,9 +4,9 @@ import os
 import locale
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
-from flask_mail import Mail
+# from flask_mail import Mail
+# from flask_migrate import Migrate
 
 import pyodbc
 
@@ -21,9 +21,9 @@ app.config.from_pyfile('flask.cfg')
 app.static_url_path=app.config.get('STATIC_PATH')
 
 db = SQLAlchemy(app)
-Migrate(app,db)
 
-mail = Mail(app)
+# Migrate(app,db)
+# mail = Mail(app)
 
 locale.setlocale( locale.LC_ALL, '' )
 
