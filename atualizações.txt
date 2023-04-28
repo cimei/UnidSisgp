@@ -1,5 +1,9 @@
 ## Atualizações ##
 
+28/04/2023
+Prints dos dados ldap para acompanhamento.
+v2.1.2a
+
 27/04/2023
 Dados para acesso ao ldap informados como variáveis de ambiente.
 Não é mais necessária a tabela Apoio.User_Unid.

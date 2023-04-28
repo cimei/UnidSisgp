@@ -83,6 +83,10 @@ def login():
         str_search      = os.environ.get('STR_SEARCH')
         str_atributo    = os.environ.get('STR_ATRIBUTO')
 
+        print ('*** str_conexao: ', str_conexao)
+        print ('*** str_search: ', str_search)
+        print ('*** str_atributo: ', str_atributo)
+
         # abertura para login com usuarios de teste, gatilho para se conseguir logar com usuários que não existem no DIT do LDAP
         if username == 'Chefe_1' or username == 'Chefe_2' or username == 'Pessoa_1' or username == 'Pessoa_2':
             pessoa = Pessoas.query.filter_by(pesNome = username).first()
@@ -95,7 +99,7 @@ def login():
                 #conexao = Pessoas.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
                 conexao = Pessoas.conecta_ldap(username,password,str_conexao)
             except:
-                flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente.', 'erro')
+                flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente. '+str_conexao+' '+str_search+' '+str_atributo, 'erro')
                 return render_template('login.html', form=form)
 
             if conexao == 'sem_credencial':
@@ -114,7 +118,7 @@ def login():
                 #ldap_cpf  = str((conexao.entries[0])['carLicense'])
                 pessoa = Pessoas.query.filter_by(pesEmail = ldap_mail).first()
                 if not pessoa:
-                    flash('Seu e-mail no PGD ('+pessoa.pesEmail+') não bate com sei e-mail no LDAP ('+ldap_mail+'). Acesso negado!','erro')
+                    flash('Seu e-mail no PGD não bate com sei e-mail no LDAP ('+ldap_mail+') ou você não está cadastrato lá. Acesso negado!','erro')
                     return render_template('login.html', form=form)
             
         login_user(pessoa)

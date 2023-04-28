@@ -37,59 +37,6 @@ from sqlalchemy.dialects.mssql import NUMERIC
 @login_manager.user_loader
 def load_user(user_id):
     return Pessoas.query.get(user_id)
-# def load_user(user_id):
-#     return users.query.get(user_id)
-
-# class users(db.Model, UserMixin):
-
-#     __tablename__ = 'User_Unid'
-#     __table_args__ = {"schema": "Apoio"}
-
-#     id                         = db.Column(db.Integer,primary_key=True)
-#     userNome                   = db.Column(db.String(64),unique=True,index=True)
-#     userEmail                  = db.Column(db.String(64),unique=True,index=True)
-#     password_hash              = db.Column(db.String(128))
-#     email_confirmation_sent_on = db.Column(db.DateTime, nullable=True)
-#     email_confirmed            = db.Column(db.Boolean, nullable=True, default=False)
-#     email_confirmed_on         = db.Column(db.DateTime, nullable=True)
-#     registered_on              = db.Column(db.DateTime, nullable=True)
-#     last_logged_in             = db.Column(db.DateTime, nullable=True)
-#     current_logged_in          = db.Column(db.DateTime, nullable=True)
-#     userAtivo                  = db.Column(db.Boolean)
-#     avaliadorId                = db.Column(db.Integer, nullable=True)
-
-#     def __init__(self,userNome,userEmail,plaintext_password,userAtivo,email_confirmation_sent_on=None,avaliadorId=None):
-
-#         self.userNome                   = userNome
-#         self.userEmail                  = userEmail
-#         self.password_hash              = generate_password_hash(plaintext_password)
-#         self.email_confirmation_sent_on = email_confirmation_sent_on
-#         self.email_confirmed            = False
-#         self.email_confirmed_on         = None
-#         self.registered_on              = datetime.now()
-#         self.last_logged_in             = None
-#         self.current_logged_in          = datetime.now()
-#         self.userAtivo                  = userAtivo
-#         self.avaliadorId                = avaliadorId
-
-#     def check_password (self,plaintext_password):
-
-#         return check_password_hash(self.password_hash,plaintext_password)
-
-#     @staticmethod
-#     def conecta_ldap(username, password, str_DN):
-#         server = Server('ldap.cnpq.br:2389')
-#         user_str_DN = 'uid='+username.strip()+','+str_DN.strip()
-#         conn = Connection(server, user_str_DN, password)
-#         status = conn.bind()
-#         if status:
-#             return conn 
-#         else:
-#             return 'sem_credencial'
-
-#     def __repr__(self):
-
-#         return f"{self.userNome};"
 
 ## tabela de registro dos principais commits
 class Log_Auto(db.Model):
@@ -245,8 +192,10 @@ class Pessoas(db.Model, UserMixin):
         conn = Connection(server, user_str_DN, password)
         status = conn.bind()
         if status:
+            print('*** Conexão LDAP '+ldap_url+' ok. ***')
             return conn 
         else:
+            print('*** Conexão LDAP '+ldap_url+' NÃO ok. ***')
             return 'sem_credencial'   
             
     def get_id(self):
