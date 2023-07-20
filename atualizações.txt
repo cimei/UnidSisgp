@@ -2,7 +2,8 @@
 
 28/04/2023
 Prints dos dados ldap para acompanhamento.
-v2.1.2a
+Possibilidade da pessoa de alterar um plano que foi enviado para aceite ou que foi aceito.
+v2.1.3
 
 27/04/2023
 Dados para acesso ao ldap informados como variáveis de ambiente.

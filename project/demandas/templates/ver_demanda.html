@@ -43,6 +43,11 @@
                   {% endif %}
                   {% if usuario.pesNome != post.pesNome and usuario.tipoFuncaoId != None and post.descricao == ' Enviado para aceite' %}
                     <a href="{{url_for('demandas.analisa_plano',pacto_id=id)}}" class="btn btn-info btn-sm" role="button" aria-pressed="true">Aceitar ou Recusar</a>
+                  {% elif usuario.pesNome == post.pesNome and post.descricao == ' Enviado para aceite' %}
+                    <a href="{{url_for('demandas.altera_plano',pg_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-danger btn-sm" role="button" aria-pressed="true">Alterar Plano</a>  
+                  {% endif %}
+                  {% if usuario.pesNome == post.pesNome and post.descricao == 'Aceito' %}
+                  <a href="{{url_for('demandas.altera_plano',pg_id=post.planoTrabalhoId,pacto_id=id)}}" class="btn btn-danger btn-sm" role="button" aria-pressed="true">Alterar Plano</a>
                   {% endif %}
                 </div>  
                 <div class="col-4" align="right">
