@@ -17,7 +17,7 @@
 
 from flask import render_template, url_for, flash, redirect, Blueprint
 from flask_login import current_user, login_required
-from sqlalchemy import func, cast, String
+from sqlalchemy import func, literal, case, cast, String, literal_column
 from sqlalchemy.sql import label
 from sqlalchemy.orm import aliased
 from project import db
@@ -147,6 +147,8 @@ def plano_trabalho(lista,coord):
     # alias do catdom para pegar modalidade de execução do PG
     catdom_1 = aliased(catdom)    
 
+    hoje = datetime.now()
+
     planos_trab_unid = db.session.query(Planos_de_Trabalho.planoTrabalhoId,
                                         Planos_de_Trabalho.situacaoId,
                                         Planos_de_Trabalho.dataInicio,
@@ -158,7 +160,8 @@ def plano_trabalho(lista,coord):
                                         objetos.c.qtd_objetos,
                                         Unidades.undSigla,
                                         Unidades.unidadeId,
-                                        label('modalidade',catdom_1.descricao))\
+                                        label('modalidade',catdom_1.descricao),
+                                        label('vencido',case((Planos_de_Trabalho.dataFim < hoje, literal_column("'s'")), else_=literal_column("'n'"))))\
                                  .join(catdom, catdom.catalogoDominioId == Planos_de_Trabalho.situacaoId)\
                                  .join(ativs, ativs.c.planoTrabalhoId == Planos_de_Trabalho.planoTrabalhoId)\
                                  .join(Unidades, Unidades.unidadeId == Planos_de_Trabalho.unidadeId)\

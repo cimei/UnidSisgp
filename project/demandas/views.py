@@ -205,7 +205,8 @@ def demanda(pacto_id):
                                  label('conclu',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 503, 1)], else_=0))),
                                  label('exec',func.sum(case([(Pactos_de_Trabalho_Atividades.situacaoId == 502, 1)], else_=0))),
                                  label('tempo_prev_total',func.sum(Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem)),
-                                 Pactos_de_Trabalho_Atividades.itemCatalogoId)\
+                                 Pactos_de_Trabalho_Atividades.itemCatalogoId,
+                                 label('avaliada',func.sum(case([(Pactos_de_Trabalho_Atividades.nota != None, 1)], else_=0))))\
                           .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoId == demanda.pactoTrabalhoId)\
                           .join(Atividades, Atividades.itemCatalogoId == Pactos_de_Trabalho_Atividades.itemCatalogoId)\
                           .group_by(Pactos_de_Trabalho_Atividades.itemCatalogoId,
@@ -3297,6 +3298,13 @@ def finaliza_plano(pacto_id):
 
     hoje = datetime.now()
 
+    #verifica se o usuário logado é chefe
+    chefia = db.session.query(Tipo_Func_Pessoa.tfnIndicadorChefia).filter(Tipo_Func_Pessoa.tipoFuncaoId==current_user.tipoFuncaoId).first()
+    if chefia and chefia.tfnIndicadorChefia:
+        chefe = True
+    else:
+        chefe = False
+
     #pega e-mail do usuário logado
     email = current_user.pesEmail
 
@@ -3306,7 +3314,7 @@ def finaliza_plano(pacto_id):
     #pega dono do plano
     dono = db.session.query(Pessoas).filter(Pessoas.pessoaId == plano.pessoaId).first()
 
-    if dono.pesEmail == email:
+    if dono.pesEmail == email or chefe:
 
         # recalcular %execução e relação previsto/executado
         # pega as atividades no plano do cidadão

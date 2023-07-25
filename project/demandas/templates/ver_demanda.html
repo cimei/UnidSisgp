@@ -365,6 +365,14 @@
                           {% endif %}
                         </div>
                       </div>
+
+                      {% if item.avaliada != 0 and item.avaliada != None %}
+                        <div class="progress" style="height: 1rem; width: 23rem;">
+                          <div class="progress-bar bg-info" role="progressbar" aria-label="Status avalia" style="width: {{(100 * item.avaliada / item.tam_grupo)|round|int}}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                              {{(100 * item.avaliada / item.tam_grupo)|round|int}}%
+                          </div>
+                        </div>
+                      {% endif %}
                     
                   </div>
                

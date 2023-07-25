@@ -1,5 +1,9 @@
 ## Atualizações ##
 
+Criar plano somente em PG em execução e vigente.
+Barra de acompanhamento da avaliação em plano de trabalho.
+v2.1.4
+
 28/04/2023
 Prints dos dados ldap para acompanhamento.
 Possibilidade da pessoa de alterar um plano que foi enviado para aceite ou que foi aceito.

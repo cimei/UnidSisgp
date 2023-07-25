@@ -125,7 +125,7 @@
           
           <td><p align = "center"> 
             
-                {% if pt.descricao == 'Em execução' %}
+                {% if pt.descricao == 'Em execução' and pt.vencido == 'n' %}
                 <a class="" href="{{url_for('demandas.cria_plano',pg_id=pt.planoTrabalhoId)}}">
                   <abbr title="Clique aqui para criar um plano de trabalho neste PG.">
                   Criar Plano

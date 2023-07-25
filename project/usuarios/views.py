@@ -94,13 +94,15 @@ def login():
             if not pessoa:
                 flash(username + ' não existe na tabela Pessoas do DBSISGP!', 'erro')
                 return render_template('login.html', form=form)
-        else:    
-            try:
-                #conexao = Pessoas.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
-                conexao = Pessoas.conecta_ldap(username,password,str_conexao)
-            except:
-                flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente. '+str_conexao+' '+str_search+' '+str_atributo, 'erro')
-                return render_template('login.html', form=form)
+        else:   
+
+            conexao = Pessoas.conecta_ldap(username,password,str_conexao) 
+            # try:
+            #     #conexao = Pessoas.conecta_ldap(username,password,'ou=People,dc=cnpq,dc=br')
+            #     conexao = Pessoas.conecta_ldap(username,password,str_conexao)
+            # except:
+            #     flash('Problema no acesso. Por favor, verifique suas credenciais e tente novamente. '+str_conexao+' '+str_search+' '+str_atributo, 'erro')
+            #     return render_template('login.html', form=form)
 
             if conexao == 'sem_credencial':
                 retorno = False
