@@ -44,12 +44,17 @@
         <div class="form-row">
           <div class="col-2">
             <div class="form-group">
-              {{ render_field(form.data_ini,class="form-control",obr=True) }}
+              {{ render_field(form.data_ini,class="form-control",obr=True, id="startdate") }}
             </div>
           </div>
           <div class="col-2">
             <div class="form-group">
-              {{ render_field(form.data_fim,class="form-control",obr=True) }}
+              {{ render_field(form.data_fim,class="form-control",obr=True, id="enddate") }}
+            </div>
+          </div>
+          <div class="col-2">
+            <div class="form-group">
+              <!-- <input type="text" id="days"> -->
             </div>
           </div>
           {% if chefe %}
@@ -99,4 +104,39 @@
   </div>
 
 </div>
+
+<!-- <input type="text" id="startdate">
+<input type="text" id="enddate">
+<input type="text" id="days"> -->
+
+<script>
+$(document).ready(function() {
+
+$( "#startdate,#enddate" ).datepicker({
+changeMonth: true,
+changeYear: true,
+firstDay: 1,
+dateFormat: 'yyyy-mm-dd',
+})
+
+$( "#startdate" ).datepicker({ dateFormat: 'yyyy-mm-dd' });
+$( "#enddate" ).datepicker({ dateFormat: 'yyyy-mm-dd' });
+
+$('#enddate').change(function() {
+var start = $('#startdate').datepicker('getDate');
+var end   = $('#enddate').datepicker('getDate');
+
+if (start<end) {
+var days   = (end - start)/1000/60/60/24;
+$('#days').val(days);
+}
+else {
+alert ("You cant come back before you have been!");
+$('#startdate').val("");
+$('#enddate').val("");
+$('#days').val("");
+}
+}); //end change function
+}); //end ready
+</script>
 {% endblock %}

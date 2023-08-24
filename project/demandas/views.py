@@ -1265,6 +1265,14 @@ def solicitacao(pacto_id,tipo):
             execucao = 0
             concluidas = 0
 
+            if quantidade > qtd_ativs_grupo:
+                flash('Verifique a quantidade de ocorrências, está maior do que o registrado na atividade!','erro')
+                return render_template('add_solicitacao.html', form=form, 
+                                                   tipo=tipo_solic.descricao, 
+                                                   pacto=pacto, 
+                                                   items_cat=items_cat,
+                                                   sum_ativs_tempo_total = sum_ativs_tempo_total)
+
             for a in range (quantidade): 
 
                 ativ_a_excluir = ativs_grupo[a]                   
@@ -2915,7 +2923,7 @@ def cria_plano(pg_id):
 
                 ativ_cand = Atividade_Candidato (planoTrabalhoAtividadeCandidatoId = uuid.uuid4(),
                                                 planoTrabalhoAtividadeId          = pg.planoTrabalhoAtividadeId,
-                                                pessoaId                          = pes.pessoaId,
+                                                pessoaId                          = pes_sel.pessoaId,
                                                 situacaoId                        = 804,
                                                 termoAceite                       = pg.termoAceite)
                 db.session.add(ativ_cand)     
@@ -2925,7 +2933,7 @@ def cria_plano(pg_id):
                                                            situacaoId                        = ativ_cand.situacaoId,
                                                            data                              = hist.dataOperacao,
                                                            descricao                         = None,
-                                                           responsavelOperacao               = pes.pessoaId)
+                                                           responsavelOperacao               = pes_sel.pessoaId)
                 db.session.add(ativ_cand_hist)  
 
                 db.session.commit()                           
