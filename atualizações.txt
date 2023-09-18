@@ -1,5 +1,6 @@
 ## Atualizações ##
 
+18/09/2023
 Criar plano somente em PG em execução e vigente.
 Barra de acompanhamento da avaliação em plano de trabalho.
 v2.1.4

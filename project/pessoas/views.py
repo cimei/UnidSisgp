@@ -1,7 +1,7 @@
 """
 .. topic:: Pessoas (views)
 
-    As Pessoas são os servidores lotados na intituião.
+    As Pessoas são os servidores lotados na intituição.
 
 
 .. topic:: Ações relacionadas às pessoas
