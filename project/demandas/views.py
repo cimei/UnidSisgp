@@ -171,7 +171,7 @@ def demanda(pacto_id):
     #pega hierarquia superior da unidade da demanda
     unid = db.session.query(Unidades.unidadeId, Unidades.undSigla, VW_Unidades.undSiglaCompleta)\
                            .filter(Unidades.undSigla == demanda.undSigla)\
-                           .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                           .outerjoin(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                            .first()
     if unid.undSiglaCompleta != None:
         tree_sup = unid.undSiglaCompleta.split('/')
@@ -524,7 +524,7 @@ def ativ_ocor(pacto_id,item_cat_id):
     #pega hierarquia superior da unidade da demanda
     unid = db.session.query(Unidades.unidadeId, Unidades.undSigla, VW_Unidades.undSiglaCompleta)\
                      .filter(Unidades.unidadeId == demanda.unidadeId)\
-                     .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                     .outerjoin(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                      .first()
     if unid.undSiglaCompleta:                 
         tree_sup = unid.undSiglaCompleta.split('/')
@@ -693,14 +693,14 @@ def list_demandas(lista,coord):
     unid_id = db.session.query(Pessoas.unidadeId).filter(Pessoas.pesEmail == email).first()
     unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
                            .filter(Unidades.unidadeId == unid_id.unidadeId)\
-                           .join(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                           .join(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                            .first()
     unid = unid_id.unidadeId
 
     #possibilidade de ver outra unidade
     if coord != '*':
         unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
-                               .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                               .outerjoin(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                                .filter(Unidades.undSigla == coord)\
                                .first()
         unid = unid_dados.unidadeId
@@ -2058,7 +2058,7 @@ def list_demandas_usu(lista,pessoa_id):
     
     unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
                         .filter(Unidades.unidadeId == pes.unidadeId)\
-                        .join(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                        .join(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                         .first()
     
     if lista == 'Todas':

@@ -82,14 +82,14 @@ def plano_trabalho(lista,coord):
     unid_id    = db.session.query(Pessoas.unidadeId).filter(Pessoas.pesEmail == email).first()
     unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
                            .filter(Unidades.unidadeId == unid_id.unidadeId)\
-                           .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                           .outerjoin(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                            .first()
     unid = unid_id.unidadeId
 
     #possibilidade de ver outra unidade
     if coord != '*':
         unid_dados = db.session.query(Unidades.unidadeId, Unidades.undSigla, Unidades.unidadeIdPai, VW_Unidades.undSiglaCompleta)\
-                               .outerjoin(VW_Unidades, VW_Unidades.id_unidade == Unidades.unidadeId)\
+                               .outerjoin(VW_Unidades, VW_Unidades.unidadeId == Unidades.unidadeId)\
                                .filter(Unidades.undSigla == coord)\
                                .first()
         unid = unid_dados.unidadeId
