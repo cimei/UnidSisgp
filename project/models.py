@@ -130,23 +130,41 @@ class Unidades(db.Model):
 
 class VW_Unidades(db.Model):
 
-    __tablename__ = 'VW_UNIDADE'
+    __tablename__ = 'VW_UnidadeSiglaCompleta'
     __table_args__ = {"schema": "dbo"}
 
-    id_unidade       = db.Column(db.BigInteger, primary_key = True)
-    undDescricao     = db.Column(db.String)
-    undSiglaCompleta = db.Column(db.String)
-    undCodigoSIORG   = db.Column(db.Integer)
+    unidadeId           = db.Column(db.BigInteger, primary_key = True)
+    undSigla            = db.Column(db.String)
+    undDescricao        = db.Column(db.String)
+    unidadeIdPai        = db.Column(db.String)
+    tipoUnidadeId       = db.Column(db.BigInteger)
+    situacaoUnidadeId   = db.Column(db.BigInteger)
+    ufId                = db.Column(db.String)
+    undNivel            = db.Column(db.Integer)
+    tipoFuncaoUnidadeId = db.Column(db.BigInteger)
+    undSiglaCompleta    = db.Column(db.String)
+    Email               = db.Column(db.String)
+    undCodigoSIORG      = db.Column(db.Integer)
 
-    def __init__(self, undDescricao, undSiglaCompleta, undCodigoSIORG):
+    def __init__(self, unidadeId,undSigla,undDescricao,unidadeIdPai,tipoUnidadeId,situacaoUnidadeId,ufId,
+                       undNivel,tipoFuncaoUnidadeId,undSiglaCompleta,Email,undCodigoSIORG):
 
-        self.undDescricao     = undDescricao
-        self.undSiglaCompleta = undSiglaCompleta
-        self.undCodigoSIORG   = undCodigoSIORG
+        self.unidadeId           = unidadeId
+        self.undSigla            = undSigla
+        self.undDescricao        = undDescricao
+        self.unidadeIdPai        = unidadeIdPai
+        self.tipoUnidadeId       = tipoUnidadeId
+        self.situacaoUnidadeId   = situacaoUnidadeId
+        self.ufId                = ufId
+        self.undNivel            = undNivel
+        self.tipoFuncaoUnidadeId = tipoFuncaoUnidadeId
+        self.undSiglaCompleta    = undSiglaCompleta
+        self.Email               = Email
+        self.undCodigoSIORG      = undCodigoSIORG
 
 
     def __repr__ (self):
-        return f"{self.undDescricao};{self.undSiglaCompleta};{self.undCodigoSIORG}"
+        return f"{self.undSiglaCompleta}"
 
 
 # pessoas
