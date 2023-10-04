@@ -1,5 +1,9 @@
 ## Atualizações ##
 
+04/10/2023
+Correção no aceite de solicitação.
+v2.1.5
+
 18/09/2023
 Criar plano somente em PG em execução e vigente.
 Barra de acompanhamento da avaliação em plano de trabalho.

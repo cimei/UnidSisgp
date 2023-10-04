@@ -1551,7 +1551,8 @@ def solicitacao_analise(solic_id,pacto_id):
                                     Pactos_de_Trabalho_Solic.observacoesAnalista,
                                     Pactos_de_Trabalho_Solic.analisado,
                                     Pessoas.pesNome,
-                                    Unidades.ufId)\
+                                    Unidades.ufId,
+                                    Pactos_de_Trabalho_Solic.tipoSolicitacaoId)\
                              .filter(Pactos_de_Trabalho_Solic.pactoTrabalhoSolicitacaoId == solic_id)\
                              .join(Pessoas, Pessoas.pessoaId == Pactos_de_Trabalho_Solic.solicitante)\
                              .join(catdom, catdom.catalogoDominioId == Pactos_de_Trabalho_Solic.tipoSolicitacaoId)\
@@ -1561,15 +1562,17 @@ def solicitacao_analise(solic_id,pacto_id):
 
     dados_solic = ast.literal_eval(str(solicitacao.tit).replace('null','None').replace('true','True').replace('false','False'))   
 
-    #pega dados da atividade para a qual a solicitação é feita, se for o caso
-    if dados_solic['pactoTrabalhoAtividadeId']:
+    #pega dados da atividade para a qual a solicitação é feita, se for o caso (Prazo de atividade ultrapassado ou Excluir atividade)
+    if solicitacao.tipoSolicitacaoId == 603 or solicitacao.tipoSolicitacaoId == 604:
         ativ_solic = db.session.query(Pactos_de_Trabalho_Atividades.descricao,
                                       Pactos_de_Trabalho_Atividades.tempoPrevistoPorItem,
                                       Pactos_de_Trabalho_Atividades.tempoRealizado,
                                       Atividades.titulo)\
                                .filter(Pactos_de_Trabalho_Atividades.pactoTrabalhoAtividadeId==dados_solic['pactoTrabalhoAtividadeId'].upper())\
                                .join(Atividades,Atividades.itemCatalogoId==Pactos_de_Trabalho_Atividades.itemCatalogoId)\
-                               .first()              
+                               .first()      
+    else:
+        ativ_solic = None                                   
 
     # verifica se há multiplas solicitações de exclusão não analisadas para a mesma atividade
     ocor_ativ_id_l = []
